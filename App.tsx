@@ -1146,7 +1146,7 @@ const App: React.FC = () => {
               const { data: { session } } = await supabase.auth.getSession();
               if (!session) throw new Error("Not authenticated");
 
-              const response = await fetch('/api/create-cashfree-order', {
+              const response = await fetch('/api/create-razorpay-order', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -1165,21 +1165,40 @@ const App: React.FC = () => {
                 throw new Error(errorData.error || 'Failed to create order');
               }
               
-              const { payment_session_id } = await response.json();
-              if (payment_session_id) {
-                // Initialize Cashfree
-                const cashfree = window.Cashfree({
-                  mode: "sandbox", // Change to "production" for live
-                });
+              const { order_id, amount, currency, key_id } = await response.json();
+              if (order_id) {
+                // Initialize Razorpay checkout
+                const options = {
+                  key: key_id,
+                  amount: amount,
+                  currency: currency,
+                  name: "InvoicePro",
+                  description: `${plan} plan`,
+                  order_id: order_id,
+                  handler: function () {
+                    // Payment successful — webhook will handle subscription update
+                    toast.success('Payment successful! Your plan will be activated shortly.');
+                    setIsSubscriptionPromptOpen(false);
+                  },
+                  prefill: {
+                    name: currentUser?.name || '',
+                    email: currentUser?.email || '',
+                  },
+                  theme: {
+                    color: "#6366f1",
+                  },
+                };
                 
-                cashfree.checkout({
-                  paymentSessionId: payment_session_id,
-                  redirectTarget: "_self",
+                const rzp = new window.Razorpay(options);
+                rzp.on('payment.failed', function (response: any) {
+                  console.error('Payment failed:', response.error);
+                  toast.error('Payment failed. Please try again.');
                 });
+                rzp.open();
               }
             } catch (error) {
               console.error('Error creating checkout session:', error);
-              alert('Failed to start checkout process. Please try again.');
+              toast.error('Failed to start checkout process. Please try again.');
             }
           }} 
         />

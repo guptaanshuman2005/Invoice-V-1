@@ -1,6 +1,6 @@
 declare global {
   interface Window {
-    Cashfree: any;
+    Razorpay: any;
   }
 }
 

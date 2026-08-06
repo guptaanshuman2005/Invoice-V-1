@@ -1,6 +1,6 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import { Cashfree, CFEnvironment } from "cashfree-pg";
+import Razorpay from "razorpay";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
@@ -13,15 +13,12 @@ console.log("Starting server.ts...");
 
 dotenv.config();
 
-console.log("Config loaded. Initializing Cashfree...");
+console.log("Config loaded. Initializing Razorpay...");
 
-const cashfree = new Cashfree(
-  process.env.CASHFREE_ENVIRONMENT === "PRODUCTION" 
-    ? CFEnvironment.PRODUCTION 
-    : CFEnvironment.SANDBOX,
-  process.env.CASHFREE_APP_ID || "",
-  process.env.CASHFREE_SECRET_KEY || ""
-);
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || "",
+  key_secret: process.env.RAZORPAY_KEY_SECRET || "",
+});
 
 console.log("Initializing Supabase...");
 
@@ -119,9 +116,9 @@ async function startServer() {
 
   console.log("Registering API routes...");
 
-  app.post("/api/create-cashfree-order", verifyAuth, async (req, res) => {
+  app.post("/api/create-razorpay-order", verifyAuth, async (req, res) => {
     try {
-      const { plan, companyId, customerPhone, customerEmail, customerName } = req.body;
+      const { plan, companyId, customerEmail, customerName } = req.body;
       const user = (req as any).user;
       
       // IDOR Check: Verify the user owns the company
@@ -151,60 +148,57 @@ async function startServer() {
         return res.status(400).json({ error: "Invalid plan" });
       }
 
-      const orderId = `order_${companyId}_${Date.now()}`;
-
-      const request = {
-        order_amount: amount,
-        order_currency: "INR",
-        order_id: orderId,
-        customer_details: {
-          customer_id: companyId,
-          customer_phone: customerPhone || "9999999999",
-          customer_email: customerEmail || "test@example.com",
-          customer_name: customerName || "Customer",
-        },
-        order_meta: {
-          return_url: `${process.env.APP_URL || 'http://localhost:3000'}?order_id={order_id}`,
-          notify_url: `${process.env.APP_URL || 'http://localhost:3000'}/api/cashfree-webhook`,
-        },
-        order_tags: {
+      const order = await razorpay.orders.create({
+        amount: amount * 100, // Razorpay expects amount in paise
+        currency: "INR",
+        receipt: `receipt_${companyId}_${Date.now()}`,
+        notes: {
           plan,
           companyId,
         },
-      };
+      });
 
-      const response = await cashfree.PGCreateOrder(request);
-      
       res.json({ 
-        payment_session_id: response.data.payment_session_id,
-        order_id: response.data.order_id
+        order_id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        key_id: process.env.RAZORPAY_KEY_ID,
       });
     } catch (error: any) {
-      console.error("Cashfree error:", error.response?.data || error);
+      console.error("Razorpay error:", error);
       res.status(500).json({ error: error.message || "Failed to create order" });
     }
   });
 
-  // Cashfree Webhook
-  app.post('/api/cashfree-webhook', async (req, res) => {
-    try {
-      cashfree.PGVerifyWebhookSignature(
-        req.headers["x-webhook-signature"] as string,
-        JSON.stringify(req.body),
-        req.headers["x-webhook-timestamp"] as string
-      );
-    } catch (err: any) {
-      console.error(`Webhook Signature Verification Error: ${err.message}`);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+  // Razorpay Webhook
+  app.post('/api/razorpay-webhook', async (req, res) => {
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "";
+    const signature = req.headers["x-razorpay-signature"] as string;
+
+    if (!signature || !webhookSecret) {
+      console.error("Missing webhook signature or secret");
+      return res.status(400).send("Missing signature or secret");
+    }
+
+    // Verify webhook signature
+    const expectedSignature = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(JSON.stringify(req.body))
+      .digest("hex");
+
+    if (expectedSignature !== signature) {
+      console.error("Webhook signature verification failed");
+      return res.status(400).send("Invalid signature");
     }
 
     const event = req.body;
 
-    // Handle the event
-    if (event.type === 'PAYMENT_SUCCESS_WEBHOOK') {
-      const orderTags = event.data?.order?.order_tags;
-      const companyId = orderTags?.companyId;
-      const plan = orderTags?.plan as string;
+    // Handle payment.captured event
+    if (event.event === 'payment.captured') {
+      const payment = event.payload?.payment?.entity;
+      const notes = payment?.notes;
+      const companyId = notes?.companyId;
+      const plan = notes?.plan as string;
       
       if (companyId && plan) {
         // Fetch the current company subscription
@@ -264,7 +258,7 @@ async function startServer() {
       }
     }
 
-    res.send();
+    res.json({ status: "ok" });
   });
 
   // Vite middleware for development
