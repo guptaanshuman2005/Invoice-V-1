@@ -87,7 +87,7 @@ const verifyAuth = async (req: express.Request, res: express.Response, next: exp
 async function startServer() {
   console.log("In startServer()...");
   const app = express();
-  const PORT = 3000;
+  const PORT = parseInt(process.env.PORT || "3000", 10);
 
   // Trust proxy for rate limiting behind reverse proxies
   app.set('trust proxy', 1);
