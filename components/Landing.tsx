@@ -127,11 +127,11 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
             <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Monthly</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Pay as you go, cancel anytime.</p>
             <div className="mb-8">
-              <span className="text-5xl font-black text-slate-900 dark:text-white font-display">₹199</span>
+              <span className="text-5xl font-black text-slate-900 dark:text-white font-display">₹49</span>
               <span className="text-slate-500 dark:text-slate-400 font-bold"> / mo</span>
             </div>
             <ul className="space-y-4 mb-8 flex-1">
-              {['Up to 50 invoices/mo', 'Unlimited Workspaces', 'Custom branding & logos', 'Basic Analytics', 'Email support'].map((feature, i) => (
+              {['Up to 50 invoices / mo'].map((feature, i) => (
                 <li key={i} className="flex items-center gap-3 text-slate-700 dark:text-slate-300 text-sm font-semibold">
                   <CheckCircle2 className="w-5 h-5 text-accent shrink-0" /> {feature}
                 </li>
@@ -139,7 +139,7 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
             </ul>
             <div className="p-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl mb-8 border border-slate-200/10 dark:border-slate-700/20">
                 <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold mb-1">Need more invoices?</p>
-                <p className="text-sm font-black text-slate-700 dark:text-slate-300 font-display">+ ₹99 per 20 extra invoices</p>
+                <p className="text-sm font-black text-slate-700 dark:text-slate-300 font-display">+ ₹29 per 50 extra invoices</p>
             </div>
             <button 
               onClick={onGetStarted}
@@ -155,14 +155,14 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
               MOST POPULAR
             </div>
             <h3 className="text-xl font-black text-white mb-2 uppercase tracking-wide">Quarterly</h3>
-            <p className="text-sm text-slate-400 mb-6 font-medium">Save 15% with quarterly billing.</p>
+            <p className="text-sm text-slate-400 mb-6 font-medium">Save with quarterly billing.</p>
             <div className="mb-8">
-              <span className="text-5xl font-black text-white font-display">₹499</span>
+              <span className="text-5xl font-black text-white font-display">₹129</span>
               <span className="text-slate-400 font-bold"> / qtr</span>
-              <p className="text-xs text-accent mt-2.5 font-bold uppercase tracking-wider">Works out to ₹166/mo</p>
+              <p className="text-xs text-accent mt-2.5 font-bold uppercase tracking-wider">Works out to ₹43/mo</p>
             </div>
             <ul className="space-y-4 mb-8 flex-1">
-              {['Up to 200 invoices/qtr', 'Unlimited Workspaces', 'Custom branding & logos', 'Advanced Analytics', 'Priority email support'].map((feature, i) => (
+              {['Up to 200 invoices / qtr'].map((feature, i) => (
                 <li key={i} className="flex items-center gap-3 text-slate-200 text-sm font-semibold">
                   <CheckCircle2 className="w-5 h-5 text-accent shrink-0" /> {feature}
                 </li>
@@ -170,7 +170,7 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
             </ul>
             <div className="p-4 bg-slate-800/30 rounded-2xl mb-8 border border-slate-700/20">
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Need more invoices?</p>
-                <p className="text-sm font-black text-white font-display">+ ₹249 per 50 extra invoices</p>
+                <p className="text-sm font-black text-white font-display">+ ₹89 per 200 extra invoices</p>
             </div>
             <button 
               onClick={onGetStarted}
@@ -186,12 +186,12 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
             <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Yearly</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Best value for growing companies.</p>
             <div className="mb-8">
-              <span className="text-5xl font-black text-slate-900 dark:text-white font-display">₹1,499</span>
+              <span className="text-5xl font-black text-slate-900 dark:text-white font-display">₹399</span>
               <span className="text-slate-500 dark:text-slate-400 font-bold"> / yr</span>
-              <p className="text-xs text-emerald-500 mt-2.5 font-bold uppercase tracking-wider">Works out to ₹125/mo</p>
+              <p className="text-xs text-emerald-500 mt-2.5 font-bold uppercase tracking-wider">Works out to ₹33/mo</p>
             </div>
             <ul className="space-y-4 mb-8 flex-1">
-              {['Up to 1000 invoices/yr', 'Unlimited Workspaces', 'White-labeling options', 'Custom Reports', '24/7 Priority support'].map((feature, i) => (
+              {['Up to 1000 invoices / yr'].map((feature, i) => (
                 <li key={i} className="flex items-center gap-3 text-slate-700 dark:text-slate-300 text-sm font-semibold">
                   <CheckCircle2 className="w-5 h-5 text-accent shrink-0" /> {feature}
                 </li>
@@ -199,7 +199,7 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
             </ul>
             <div className="p-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl mb-8 border border-slate-200/10 dark:border-slate-700/20">
                 <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold mb-1">Need more invoices?</p>
-                <p className="text-sm font-black text-slate-700 dark:text-slate-300 font-display">+ ₹899 per 200 extra invoices</p>
+                <p className="text-sm font-black text-slate-700 dark:text-slate-300 font-display">+ ₹199 per 500 extra invoices</p>
             </div>
             <button 
               onClick={onGetStarted}

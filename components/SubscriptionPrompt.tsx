@@ -32,11 +32,11 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
           <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-accent transition-colors flex flex-col">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Basic</h3>
             <div className="mb-4">
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-white">₹199</span>
+              <span className="text-3xl font-extrabold text-slate-900 dark:text-white">₹49</span>
               <span className="text-slate-500">/mo</span>
             </div>
             <ul className="space-y-3 mb-6 flex-1 text-sm text-slate-600 dark:text-slate-400">
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent" /> 50 invoices/month</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent" /> Up to 50 invoices / mo</li>
               <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent" /> Billed Monthly</li>
             </ul>
             <Button onClick={() => handleSubscribe('basic')} className="w-full">Choose Basic</Button>
@@ -49,11 +49,11 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             </div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Standard</h3>
             <div className="mb-4">
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-white">₹499</span>
+              <span className="text-3xl font-extrabold text-slate-900 dark:text-white">₹129</span>
               <span className="text-slate-500">/quarter</span>
             </div>
             <ul className="space-y-3 mb-6 flex-1 text-sm text-slate-600 dark:text-slate-400">
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent" /> 100 invoices/month</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent" /> Up to 200 invoices / qtr</li>
               <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent" /> Billed Quarterly</li>
             </ul>
             <Button onClick={() => handleSubscribe('standard')} className="w-full">Choose Standard</Button>
@@ -63,11 +63,11 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
           <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-accent transition-colors flex flex-col">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Premium</h3>
             <div className="mb-4">
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-white">₹1499</span>
+              <span className="text-3xl font-extrabold text-slate-900 dark:text-white">₹399</span>
               <span className="text-slate-500">/year</span>
             </div>
             <ul className="space-y-3 mb-6 flex-1 text-sm text-slate-600 dark:text-slate-400">
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent" /> 300 invoices/month</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent" /> Up to 1000 invoices / yr</li>
               <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent" /> Billed Yearly</li>
             </ul>
             <Button onClick={() => handleSubscribe('premium')} className="w-full">Choose Premium</Button>
@@ -84,7 +84,7 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div>
                 <div className="font-bold text-slate-900 dark:text-white">+50 Invoices</div>
-                <div className="text-accent font-semibold">₹99</div>
+                <div className="text-accent font-semibold">₹29</div>
               </div>
               <Button variant="outline" size="sm" onClick={() => handleSubscribe('addon_50')} className="flex items-center gap-1">
                 <PlusCircle className="w-4 h-4" /> Add
@@ -94,7 +94,7 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div>
                 <div className="font-bold text-slate-900 dark:text-white">+200 Invoices</div>
-                <div className="text-accent font-semibold">₹299</div>
+                <div className="text-accent font-semibold">₹89</div>
               </div>
               <Button variant="outline" size="sm" onClick={() => handleSubscribe('addon_200')} className="flex items-center gap-1">
                 <PlusCircle className="w-4 h-4" /> Add
@@ -104,7 +104,7 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div>
                 <div className="font-bold text-slate-900 dark:text-white">+500 Invoices</div>
-                <div className="text-accent font-semibold">₹499</div>
+                <div className="text-accent font-semibold">₹199</div>
               </div>
               <Button variant="outline" size="sm" onClick={() => handleSubscribe('addon_500')} className="flex items-center gap-1">
                 <PlusCircle className="w-4 h-4" /> Add

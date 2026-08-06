@@ -140,12 +140,12 @@ async function startServer() {
       }
 
       let amount = 0;
-      if (plan === "basic") amount = 199;
-      else if (plan === "standard") amount = 499;
-      else if (plan === "premium") amount = 1499;
-      else if (plan === "addon_50") amount = 99;
-      else if (plan === "addon_200") amount = 299;
-      else if (plan === "addon_500") amount = 499;
+      if (plan === "basic") amount = 49;
+      else if (plan === "standard") amount = 129;
+      else if (plan === "premium") amount = 399;
+      else if (plan === "addon_50") amount = 29;
+      else if (plan === "addon_200") amount = 89;
+      else if (plan === "addon_500") amount = 199;
 
       if (amount === 0) {
         return res.status(400).json({ error: "Invalid plan" });
@@ -234,7 +234,7 @@ async function startServer() {
                  subscription.addonInvoices = (subscription.addonInvoices || 0) + extraInvoices;
              }
           } else {
-              const invoiceLimit = plan === 'basic' ? 50 : plan === 'standard' ? 100 : 300;
+              const invoiceLimit = plan === 'basic' ? 50 : plan === 'standard' ? 200 : 1000;
               const currentPeriodEnd = new Date();
               if (plan === 'basic') currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
               else if (plan === 'standard') currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 3);
