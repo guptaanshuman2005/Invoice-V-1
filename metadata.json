@@ -1,0 +1,7 @@
+{
+  "name": "InvoicePro",
+  "description": "A comprehensive GST invoicing application for Indian businesses. Easily manage clients, items, and generate professional invoices with automated tax calculations.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
