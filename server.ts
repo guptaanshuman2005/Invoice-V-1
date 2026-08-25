@@ -15,10 +15,19 @@ dotenv.config();
 
 console.log("Config loaded. Initializing Razorpay...");
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "",
-});
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID || "";
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || "";
+
+let razorpay: any = null;
+if (razorpayKeyId && razorpayKeySecret) {
+  razorpay = new Razorpay({
+    key_id: razorpayKeyId,
+    key_secret: razorpayKeySecret,
+  });
+  console.log("Razorpay client initialized.");
+} else {
+  console.warn("Razorpay keys missing. Payment processing will not work correctly.");
+}
 
 console.log("Initializing Supabase...");
 
