@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
+import { Analytics } from '@vercel/analytics/react';
 import App from './App';
 import './index.css';
 
@@ -25,6 +26,7 @@ root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
+      <Analytics />
       <Toaster position="top-right" richColors />
     </QueryClientProvider>
   </React.StrictMode>
