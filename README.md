@@ -136,4 +136,6 @@ invoicepro/
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+Copyright (c) 2026 Anshuman Gupta. All rights reserved.
+
+See [LICENSE](LICENSE) for details.
