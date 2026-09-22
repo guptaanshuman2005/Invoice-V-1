@@ -1,13 +1,21 @@
 import React from 'react';
-import { Zap, CheckCircle2, ArrowRight, Shield, BarChart3, Mail, CreditCard, Cpu } from 'lucide-react';
+import { Zap, CheckCircle2, ArrowRight, Shield, BarChart3, Mail, CreditCard, Cpu, Play, Sparkles, FileText, IndianRupee } from 'lucide-react';
 
 interface LandingProps {
   onGetStarted: () => void;
+  onExploreDemo?: () => void;
+  onLaunchSandbox?: () => void;
   onNavigateToPrivacy?: () => void;
   onNavigateToTerms?: () => void;
 }
 
-const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, onNavigateToTerms }) => {
+const Landing: React.FC<LandingProps> = ({ 
+  onGetStarted, 
+  onExploreDemo, 
+  onLaunchSandbox, 
+  onNavigateToPrivacy, 
+  onNavigateToTerms 
+}) => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-accent selection:text-white relative overflow-hidden">
       
@@ -19,17 +27,24 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] -z-10"></div>
 
       {/* Sticky Glassmorphic Navbar */}
-      <nav className="sticky top-6 z-50 flex items-center justify-between px-8 py-4 max-w-5xl mx-auto rounded-3xl glass-panel shadow-lg border border-white/20 dark:border-slate-800/40 backdrop-blur-xl mt-6">
+      <nav className="sticky top-6 z-50 flex items-center justify-between px-6 sm:px-8 py-4 max-w-5xl mx-auto rounded-3xl glass-panel shadow-lg border border-white/20 dark:border-slate-800/40 backdrop-blur-xl mt-6">
         <div className="flex items-center gap-2.5">
           <div className="bg-gradient-to-r from-accent to-indigo-600 text-white p-2 rounded-xl shadow-md h-9 w-9 flex items-center justify-center">
             <Zap className="w-full h-full" strokeWidth={2.5} />
           </div>
           <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white font-display">InvoicePro</span>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 sm:gap-6">
+          <button 
+            onClick={onExploreDemo || onLaunchSandbox}
+            className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-extrabold text-accent hover:text-accent-hover transition-colors"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Interactive</span> Demo
+          </button>
           <button 
             onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-            className="text-xs uppercase tracking-wider font-extrabold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            className="hidden md:inline-block text-xs uppercase tracking-wider font-extrabold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             Pricing
           </button>
@@ -41,7 +56,7 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
           </button>
           <button 
             onClick={onGetStarted}
-            className="text-xs uppercase tracking-wider font-black bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 text-white px-5 py-2.5 rounded-2xl transition-all shadow-md shadow-accent/20 hover:scale-105 active:scale-95"
+            className="text-xs uppercase tracking-wider font-black bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 text-white px-4 sm:px-5 py-2.5 rounded-2xl transition-all shadow-md shadow-accent/20 hover:scale-105 active:scale-95"
           >
             Get Started
           </button>
@@ -49,31 +64,81 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
       </nav>
 
       {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-6 pt-28 pb-24 text-center relative z-10">
+      <main className="max-w-7xl mx-auto px-6 pt-24 pb-20 text-center relative z-10">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 dark:bg-accent/15 border border-accent/20 dark:border-accent/30 text-accent text-xs font-black uppercase tracking-widest mb-8">
           <span className="flex h-2.5 w-2.5 rounded-full bg-accent animate-pulse"></span>
-          InvoicePro 2.0 is Live
+          InvoicePro 2.0 with Instant Demo Sandbox
         </div>
         <h1 className="text-5xl md:text-8xl font-black text-slate-900 dark:text-white tracking-tight mb-8 max-w-5xl mx-auto leading-[1.05] font-display">
           The smartest way to manage your <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent via-indigo-500 to-purple-600 dark:from-accent dark:via-indigo-400 dark:to-purple-500 font-display">invoices & billing.</span>
         </h1>
         <p className="text-lg md:text-2xl text-slate-600 dark:text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed font-medium">
-          Create professional invoices, track live inventory, and manage client relations in one unified glassmorphic platform. Designed for modern freelancers and fast-growing enterprises.
+          Create GST-compliant invoices, track live inventory, and manage client relations in one unified glassmorphic platform. Designed for modern Indian freelancers and fast-growing enterprises.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto sm:max-w-none">
+
+        {/* Hero CTA Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto mb-16">
           <button 
             onClick={onGetStarted}
             className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 text-white px-8 py-4 rounded-2xl font-black text-lg transition-all shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/25 hover:-translate-y-1"
           >
             Start Free Today <ArrowRight className="w-5 h-5" />
           </button>
+
+          {(onLaunchSandbox || onExploreDemo) && (
+            <button 
+              onClick={onLaunchSandbox || onExploreDemo}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-slate-900 text-accent dark:text-indigo-400 border-2 border-accent/40 hover:border-accent dark:border-accent/40 px-8 py-4 rounded-2xl font-black text-lg transition-all shadow-md hover:-translate-y-1 hover:shadow-lg hover:shadow-accent/10"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>Try Live Demo</span>
+            </button>
+          )}
+
           <button 
             onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-slate-900/80 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 px-8 py-4 rounded-2xl font-black text-lg transition-all shadow-sm hover:-translate-y-1"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-6 py-4 rounded-2xl font-bold text-base transition-all"
           >
             View Pricing
           </button>
         </div>
+
+        {/* Demo Callout Showcase Card */}
+        <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl glass-panel border border-accent/30 shadow-2xl relative overflow-hidden text-left bg-gradient-to-r from-white/90 via-white/80 to-indigo-50/60 dark:from-slate-900/90 dark:via-slate-900/80 dark:to-indigo-950/40 backdrop-blur-xl">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-accent">
+                <Sparkles className="w-4 h-4" />
+                <span>Instant Sandbox Available</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-display">
+                Want to test before signing up?
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed">
+                Launch the interactive sandbox preloaded with simulated Indian GST data (Apex Global Technologies, Mumbai). Test invoice templates, inventory alerts, and live tax calculations instantly.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
+              {onExploreDemo && (
+                <button
+                  onClick={onExploreDemo}
+                  className="flex-1 md:flex-none px-4 py-3 rounded-xl font-bold text-xs border border-slate-300 dark:border-slate-700 hover:border-accent text-slate-700 dark:text-slate-200 transition-all text-center"
+                >
+                  Template Tour
+                </button>
+              )}
+              <button
+                onClick={onLaunchSandbox || onGetStarted}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-accent/20 hover:scale-105 active:scale-95"
+              >
+                <Play className="w-3.5 h-3.5 fill-white" />
+                <span>Launch Sandbox</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
       </main>
 
       {/* Features Grid */}
@@ -95,10 +160,10 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
 
             <div className="p-8 rounded-3xl glass-panel border border-slate-200/10 dark:border-slate-800/20 hover:-translate-y-2 transition-all duration-300 group">
               <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform">
-                <CreditCard className="w-6 h-6" />
+                <IndianRupee className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 font-display">Seamless Payments</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Accept UPI, Credit Card, and bank transfers via premium secure gateway integrations. Get paid 2x faster.</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 font-display">GST & E-Way Transit</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Complete Indian GST council compliance with automatic CGST, SGST, IGST calculation and E-Way bill consignment numbers.</p>
             </div>
 
             <div className="p-8 rounded-3xl glass-panel border border-slate-200/10 dark:border-slate-800/20 hover:-translate-y-2 transition-all duration-300 group">
@@ -131,7 +196,7 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
               <span className="text-slate-500 dark:text-slate-400 font-bold"> / mo</span>
             </div>
             <ul className="space-y-4 mb-8 flex-1">
-              {['Up to 50 invoices / mo'].map((feature, i) => (
+              {['Up to 50 invoices / mo', 'Standard GST Templates', 'Email & PDF Exports'].map((feature, i) => (
                 <li key={i} className="flex items-center gap-3 text-slate-700 dark:text-slate-300 text-sm font-semibold">
                   <CheckCircle2 className="w-5 h-5 text-accent shrink-0" /> {feature}
                 </li>
@@ -162,7 +227,7 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
               <p className="text-xs text-accent mt-2.5 font-bold uppercase tracking-wider">Works out to ₹43/mo</p>
             </div>
             <ul className="space-y-4 mb-8 flex-1">
-              {['Up to 200 invoices / qtr'].map((feature, i) => (
+              {['Up to 200 invoices / qtr', 'All Custom Templates & Colors', 'Automated Stock Depletion', 'WhatsApp 1-Click PDF Share'].map((feature, i) => (
                 <li key={i} className="flex items-center gap-3 text-slate-200 text-sm font-semibold">
                   <CheckCircle2 className="w-5 h-5 text-accent shrink-0" /> {feature}
                 </li>
@@ -191,7 +256,7 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
               <p className="text-xs text-emerald-500 mt-2.5 font-bold uppercase tracking-wider">Works out to ₹33/mo</p>
             </div>
             <ul className="space-y-4 mb-8 flex-1">
-              {['Up to 1000 invoices / yr'].map((feature, i) => (
+              {['Up to 1000 invoices / yr', 'Multi-user & Multiple Branches', 'Priority E-Way Transit Support', 'Full P&L Analytics Suite'].map((feature, i) => (
                 <li key={i} className="flex items-center gap-3 text-slate-700 dark:text-slate-300 text-sm font-semibold">
                   <CheckCircle2 className="w-5 h-5 text-accent shrink-0" /> {feature}
                 </li>
@@ -220,6 +285,7 @@ const Landing: React.FC<LandingProps> = ({ onGetStarted, onNavigateToPrivacy, on
             <span className="font-extrabold text-slate-900 dark:text-white font-display">InvoicePro</span>
           </div>
           <div className="flex items-center gap-6">
+            <button onClick={onExploreDemo || onLaunchSandbox} className="text-xs uppercase tracking-wider font-extrabold text-accent hover:underline">Interactive Demo</button>
             <button onClick={onNavigateToPrivacy} className="text-xs uppercase tracking-wider font-extrabold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">Privacy Policy</button>
             <button onClick={onNavigateToTerms} className="text-xs uppercase tracking-wider font-extrabold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">Terms of Service</button>
           </div>

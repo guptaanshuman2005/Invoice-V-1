@@ -24,7 +24,7 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             <Zap className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Choose a Plan to Continue</h2>
-          <p className="text-slate-600 dark:text-slate-400">You have reached your free limit (10 invoices/mo). Select a plan or buy an add-on below.</p>
+          <p className="text-slate-600 dark:text-slate-400">Select a plan or buy an add-on below. <span className="text-accent font-semibold">(Launch Preview: Upgrades activate instantly for testing)</span></p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-12">

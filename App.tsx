@@ -10,6 +10,9 @@ import Invoices, { InvoiceContent } from './components/Invoices';
 import NewInvoice from './components/NewInvoice';
 import Auth from './components/auth/Auth';
 import Landing from './components/Landing';
+import DemoPage from './components/DemoPage';
+import DemoBanner from './components/DemoBanner';
+import { createDemoCompany } from './demoData';
 import CompanyManager from './components/CompanyManager';
 import UserProfile from './components/UserProfile';
 import SubscriptionPrompt from './components/SubscriptionPrompt';
@@ -100,8 +103,52 @@ const App: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
 
-  const activeCompany = useMemo(() => companies.find(c => c.id === activeCompanyId) || null, [companies, activeCompanyId]);
-  const userCompanies = useMemo(() => companies.filter(c => c.ownerId === currentUser?.id), [companies, currentUser]);
+  // Demo Mode State
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('demo') === 'true' || window.location.pathname === '/demo') return true;
+    return sessionStorage.getItem('isDemoMode') === 'true';
+  });
+
+  const [demoCompany, setDemoCompany] = useState<Company>(() => {
+    const saved = sessionStorage.getItem('demoCompanyData');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return createDemoCompany();
+  });
+
+  useEffect(() => {
+    if (isDemoMode) {
+      sessionStorage.setItem('isDemoMode', 'true');
+      sessionStorage.setItem('demoCompanyData', JSON.stringify(demoCompany));
+    } else {
+      sessionStorage.removeItem('isDemoMode');
+    }
+  }, [isDemoMode, demoCompany]);
+
+  const effectiveUser: User | null = useMemo(() => {
+    if (currentUser) return currentUser;
+    if (isDemoMode) {
+      return {
+        id: 'demo_user',
+        name: 'Demo Explorer (Guest)',
+        email: 'demo@apextechglobal.in',
+        passwordHash: ''
+      };
+    }
+    return null;
+  }, [currentUser, isDemoMode]);
+
+  const activeCompany = useMemo(() => {
+    if (isDemoMode) return demoCompany;
+    return companies.find(c => c.id === activeCompanyId) || null;
+  }, [isDemoMode, demoCompany, companies, activeCompanyId]);
+
+  const userCompanies = useMemo(() => {
+    if (isDemoMode) return [demoCompany];
+    return companies.filter(c => c.ownerId === currentUser?.id);
+  }, [isDemoMode, demoCompany, companies, currentUser]);
 
   useEffect(() => {
     if (activeCompanyId) {
@@ -348,7 +395,28 @@ const App: React.FC = () => {
   };
 
   const handleUpdateCompany = (updatedCompany: Company) => {
+      if (isDemoMode) {
+        setDemoCompany(updatedCompany);
+        sessionStorage.setItem('demoCompanyData', JSON.stringify(updatedCompany));
+        return;
+      }
       setCompanies(companies.map(c => c.id === updatedCompany.id ? updatedCompany : c));
+  };
+
+  const handleResetDemoData = () => {
+    const fresh = createDemoCompany();
+    setDemoCompany(fresh);
+    sessionStorage.setItem('demoCompanyData', JSON.stringify(fresh));
+    toast.success('Sample demo data has been reset to default state.');
+  };
+
+  const handleExitDemo = () => {
+    setIsDemoMode(false);
+    sessionStorage.removeItem('isDemoMode');
+    sessionStorage.removeItem('demoCompanyData');
+    setActiveView('Dashboard');
+    setShowAuth(false);
+    toast.info('Exited demo mode.');
   };
   
   const handleSwitchCompany = (companyId: string) => {
@@ -835,22 +903,37 @@ const App: React.FC = () => {
       handleSetActiveView('NewInvoice');
   };
 
-  if (!isAuthReady || isLoadingCompanies) {
+  if (!isAuthReady || (isLoadingCompanies && !isDemoMode)) {
     return <div className="w-full h-screen bg-slate-100 dark:bg-secondary-dark flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div></div>;
   }
 
-  if (!currentUser) {
+  if (!effectiveUser) {
     if (activeView === 'PrivacyPolicy') {
       return <PrivacyPolicy onBack={() => handleSetActiveView('Dashboard')} />;
     }
     if (activeView === 'TermsOfService') {
       return <TermsOfService onBack={() => handleSetActiveView('Dashboard')} />;
     }
+    if (activeView === 'Demo') {
+      return <DemoPage 
+        onLaunchSandbox={() => {
+          setIsDemoMode(true);
+          handleSetActiveView('Dashboard');
+        }}
+        onBackToLanding={() => handleSetActiveView('Dashboard')}
+        onGetStarted={() => setShowAuth(true)}
+      />;
+    }
     if (showAuth) {
       return <Auth onBack={() => setShowAuth(false)} />;
     }
     return <Landing 
       onGetStarted={() => setShowAuth(true)} 
+      onExploreDemo={() => handleSetActiveView('Demo')}
+      onLaunchSandbox={() => {
+        setIsDemoMode(true);
+        handleSetActiveView('Dashboard');
+      }}
       onNavigateToPrivacy={() => handleSetActiveView('PrivacyPolicy')}
       onNavigateToTerms={() => handleSetActiveView('TermsOfService')}
     />;
@@ -910,6 +993,7 @@ const App: React.FC = () => {
       case 'Transporters': return <Transporters transporters={activeCompany.transporters} setTransporters={setTransporters} />;
       case 'Settings': return <Settings activeCompany={activeCompany} updateCompany={handleUpdateCompany} />;
       case 'PrivacyPolicy': return <PrivacyPolicy onBack={() => handleSetActiveView('Dashboard')} />;
+      case 'Demo': return <DemoPage onLaunchSandbox={() => handleSetActiveView('Dashboard')} onBackToLanding={handleExitDemo} onGetStarted={() => { handleExitDemo(); setShowAuth(true); }} />;
       case 'TermsOfService': return <TermsOfService onBack={() => handleSetActiveView('Dashboard')} />;
       default: return (
         <Dashboard 
@@ -929,25 +1013,33 @@ const App: React.FC = () => {
   };
 
     return (
-        <div className="flex h-screen bg-slate-100 dark:bg-secondary-dark font-sans transition-all relative overflow-hidden">
-            <Sidebar
-                activeView={activeView}
-                setActiveView={handleSetActiveView}
-                theme={theme}
-                setTheme={setTheme}
-                userCompanies={userCompanies}
-                activeCompany={activeCompany}
-                onSwitchCompany={handleSwitchCompany}
-                onAddCompany={() => setIsAddCompanyModalOpen(true)}
-                onLogout={handleLogout}
-                isOpen={isSidebarOpen}
-                onClose={() => setIsSidebarOpen(false)}
-                currentUser={currentUser}
-                onOpenProfile={() => setIsProfileOpen(true)}
-                isCollapsed={isSidebarCollapsed}
-                onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            />
-            <main className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'md:ml-0' : ''}`}>
+        <div className="flex flex-col h-screen bg-slate-100 dark:bg-secondary-dark font-sans transition-all relative overflow-hidden">
+            {isDemoMode && (
+              <DemoBanner 
+                onResetData={handleResetDemoData} 
+                onExitDemo={handleExitDemo}
+                onOpenDemoShowcase={() => handleSetActiveView('Demo')}
+              />
+            )}
+            <div className="flex flex-1 min-h-0 overflow-hidden relative">
+              <Sidebar
+                  activeView={activeView}
+                  setActiveView={handleSetActiveView}
+                  theme={theme}
+                  setTheme={setTheme}
+                  userCompanies={userCompanies}
+                  activeCompany={activeCompany}
+                  onSwitchCompany={handleSwitchCompany}
+                  onAddCompany={() => setIsAddCompanyModalOpen(true)}
+                  onLogout={isDemoMode ? handleExitDemo : handleLogout}
+                  isOpen={isSidebarOpen}
+                  onClose={() => setIsSidebarOpen(false)}
+                  currentUser={effectiveUser}
+                  onOpenProfile={() => setIsProfileOpen(true)}
+                  isCollapsed={isSidebarCollapsed}
+                  onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              />
+              <main className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'md:ml-0' : ''}`}>
                 {/* Top Header / Search Bar */}
                 <header className="h-20 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-30">
                     <div className="flex items-center gap-4 flex-1 max-w-2xl">
@@ -1039,9 +1131,9 @@ const App: React.FC = () => {
                         </button>
                         
                         <button
-                            onClick={handleLogout}
+                            onClick={isDemoMode ? handleExitDemo : handleLogout}
                             className="p-2 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors hidden sm:block"
-                            title="Sign Out"
+                            title={isDemoMode ? "Exit Demo Sandbox" : "Sign Out"}
                         >
                             <LogOut className="w-5 h-5" />
                         </button>
@@ -1114,6 +1206,7 @@ const App: React.FC = () => {
                     {renderView()}
                 </div>
             </main>
+          </div>
 
        <Modal isOpen={isAddCompanyModalOpen} onClose={() => setIsAddCompanyModalOpen(false)} title="Create New Company">
           <div className="p-6 space-y-4">
@@ -1126,79 +1219,52 @@ const App: React.FC = () => {
         </Modal>
 
         <Modal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} title="User Profile">
-            {currentUser && <UserProfile user={currentUser} onUpdateProfile={handleUpdateProfile} onClose={() => setIsProfileOpen(false)} />}
+            {effectiveUser && <UserProfile user={effectiveUser} onUpdateProfile={handleUpdateProfile} onClose={() => setIsProfileOpen(false)} />}
         </Modal>
 
-        {currentUser && (
+        {effectiveUser && (
           <FeedbackModal 
             isOpen={isFeedbackModalOpen} 
             onClose={() => setIsFeedbackModalOpen(false)} 
-            userId={currentUser.id} 
+            userId={effectiveUser.id} 
           />
         )}
 
         <SubscriptionPrompt 
           isOpen={isSubscriptionPromptOpen} 
           onClose={() => setIsSubscriptionPromptOpen(false)} 
-          onSubscribe={async (plan) => {
+          onSubscribe={(plan) => {
             if (!activeCompany) return;
             try {
-              const { data: { session } } = await supabase.auth.getSession();
-              if (!session) throw new Error("Not authenticated");
+              let invoiceLimit = 50;
+              if (plan === 'standard') invoiceLimit = 200;
+              if (plan === 'premium') invoiceLimit = 1000;
+              let extraInvoices = 0;
+              if (plan.startsWith('addon_')) {
+                extraInvoices = parseInt(plan.split('_')[1], 10) || 50;
+              }
+              
+              const currentEnd = new Date();
+              currentEnd.setFullYear(currentEnd.getFullYear() + 1);
 
-              const response = await fetch('/api/create-razorpay-order', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
-                  plan,
-                  companyId: activeCompany.id,
-                  customerEmail: currentUser?.email,
-                  customerName: currentUser?.name || 'Customer',
-                }),
+              const updatedSubscription = {
+                plan: plan.startsWith('addon_') ? (activeCompany.subscription?.plan || 'free') : plan,
+                status: 'active' as const,
+                currentPeriodEnd: currentEnd.toISOString(),
+                invoiceCount: 0,
+                invoiceLimit: plan.startsWith('addon_') ? (activeCompany.subscription?.invoiceLimit || 10) : invoiceLimit,
+                addonInvoices: (activeCompany.subscription?.addonInvoices || 0) + extraInvoices,
+              };
+
+              handleUpdateCompany({
+                ...activeCompany,
+                subscription: updatedSubscription
               });
-              
-              if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to create order');
-              }
-              
-              const { order_id, amount, currency, key_id } = await response.json();
-              if (order_id) {
-                // Initialize Razorpay checkout
-                const options = {
-                  key: key_id,
-                  amount: amount,
-                  currency: currency,
-                  name: "InvoicePro",
-                  description: `${plan} plan`,
-                  order_id: order_id,
-                  handler: function () {
-                    // Payment successful — webhook will handle subscription update
-                    toast.success('Payment successful! Your plan will be activated shortly.');
-                    setIsSubscriptionPromptOpen(false);
-                  },
-                  prefill: {
-                    name: currentUser?.name || '',
-                    email: currentUser?.email || '',
-                  },
-                  theme: {
-                    color: "#6366f1",
-                  },
-                };
-                
-                const rzp = new window.Razorpay(options);
-                rzp.on('payment.failed', function (response: any) {
-                  console.error('Payment failed:', response.error);
-                  toast.error('Payment failed. Please try again.');
-                });
-                rzp.open();
-              }
+              setIsSubscriptionPromptOpen(false);
+              toast.success(`Plan ${plan.toUpperCase()} activated successfully! (Launch Preview Mode)`);
             } catch (error) {
-              console.error('Error creating checkout session:', error);
-              toast.error('Failed to start checkout process. Please try again.');
+              console.error('Error activating plan:', error);
+              toast.error('Failed to activate plan.');
             }
           }} 
         />

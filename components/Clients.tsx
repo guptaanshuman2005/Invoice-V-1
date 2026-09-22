@@ -8,7 +8,7 @@ import { INDIAN_STATES } from '../constants';
 import { InvoiceView } from './Invoices';
 import { validateEmail, validateRequired, validateGstin, fetchLocationByPincode } from '../utils/validation';
 import { arrayToCSV, downloadCSV } from '../utils/csvExport';
-import { Clock, IndianRupee, CheckCircle, FileText, Eye, Edit, Mail, Trash2, AlertCircle, Search, Plus, Download, Upload, X } from 'lucide-react';
+import { Clock, IndianRupee, CheckCircle, FileText, Eye, Edit, Mail, Trash2, AlertCircle, Search, Plus, Download, Upload, X, Maximize2, Minimize2, ArrowLeft } from 'lucide-react';
 import { trackEvent } from '../utils/analytics';
 
 interface ClientsProps {
@@ -250,7 +250,7 @@ const ClientForm: React.FC<{
 };
 
 // --- NEW HISTORY PANEL COMPONENT ---
-const ClientHistoryPanel: React.FC<{
+interface ClientHistoryPanelProps {
     client: Client;
     invoices: Invoice[];
     currency: string;
@@ -258,7 +258,16 @@ const ClientHistoryPanel: React.FC<{
     onViewInvoice: (inv: Invoice) => void;
     onDeleteInvoice: (id: string) => void;
     onEmailInvoice: (inv: Invoice) => void;
-}> = ({ client, invoices, currency, onEditInvoice, onViewInvoice, onDeleteInvoice, onEmailInvoice }) => {
+    onClose: () => void;
+    isMaximized: boolean;
+    onToggleMaximize: () => void;
+    panelWidth?: number;
+}
+
+const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({ 
+    client, invoices, currency, onEditInvoice, onViewInvoice, onDeleteInvoice, onEmailInvoice,
+    onClose, isMaximized, onToggleMaximize, panelWidth = 490
+}) => {
     const [activeTab, setActiveTab] = useState<'invoices' | 'timeline'>('invoices');
 
     const clientInvoices = useMemo(() => 
@@ -307,85 +316,135 @@ const ClientHistoryPanel: React.FC<{
     };
 
     return (
-        <div className="animate-fade-in bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-accent" />
-                    Client History & Analytics
-                </h3>
+        <div className="animate-fade-in bg-slate-50/70 dark:bg-slate-800/40 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-lg backdrop-blur-md">
+            {/* Header with Title, Client Badge & Window Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-200/60 dark:border-slate-700/60">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-2 rounded-xl bg-accent/10 text-accent dark:bg-accent/20">
+                        <Clock className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                                Client History & Analytics
+                            </h3>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5 max-w-[240px] sm:max-w-xs" title={client.name}>
+                            {client.name} {client.city ? `• ${client.city}` : ''}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 ml-auto">
+                    <button 
+                        onClick={onToggleMaximize} 
+                        className="p-2 rounded-xl hover:bg-slate-200/60 dark:hover:bg-slate-700/60 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+                        title={isMaximized ? "Restore split view" : "Maximize panel to full width"}
+                    >
+                        {isMaximized ? <Minimize2 className="h-4 w-4" strokeWidth={2} /> : <Maximize2 className="h-4 w-4" strokeWidth={2} />}
+                    </button>
+                    <button 
+                        onClick={onClose} 
+                        className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition-all"
+                        title="Close panel"
+                    >
+                        <X className="h-4 w-4" strokeWidth={2} />
+                    </button>
+                </div>
             </div>
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="glass-panel p-4 rounded-xl relative overflow-hidden group">
-                    <div className="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity"><IndianRupee className="h-12 w-12" strokeWidth={2} /></div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Invoiced</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{currency}{stats.totalInvoiced.toLocaleString()}</p>
+            {/* Stats Overview: 2-column or 4-column depending on width */}
+            <div className={`grid ${isMaximized ? 'grid-cols-2 md:grid-cols-4' : (panelWidth >= 620 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2')} gap-3 mb-6`}>
+                <div className="glass-panel p-3.5 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
+                    <div className="absolute right-1 top-1 p-2 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none text-slate-900 dark:text-white">
+                        <IndianRupee className="h-12 w-12" strokeWidth={2} />
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Total Invoiced</p>
+                    <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate" title={`${currency}${stats.totalInvoiced.toLocaleString('en-IN')}`}>
+                        {currency}{stats.totalInvoiced.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    </p>
                 </div>
-                <div className="glass-panel p-4 rounded-xl relative overflow-hidden">
-                    <div className="absolute right-0 top-0 p-3 opacity-10 text-green-500"><CheckCircle className="h-12 w-12" strokeWidth={2} /></div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Paid</p>
-                    <p className="text-2xl font-black text-green-600 dark:text-green-400 mt-1">{currency}{stats.totalPaid.toLocaleString()}</p>
+
+                <div className="glass-panel p-3.5 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
+                    <div className="absolute right-1 top-1 p-2 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none text-green-500">
+                        <CheckCircle className="h-12 w-12" strokeWidth={2} />
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Total Paid</p>
+                    <p className="text-xl sm:text-2xl font-black text-green-600 dark:text-green-400 mt-1 tracking-tight truncate" title={`${currency}${stats.totalPaid.toLocaleString('en-IN')}`}>
+                        {currency}{stats.totalPaid.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    </p>
                 </div>
-                <div className="glass-panel p-4 rounded-xl relative overflow-hidden">
-                    <div className="absolute right-0 top-0 p-3 opacity-10 text-orange-500"><Clock className="h-12 w-12" strokeWidth={2} /></div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Outstanding</p>
-                    <p className="text-2xl font-black text-orange-500 dark:text-orange-400 mt-1">{currency}{stats.totalOutstanding.toLocaleString()}</p>
+
+                <div className="glass-panel p-3.5 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
+                    <div className="absolute right-1 top-1 p-2 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none text-orange-500">
+                        <Clock className="h-12 w-12" strokeWidth={2} />
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Outstanding</p>
+                    <p className="text-xl sm:text-2xl font-black text-orange-500 dark:text-orange-400 mt-1 tracking-tight truncate" title={`${currency}${stats.totalOutstanding.toLocaleString('en-IN')}`}>
+                        {currency}{stats.totalOutstanding.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    </p>
                 </div>
-                <div className="glass-panel p-4 rounded-xl relative overflow-hidden">
-                    <div className="absolute right-0 top-0 p-3 opacity-10 text-blue-500"><FileText className="h-12 w-12" strokeWidth={2} /></div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Invoice Count</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stats.count}</p>
+
+                <div className="glass-panel p-3.5 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
+                    <div className="absolute right-1 top-1 p-2 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none text-blue-500">
+                        <FileText className="h-12 w-12" strokeWidth={2} />
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Total Invoices</p>
+                    <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate">
+                        {stats.count}
+                    </p>
                 </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-6 border-b border-slate-200 dark:border-slate-700 mb-6">
+            <div className="flex gap-4 border-b border-slate-200 dark:border-slate-700 mb-5">
                 <button 
                     onClick={() => setActiveTab('invoices')} 
-                    className={`pb-3 text-sm font-medium transition-all relative ${activeTab === 'invoices' ? 'text-accent' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                    className={`pb-2.5 text-xs sm:text-sm font-bold transition-all relative ${activeTab === 'invoices' ? 'text-accent' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
                 >
-                    Invoice History
+                    Invoice History ({clientInvoices.length})
                     {activeTab === 'invoices' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full"></span>}
                 </button>
                 <button 
                     onClick={() => setActiveTab('timeline')} 
-                    className={`pb-3 text-sm font-medium transition-all relative ${activeTab === 'timeline' ? 'text-accent' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                    className={`pb-2.5 text-xs sm:text-sm font-bold transition-all relative ${activeTab === 'timeline' ? 'text-accent' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
                 >
-                    Timeline & Interactions
+                    Timeline & Activity ({timelineEvents.length})
                     {activeTab === 'timeline' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full"></span>}
                 </button>
             </div>
 
             {/* Invoices Tab */}
             {activeTab === 'invoices' && (
-                <div className="glass-panel rounded-xl overflow-hidden shadow-sm">
+                <div className="glass-panel rounded-xl overflow-hidden shadow-sm border border-slate-200/60 dark:border-slate-800/60">
                     {clientInvoices.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs text-slate-500 uppercase font-semibold">
+                        <div className="overflow-x-auto custom-scrollbar">
+                            <table className="w-full text-sm text-left min-w-[480px]">
+                                <thead className="bg-slate-100/70 dark:bg-slate-800/70 text-[11px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider border-b border-slate-200 dark:border-slate-800">
                                     <tr>
-                                        <th className="px-4 py-3">Date</th>
-                                        <th className="px-4 py-3">Number</th>
-                                        <th className="px-4 py-3 text-right">Amount</th>
-                                        <th className="px-4 py-3 text-center">Status</th>
-                                        <th className="px-4 py-3 text-right">Actions</th>
+                                        <th className="px-3.5 py-3 whitespace-nowrap">Date</th>
+                                        <th className="px-3.5 py-3 whitespace-nowrap">Invoice #</th>
+                                        <th className="px-3.5 py-3 text-right whitespace-nowrap">Amount</th>
+                                        <th className="px-3.5 py-3 text-center whitespace-nowrap">Status</th>
+                                        <th className="px-3.5 py-3 text-right whitespace-nowrap">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                     {clientInvoices.map(inv => (
-                                        <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                            <td className="px-4 py-3 text-slate-600 dark:text-slate-300 font-mono text-xs">{inv.issueDate}</td>
-                                            <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{inv.invoiceNumber}</td>
-                                            <td className="px-4 py-3 text-right font-medium text-slate-900 dark:text-white">{currency}{inv.grandTotal.toFixed(2)}</td>
-                                            <td className="px-4 py-3 text-center">
-                                                <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${getStatusBadge(inv.status)}`}>{inv.status}</span>
+                                        <tr key={inv.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                            <td className="px-3.5 py-3 text-slate-600 dark:text-slate-300 font-mono text-xs whitespace-nowrap">{inv.issueDate}</td>
+                                            <td className="px-3.5 py-3 font-semibold text-slate-900 dark:text-white whitespace-nowrap">{inv.invoiceNumber}</td>
+                                            <td className="px-3.5 py-3 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap font-mono">{currency}{inv.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                            <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide inline-block ${getStatusBadge(inv.status)}`}>{inv.status}</span>
                                             </td>
-                                            <td className="px-4 py-3 text-right space-x-2">
-                                                <button onClick={() => onViewInvoice(inv)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-accent transition-colors" title="View"><Eye className="h-4 w-4" strokeWidth={2} /></button>
-                                                <button onClick={() => onEditInvoice(inv.id)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors" title="Edit"><Edit className="h-4 w-4" strokeWidth={2} /></button>
-                                                <button onClick={() => onEmailInvoice(inv)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-blue-500 transition-colors" title="Email"><Mail className="h-4 w-4" strokeWidth={2} /></button>
-                                                <button onClick={() => onDeleteInvoice(inv.id)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-red-500 transition-colors" title="Delete"><Trash2 className="h-4 w-4" strokeWidth={2} /></button>
+                                            <td className="px-3.5 py-3 text-right whitespace-nowrap">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <button onClick={() => onViewInvoice(inv)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 hover:text-accent transition-colors" title="View Invoice"><Eye className="h-4 w-4" strokeWidth={2} /></button>
+                                                    <button onClick={() => onEditInvoice(inv.id)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors" title="Edit Invoice"><Edit className="h-4 w-4" strokeWidth={2} /></button>
+                                                    <button onClick={() => onEmailInvoice(inv)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 hover:text-blue-500 transition-colors" title="Send Email / WhatsApp"><Mail className="h-4 w-4" strokeWidth={2} /></button>
+                                                    <button onClick={() => onDeleteInvoice(inv.id)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 hover:text-red-500 transition-colors" title="Delete Invoice"><Trash2 className="h-4 w-4" strokeWidth={2} /></button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -394,8 +453,8 @@ const ClientHistoryPanel: React.FC<{
                         </div>
                     ) : (
                         <div className="p-8 text-center text-slate-500 flex flex-col items-center">
-                            <FileText className="h-12 w-12 text-slate-300 mb-3" strokeWidth={1} />
-                            No invoice history found for this client.
+                            <FileText className="h-12 w-12 text-slate-300 dark:text-slate-600 mb-3" strokeWidth={1} />
+                            <p className="text-sm font-medium">No invoice history found for this client.</p>
                         </div>
                     )}
                 </div>
@@ -403,30 +462,27 @@ const ClientHistoryPanel: React.FC<{
 
             {/* Timeline Tab */}
             {activeTab === 'timeline' && (
-                <div className="glass-panel p-6 rounded-xl">
+                <div className="glass-panel p-5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
                     <div className="relative pl-4">
-                        {/* Vertical Line */}
                         <div className="absolute top-0 bottom-0 left-[21px] w-px bg-slate-200 dark:bg-slate-700"></div>
-                        
-                        <div className="space-y-8">
+                        <div className="space-y-6">
                             {timelineEvents.map((event, idx) => (
-                                <div key={idx} className="relative flex gap-6 group">
-                                    {/* Icon/Dot */}
-                                    <div className={`absolute left-0 mt-1.5 w-11 h-11 rounded-full border-4 border-white dark:border-primary-dark flex items-center justify-center z-10 shadow-sm
-                                        ${event.type === 'created' ? 'bg-indigo-100 text-indigo-600' : 'bg-red-100 text-red-600'}`}>
+                                <div key={idx} className="relative flex gap-4 group">
+                                    <div className={`absolute left-0 mt-1 w-9 h-9 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center z-10 shadow-sm
+                                        ${event.type === 'created' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400' : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'}`}>
                                         {event.type === 'created' ? (
-                                            <FileText className="h-5 w-5" />
+                                            <FileText className="h-4 w-4" />
                                         ) : (
-                                            <AlertCircle className="h-5 w-5" />
+                                            <AlertCircle className="h-4 w-4" />
                                         )}
                                     </div>
                                     
-                                    <div className="flex-1 ml-12 pt-1">
+                                    <div className="flex-1 ml-10 pt-0.5">
                                         <div className="flex justify-between items-start mb-1">
                                             <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-accent transition-colors">{event.title}</h4>
-                                            <span className="text-xs font-mono font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">{event.date}</span>
+                                            <span className="text-[11px] font-mono font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{event.date}</span>
                                         </div>
-                                        <p className="text-sm text-slate-600 dark:text-slate-400">{event.description}</p>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400">{event.description}</p>
                                         {event.status && (
                                             <span className={`inline-block mt-2 px-2 py-0.5 text-[10px] font-bold uppercase rounded ${getStatusBadge(event.status)}`}>
                                                 {event.status}
@@ -436,12 +492,26 @@ const ClientHistoryPanel: React.FC<{
                                 </div>
                             ))}
                             {timelineEvents.length === 0 && (
-                                <p className="text-sm text-slate-500 italic pl-12">No activity recorded yet.</p>
+                                <p className="text-sm text-slate-500 italic pl-10">No activity recorded yet.</p>
                             )}
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* Bottom Actions */}
+            <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-3">
+                {isMaximized ? (
+                    <Button variant="secondary" className="w-full flex items-center justify-center gap-2" onClick={onToggleMaximize}>
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Client List
+                    </Button>
+                ) : (
+                    <Button variant="secondary" className="w-full" onClick={onClose}>
+                        Close History Panel
+                    </Button>
+                )}
+            </div>
         </div>
     );
 };
@@ -457,6 +527,19 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [invoiceToView, setInvoiceToView] = useState<Invoice | null>(null);
 
+  // Resizable History Panel State
+  const [panelWidth, setPanelWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('invoicepro_client_panel_width');
+      return saved ? Math.max(380, Math.min(850, parseInt(saved, 10))) : 490;
+    } catch {
+      return 490;
+    }
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const splitContainerRef = useRef<HTMLDivElement>(null);
+
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -466,6 +549,51 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
     }
   }, [initialSearchQuery]);
 
+  // Handle Dragging
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!splitContainerRef.current) return;
+      const rect = splitContainerRef.current.getBoundingClientRect();
+      const newWidth = rect.right - e.clientX;
+      const maxPanelWidth = Math.max(400, rect.width - 320);
+      const clampedWidth = Math.max(380, Math.min(maxPanelWidth, newWidth));
+      setPanelWidth(clampedWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      try {
+        localStorage.setItem('invoicepro_client_panel_width', panelWidth.toString());
+      } catch {}
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isDragging, panelWidth]);
+
+  const handleResetWidth = () => {
+    setPanelWidth(490);
+    try {
+      localStorage.setItem('invoicepro_client_panel_width', '490');
+    } catch {}
+  };
+
   // Derived state
   const filteredClients = useMemo(() => {
       if (!searchQuery) return clients;
@@ -474,6 +602,8 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
           c.name.toLowerCase().includes(lower) || 
           c.email.toLowerCase().includes(lower) ||
           c.phone.includes(lower) ||
+          (c.city && c.city.toLowerCase().includes(lower)) ||
+          (c.state && c.state.toLowerCase().includes(lower)) ||
           (c.tags && c.tags.some(t => t.toLowerCase().includes(lower)))
       );
   }, [clients, searchQuery]);
@@ -561,32 +691,76 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
   const uniqueTags = useMemo(() => Array.from(new Set(clients.flatMap(c => c.tags || []))), [clients]);
 
   return (
-      <div className="space-y-6">
-          <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Clients</h1>
-              <div className="flex gap-3">
-                  <Button variant="secondary" onClick={handleExport}>Export</Button>
-                  <Button onClick={() => handleOpenModal()}>+ Add Client</Button>
+      <div className="space-y-6 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-display tracking-tight">Clients Directory</h1>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Manage accounts, billing details, and view comprehensive invoice activity.</p>
+              </div>
+              <div className="flex gap-2.5 shrink-0">
+                  <Button variant="secondary" onClick={handleExport} className="gap-2">
+                      <Download className="w-4 h-4" />
+                      Export
+                  </Button>
+                  <Button onClick={() => handleOpenModal()} className="gap-2 shadow-lg shadow-accent/20">
+                      <Plus className="w-4 h-4" />
+                      Add Client
+                  </Button>
               </div>
           </div>
 
-          <div className="flex gap-4">
-              <Input label="" placeholder="Search clients..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="!py-2.5" />
+          {/* Search & Counter Bar */}
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+              <div className="relative flex-1 max-w-lg">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input 
+                      type="text" 
+                      placeholder="Search clients by name, email, phone, city, or tags..." 
+                      value={searchQuery} 
+                      onChange={e => setSearchQuery(e.target.value)} 
+                      className="w-full bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-accent focus:outline-none transition-all shadow-sm" 
+                  />
+                  {searchQuery && (
+                      <button 
+                          onClick={() => setSearchQuery('')} 
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+                          title="Clear search"
+                      >
+                          <X className="w-3.5 h-3.5" />
+                      </button>
+                  )}
+              </div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60">
+                      {filteredClients.length} of {clients.length} Clients
+                  </span>
+              </div>
           </div>
 
           {selectedIds.length > 0 && (
-              <div className="bg-accent/10 dark:bg-accent/20 border border-accent/20 p-3 rounded flex justify-between items-center animate-fade-in">
-                  <span className="text-sm font-bold text-accent dark:text-indigo-300">{selectedIds.length} selected</span>
-                  <Button variant="secondary" className="!py-1 !text-xs bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50" onClick={handleBulkDelete}>Delete Selected</Button>
+              <div className="bg-accent text-white px-5 py-3 rounded-xl flex justify-between items-center animate-slide-in-top shadow-lg shadow-accent/30">
+                  <span className="text-sm font-bold">{selectedIds.length} Clients Selected</span>
+                  <div className="flex gap-2">
+                      <Button variant="secondary" className="!py-1 !px-3 !text-xs bg-white/20 text-white hover:bg-white/30 border-transparent" onClick={handleBulkDelete}>Delete Selected</Button>
+                      <button onClick={() => setSelectedIds([])} className="text-xs font-bold hover:underline px-2 py-1">Clear</button>
+                  </div>
               </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Client List */}
-              <div className={`${viewingClient ? 'lg:col-span-2' : 'lg:col-span-3'} glass-panel rounded-xl overflow-hidden transition-all duration-300`}>
-                  <div className="overflow-x-auto">
-                      <table className="w-full min-w-[700px] text-left text-sm">
-                          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold">
+          {/* Resizable Split Container */}
+          <div ref={splitContainerRef} className="flex flex-col lg:flex-row items-stretch relative min-h-[550px] w-full gap-0">
+              {/* Client List (Left Pane) */}
+              <div 
+                  style={{
+                      display: isMaximized && viewingClient ? 'none' : 'block',
+                      flex: viewingClient ? '1 1 0%' : '1 1 100%',
+                      minWidth: viewingClient ? '320px' : '100%'
+                  }}
+                  className="glass-panel rounded-2xl overflow-hidden transition-[flex] duration-150 min-w-0 flex flex-col border border-slate-200/80 dark:border-slate-800/80 shadow-sm"
+              >
+                  <div className="overflow-x-auto custom-scrollbar flex-1">
+                      <table className="w-full min-w-[650px] text-left text-sm">
+                          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                               <tr>
                                   <th className="px-4 py-3 w-10"><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={handleSelectAll} className="rounded border-slate-300 text-accent focus:ring-accent" /></th>
                                   <th className="px-4 py-3">Name</th>
@@ -596,40 +770,91 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                              {filteredClients.map(client => (
-                                  <tr key={client.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/30 cursor-pointer transition-colors ${viewingClient?.id === client.id ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`} onClick={() => setViewingClient(client)}>
-                                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(client.id)} onChange={() => handleSelectOne(client.id)} className="rounded border-slate-300 text-accent focus:ring-accent" /></td>
-                                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                                          {client.name}
-                                          {client.tags && client.tags.length > 0 && (
-                                              <div className="flex gap-1 mt-1 flex-wrap">
-                                                  {client.tags.map(t => <span key={t} className={`text-[10px] px-1.5 py-0.5 rounded-full ${getTagColor(t)}`}>{t}</span>)}
+                              {filteredClients.map(client => {
+                                  const isSelected = viewingClient?.id === client.id;
+                                  return (
+                                      <tr 
+                                          key={client.id} 
+                                          className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition-colors relative ${
+                                              isSelected ? 'bg-indigo-50/90 dark:bg-indigo-950/30' : ''
+                                          }`} 
+                                          onClick={() => setViewingClient(client)}
+                                      >
+                                          <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                                              <input type="checkbox" checked={selectedIds.includes(client.id)} onChange={() => handleSelectOne(client.id)} className="rounded border-slate-300 text-accent focus:ring-accent" />
+                                          </td>
+                                          <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
+                                              <div className="flex items-center gap-2">
+                                                  {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>}
+                                                  <span>{client.name}</span>
                                               </div>
+                                              {client.tags && client.tags.length > 0 && (
+                                                  <div className="flex gap-1 mt-1 flex-wrap">
+                                                      {client.tags.map(t => <span key={t} className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${getTagColor(t)}`}>{t}</span>)}
+                                                  </div>
+                                              )}
+                                          </td>
+                                          <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400">
+                                              <div className="flex flex-col text-xs">
+                                                  <span className="font-medium text-slate-700 dark:text-slate-300">{client.email || '—'}</span>
+                                                  <span className="text-slate-400 mt-0.5">{client.phone || '—'}</span>
+                                              </div>
+                                          </td>
+                                          <td className="px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400">
+                                              {client.city ? `${client.city}${client.state ? `, ${client.state}` : ''}` : '—'}
+                                          </td>
+                                          <td className="px-4 py-3.5 text-right space-x-1" onClick={e => e.stopPropagation()}>
+                                              <button onClick={() => handleOpenModal(client)} className="text-slate-400 hover:text-indigo-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700" title="Edit Client"><Edit className="h-4 w-4" strokeWidth={2} /></button>
+                                              <button onClick={() => handleDeleteClient(client.id)} className="text-slate-400 hover:text-red-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700" title="Delete Client"><Trash2 className="h-4 w-4" strokeWidth={2} /></button>
+                                          </td>
+                                      </tr>
+                                  );
+                              })}
+                              {filteredClients.length === 0 && (
+                                  <tr>
+                                      <td colSpan={5} className="text-center py-12 text-slate-500 dark:text-slate-400">
+                                          <p className="font-medium">No clients found matching "{searchQuery}".</p>
+                                          {searchQuery && (
+                                              <button onClick={() => setSearchQuery('')} className="mt-2 text-xs text-accent font-bold hover:underline">
+                                                  Clear search
+                                              </button>
                                           )}
                                       </td>
-                                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
-                                          <div className="flex flex-col">
-                                              <span>{client.email}</span>
-                                              <span className="text-xs">{client.phone}</span>
-                                          </div>
-                                      </td>
-                                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{client.city}{client.state ? `, ${client.state}` : ''}</td>
-                                      <td className="px-4 py-3 text-right space-x-2" onClick={e => e.stopPropagation()}>
-                                          <button onClick={() => handleOpenModal(client)} className="text-slate-400 hover:text-indigo-600 transition-colors p-1"><Edit className="h-4 w-4" strokeWidth={2} /></button>
-                                          <button onClick={() => handleDeleteClient(client.id)} className="text-slate-400 hover:text-red-600 transition-colors p-1"><Trash2 className="h-4 w-4" strokeWidth={2} /></button>
-                                      </td>
                                   </tr>
-                              ))}
-                              {filteredClients.length === 0 && <tr><td colSpan={5} className="text-center py-8 text-slate-500 dark:text-slate-400">No clients found.</td></tr>}
+                              )}
                           </tbody>
                       </table>
                   </div>
               </div>
 
+              {/* Draggable Divider (Desktop) */}
+              {viewingClient && !isMaximized && (
+                  <div 
+                      onMouseDown={handleMouseDown}
+                      onDoubleClick={handleResetWidth}
+                      title="Drag left/right to resize • Double-click to reset"
+                      className={`hidden lg:flex flex-col justify-center items-center w-4 -mx-2 z-20 cursor-col-resize select-none transition-colors group ${
+                          isDragging ? 'bg-accent/20' : 'hover:bg-accent/15'
+                      }`}
+                  >
+                      <div className={`w-1 h-16 rounded-full transition-all duration-200 ${
+                          isDragging 
+                              ? 'bg-accent shadow-lg shadow-accent/50 scale-y-110' 
+                              : 'bg-slate-300 dark:bg-slate-700 group-hover:bg-accent group-hover:scale-y-110'
+                      }`} />
+                  </div>
+              )}
+
               {/* History Panel Side View */}
               {viewingClient && (
-                  <div className="lg:col-span-1 animate-fade-in">
-                      <div className="sticky top-6 space-y-4">
+                  <div 
+                      style={{
+                          width: isMaximized ? '100%' : `${panelWidth}px`,
+                          maxWidth: '100%'
+                      }}
+                      className={`w-full ${isMaximized ? '' : 'lg:shrink-0'} animate-fade-in mt-6 lg:mt-0 ${viewingClient && !isMaximized ? 'lg:pl-3' : ''}`}
+                  >
+                      <div className="sticky top-6">
                           <ClientHistoryPanel 
                               client={viewingClient} 
                               invoices={invoices} 
@@ -638,8 +863,11 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                               onDeleteInvoice={onDeleteInvoice} 
                               onViewInvoice={(inv) => setInvoiceToView(inv)}
                               onEmailInvoice={(inv) => alert(`This functionality is mainly in Invoices tab. In a real app, this would open email modal for ${inv.invoiceNumber}.`)}
+                              onClose={() => setViewingClient(null)}
+                              isMaximized={isMaximized}
+                              onToggleMaximize={() => setIsMaximized(!isMaximized)}
+                              panelWidth={panelWidth}
                           />
-                          <Button variant="secondary" className="w-full" onClick={() => setViewingClient(null)}>Close History</Button>
                       </div>
                   </div>
               )}

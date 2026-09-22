@@ -17,21 +17,26 @@ interface DashboardProps {
 // ... (Keep existing icons and chart components: TrendingUpIcon, AreaChart, etc. No logic changes, just wrapper styling) ...
 
 const Sparkline: React.FC<{ data: number[], color: string }> = ({ data, color }) => {
-    if (data.length < 2) return null;
+    if (!data || data.length < 2) return null;
     const max = Math.max(...data);
     const min = Math.min(...data);
     const range = max - min || 1;
-    const width = 100;
-    const height = 40;
+    const width = 56;
+    const height = 20;
+    const padding = 2;
+    const availableHeight = height - padding * 2;
+    const availableWidth = width - padding * 2;
     const points = data.map((d, i) => {
-        const x = (i / (data.length - 1)) * width;
-        const y = height - ((d - min) / range) * height;
-        return `${x},${y}`;
+        const x = padding + (i / (data.length - 1)) * availableWidth;
+        const y = padding + availableHeight - ((d - min) / range) * availableHeight;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
     }).join(' ');
     return (
-        <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible opacity-80">
-            <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <div className="w-14 h-5 flex items-center justify-end overflow-hidden">
+            <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-hidden">
+                <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        </div>
     );
 };
 
@@ -62,29 +67,33 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, sparklin
         <div
             onClick={onClick}
             className={`
-                relative p-6 rounded-2xl glass-panel 
+                relative p-4 sm:p-5 rounded-2xl glass-panel overflow-hidden
                 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer group h-full
                 opacity-0 animate-fade-in-up ${style.shadow}
             `}
             style={{ animationDelay: `${delay}ms` }}
         >
-            <div className="flex justify-between items-start mb-4">
-                <div className={`p-3 rounded-xl ${style.bg} ${style.text} transition-transform duration-300 group-hover:scale-110`}>
+            <div className="flex justify-between items-start mb-2.5">
+                <div className={`p-2.5 rounded-xl ${style.bg} ${style.text} transition-transform duration-300 group-hover:scale-110`}>
                     {icon}
                 </div>
-                {trend && (
-                    <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${isPositive ? 'text-green-600 bg-green-100/50 dark:bg-green-900/30' : 'text-red-600 bg-red-100/50 dark:bg-red-900/30'}`}>
-                        {isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                        {Math.abs(trend.value).toFixed(1)}%
-                    </div>
-                )}
-            </div>
-            <div className="flex justify-between items-end">
-                <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{title}</p>
-                    <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1.5 font-display">{value}</h3>
+                <div className="flex flex-col items-end gap-1">
+                    {trend && (
+                        <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isPositive ? 'text-green-600 bg-green-100/50 dark:bg-green-900/30' : 'text-red-600 bg-red-100/50 dark:bg-red-900/30'}`}>
+                            {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            {Math.abs(trend.value).toFixed(1)}%
+                        </div>
+                    )}
+                    {sparklineData && (
+                        <div className="opacity-80 group-hover:opacity-100 transition-opacity mt-0.5">
+                            <Sparkline data={sparklineData} color={style.stroke} />
+                        </div>
+                    )}
                 </div>
-                {sparklineData && <div className="w-24 h-10 shrink-0"><Sparkline data={sparklineData} color={style.stroke} /></div>}
+            </div>
+            <div className="mt-1">
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{title}</p>
+                <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white mt-1 font-display whitespace-nowrap">{value}</h3>
             </div>
         </div>
     );
@@ -586,13 +595,13 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                             <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 font-display">Restock Alerts</h2>
                             <div className="space-y-3">
                                 {metrics.lowStockList.map(item => (
-                                    <div key={item.id} onClick={() => navigateToInventory('low')} className="flex items-center justify-between p-3 bg-rose-500/5 dark:bg-rose-950/10 border border-rose-500/10 dark:border-rose-900/20 rounded-2xl cursor-pointer hover:-translate-y-0.5 transition-all hover:shadow-sm">
-                                        <div>
-                                            <p className="text-xs font-black text-slate-900 dark:text-white truncate max-w-[120px]">{item.name}</p>
+                                    <div key={item.id} onClick={() => navigateToInventory('low')} className="flex items-center justify-between gap-3 p-3 bg-rose-500/5 dark:bg-rose-950/10 border border-rose-500/10 dark:border-rose-900/20 rounded-2xl cursor-pointer hover:-translate-y-0.5 transition-all hover:shadow-sm">
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xs font-black text-slate-900 dark:text-white truncate" title={item.name}>{item.name}</p>
                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">HSN: {item.hsn || 'N/A'}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <span className="text-[10px] font-extrabold text-rose-600 dark:text-rose-400 bg-rose-100/50 dark:bg-rose-900/30 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                        <div className="shrink-0 text-right">
+                                            <span className="inline-flex items-center whitespace-nowrap text-[10px] font-black text-rose-600 dark:text-rose-400 bg-rose-100/70 dark:bg-rose-950/40 border border-rose-200/50 dark:border-rose-900/40 px-2.5 py-1 rounded-full uppercase tracking-tight">
                                                 {item.quantityInStock} {item.unit || 'pcs'}
                                             </span>
                                         </div>
@@ -684,16 +693,16 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                                 </div>
                             </div>
                             <div className="grid grid-cols-3 gap-2 mt-6 text-center relative z-10">
-                                <div className="p-2 rounded-2xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100/50 dark:border-emerald-800/30">
-                                    <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-0.5">Paid</p>
+                                <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100/50 dark:border-emerald-800/30">
+                                    <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-tight mb-0.5">Paid</p>
                                     <p className="text-base font-black text-slate-900 dark:text-white">{invoiceStatusCounts.total > 0 ? Math.round((invoiceStatusCounts.paid / invoiceStatusCounts.total) * 100) : 0}%</p>
                                 </div>
-                                <div className="p-2 rounded-2xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100/50 dark:border-amber-800/30">
-                                    <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-0.5">Pending</p>
+                                <div className="p-2 sm:p-2.5 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100/50 dark:border-amber-800/30">
+                                    <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tight mb-0.5">Pending</p>
                                     <p className="text-base font-black text-slate-900 dark:text-white">{invoiceStatusCounts.total > 0 ? Math.round((invoiceStatusCounts.pending / invoiceStatusCounts.total) * 100) : 0}%</p>
                                 </div>
-                                <div className="p-2 rounded-2xl bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100/50 dark:border-rose-800/30">
-                                    <p className="text-[9px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-0.5">Overdue</p>
+                                <div className="p-2 sm:p-2.5 rounded-xl bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100/50 dark:border-rose-800/30">
+                                    <p className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-tight mb-0.5">Overdue</p>
                                     <p className="text-base font-black text-slate-900 dark:text-white">{invoiceStatusCounts.total > 0 ? Math.round((invoiceStatusCounts.overdue / invoiceStatusCounts.total) * 100) : 0}%</p>
                                 </div>
                             </div>
@@ -701,37 +710,37 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                     </div>
 
                     {/* Bottom Row: Recent Activity, Top Clients & Top Selling Items */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
                         {/* Recent Activity */}
-                        <div className="glass-panel p-8 rounded-3xl">
-                            <div className="flex justify-between items-center mb-8">
+                        <div className="glass-panel p-6 rounded-3xl">
+                            <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <h2 className="text-xl font-black text-slate-900 dark:text-white">Recent Activity</h2>
-                                    <p className="text-xs text-slate-500 font-medium mt-1">Latest transactions</p>
+                                    <h2 className="text-lg font-black text-slate-900 dark:text-white">Recent Activity</h2>
+                                    <p className="text-xs text-slate-500 font-medium mt-0.5">Latest transactions</p>
                                 </div>
-                                <button onClick={() => setActiveView && setActiveView('Invoices')} className="text-[10px] font-black text-accent uppercase tracking-widest hover:underline bg-accent/5 px-4 py-2 rounded-full">View All</button>
+                                <button onClick={() => setActiveView && setActiveView('Invoices')} className="text-[10px] font-black text-accent uppercase tracking-widest hover:underline bg-accent/5 px-3 py-1.5 rounded-full">View All</button>
                             </div>
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {invoices.length === 0 ? (
-                                    <div className="text-center py-12">
-                                        <FileText className="w-12 h-12 mx-auto text-slate-200 mb-3" />
+                                    <div className="text-center py-10">
+                                        <FileText className="w-10 h-10 mx-auto text-slate-200 mb-2" />
                                         <p className="text-sm text-slate-400 font-medium">No recent activity found.</p>
                                     </div>
                                 ) : (
                                     invoices.slice(0, 5).map((inv, idx) => (
-                                        <div onClick={() => navigateToInvoices()} key={inv.id} className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-slate-100 dark:hover:border-slate-700 opacity-0 animate-fade-in-up group" style={{ animationDelay: `${idx * 100}ms` }}>
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shadow-sm transition-transform group-hover:scale-110 ${inv.status === 'Paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : inv.status === 'Overdue' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+                                        <div onClick={() => navigateToInvoices()} key={inv.id} className="flex items-center justify-between gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-slate-100 dark:hover:border-slate-700 opacity-0 animate-fade-in-up group" style={{ animationDelay: `${idx * 100}ms` }}>
+                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                <div className={`w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center font-black text-sm shadow-sm transition-transform group-hover:scale-105 ${inv.status === 'Paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : inv.status === 'Overdue' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
                                                     {(inv.client?.name || 'U').charAt(0).toUpperCase()}
                                                 </div>
-                                                <div className="overflow-hidden">
-                                                    <p className="text-sm font-black text-slate-900 dark:text-white truncate group-hover:text-accent transition-colors">{inv.client?.name || 'Unknown Client'}</p>
-                                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-0.5">{inv.invoiceNumber} • {inv.issueDate}</p>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-black text-slate-900 dark:text-white truncate group-hover:text-accent transition-colors" title={inv.client?.name}>{inv.client?.name || 'Unknown Client'}</p>
+                                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-0.5 truncate">{inv.invoiceNumber} • {inv.issueDate}</p>
                                                 </div>
                                             </div>
-                                            <div className="text-right shrink-0">
-                                                <p className="text-sm font-black text-slate-900 dark:text-white">{currency}{inv.grandTotal.toLocaleString()}</p>
-                                                <p className={`text-[10px] font-black uppercase tracking-widest mt-0.5 ${inv.status === 'Paid' ? 'text-emerald-500' : inv.status === 'Overdue' ? 'text-rose-500' : 'text-amber-500'}`}>{inv.status}</p>
+                                            <div className="text-right shrink-0 ml-2">
+                                                <p className="text-sm font-black text-slate-900 dark:text-white whitespace-nowrap">{currency}{inv.grandTotal.toLocaleString()}</p>
+                                                <p className={`text-[10px] font-black uppercase tracking-wider mt-0.5 whitespace-nowrap ${inv.status === 'Paid' ? 'text-emerald-500' : inv.status === 'Overdue' ? 'text-rose-500' : 'text-amber-500'}`}>{inv.status}</p>
                                             </div>
                                         </div>
                                     ))
@@ -740,20 +749,20 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                         </div>
 
                         {/* Top Clients */}
-                        <div className="glass-panel p-8 rounded-3xl">
-                            <div className="flex justify-between items-center mb-8">
+                        <div className="glass-panel p-6 rounded-3xl">
+                            <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <h2 className="text-xl font-black text-slate-900 dark:text-white">Top Clients</h2>
-                                    <p className="text-xs text-slate-500 font-medium mt-1">By revenue contribution</p>
+                                    <h2 className="text-lg font-black text-slate-900 dark:text-white">Top Clients</h2>
+                                    <p className="text-xs text-slate-500 font-medium mt-0.5">By revenue contribution</p>
                                 </div>
                                 <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                                    <Users className="w-5 h-5 text-slate-400" />
+                                    <Users className="w-4 h-4 text-slate-400" />
                                 </div>
                             </div>
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {metrics.topClients.length === 0 ? (
-                                    <div className="text-center py-12">
-                                        <Users className="w-12 h-12 mx-auto text-slate-200 mb-3" />
+                                    <div className="text-center py-10">
+                                        <Users className="w-10 h-10 mx-auto text-slate-200 mb-2" />
                                         <p className="text-sm text-slate-400 font-medium">No client data yet.</p>
                                     </div>
                                 ) : (
@@ -761,19 +770,19 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                                         <div
                                             key={idx}
                                             onClick={() => setActiveView && setActiveView('Clients')}
-                                            className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50 group hover:border-accent/30 hover:shadow-md cursor-pointer transition-all"
+                                            className="flex items-center justify-between gap-3 p-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50 group hover:border-accent/30 hover:shadow-md cursor-pointer transition-all"
                                         >
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center font-black text-xs group-hover:bg-accent group-hover:text-white transition-all">
+                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                <div className="w-9 h-9 shrink-0 rounded-xl bg-accent/10 text-accent flex items-center justify-center font-black text-xs group-hover:bg-accent group-hover:text-white transition-all">
                                                     {idx + 1}
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-black text-slate-900 dark:text-white group-hover:text-accent transition-colors">{client.name}</p>
-                                                    <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-0.5">{client.count} Invoices</p>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-black text-slate-900 dark:text-white truncate group-hover:text-accent transition-colors" title={client.name}>{client.name}</p>
+                                                    <p className="text-[10px] text-slate-500 uppercase font-black tracking-wider mt-0.5 truncate">{client.count} {client.count === 1 ? 'Invoice' : 'Invoices'}</p>
                                                 </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-sm font-black text-slate-900 dark:text-white">{currency}{client.total.toLocaleString()}</p>
+                                            <div className="text-right shrink-0 ml-2">
+                                                <p className="text-sm font-black text-slate-900 dark:text-white whitespace-nowrap">{currency}{client.total.toLocaleString()}</p>
                                             </div>
                                         </div>
                                     ))
@@ -782,24 +791,32 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                         </div>
 
                         {/* Top Selling Items */}
-                        <div className="glass-panel p-8 rounded-3xl flex flex-col justify-between">
+                        <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between md:col-span-2 2xl:col-span-1">
                             <div>
-                                <h2 className="text-xl font-black text-slate-900 dark:text-white">Top Selling Items</h2>
-                                <p className="text-xs text-slate-500 font-medium mt-1">Best performing inventory</p>
+                                <h2 className="text-lg font-black text-slate-900 dark:text-white">Top Selling Items</h2>
+                                <p className="text-xs text-slate-500 font-medium mt-0.5">Best performing inventory</p>
                             </div>
-                            <div className="h-56 w-full mt-6 relative z-10 flex items-center justify-center">
+                            <div className="h-56 w-full mt-4 relative z-10 flex items-center justify-center">
                                 {metrics.topSellingItems.length === 0 ? (
-                                    <div className="text-center py-12 text-slate-400">
-                                        <FileText className="w-12 h-12 mx-auto text-slate-200 mb-3" />
+                                    <div className="text-center py-10 text-slate-400">
+                                        <FileText className="w-10 h-10 mx-auto text-slate-200 mb-2" />
                                         <p className="text-sm font-medium">No sales recorded yet.</p>
                                     </div>
                                 ) : (
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={metrics.topSellingItems} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                                            <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                        <BarChart data={metrics.topSellingItems} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                                            <XAxis
+                                                dataKey="name"
+                                                tick={{ fontSize: 9, fill: '#94a3b8' }}
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tickFormatter={(name: string) => (name && name.length > 10 ? `${name.slice(0, 9)}…` : name)}
+                                                interval={0}
+                                            />
                                             <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                                             <Tooltip
                                                 contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '11px' }}
+                                                labelFormatter={(label: string) => label}
                                                 formatter={(value) => [`${value} units`, 'Quantity Sold']}
                                             />
                                             <Bar dataKey="quantity" fill="#818cf8" radius={[4, 4, 0, 0]} />
@@ -814,16 +831,16 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
             {/* Smart Draft Recovery Bar */}
             {hasDraft && onContinueDraft && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-4 animate-slide-in cursor-pointer hover:bg-black transition-colors" onClick={onContinueDraft}>
+                <div className="fixed bottom-6 right-6 md:right-8 z-40 bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md text-white px-5 py-3.5 rounded-2xl border border-slate-700/60 shadow-2xl flex items-center gap-4 animate-slide-in cursor-pointer hover:bg-slate-900 transition-all" onClick={onContinueDraft}>
                     <div className="flex flex-col">
                         <span className="font-bold text-sm">Unfinished Invoice Found</span>
                         <span className="text-xs text-slate-400">Continue where you left off?</span>
                     </div>
-                    <button className="bg-white text-slate-900 px-4 py-2 rounded-full text-xs font-bold hover:bg-slate-200">
+                    <button className="bg-white text-slate-900 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors">
                         Resume
                     </button>
                     <button
-                        className="text-slate-500 hover:text-white"
+                        className="text-slate-500 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
                         onClick={(e) => {
                             e.stopPropagation();
                             setHasDraft(false);
