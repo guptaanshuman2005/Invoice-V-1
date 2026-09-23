@@ -9,6 +9,7 @@ import helmet from "helmet";
 
 console.log("Starting server.ts...");
 
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config();
 
 console.log("Initializing Supabase...");
