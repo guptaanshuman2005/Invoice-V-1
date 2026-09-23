@@ -511,11 +511,7 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
             <div className="glass-panel p-8 rounded-2xl">
                 <div className="flex justify-between items-center mb-6 border-b border-slate-100 dark:border-slate-700/50 pb-4">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-light-text">Invoice Template</h2>
-                    {activeCompany.subscription?.plan === 'premium' ? (
-                        <span className="text-xs font-bold uppercase tracking-wider bg-amber-500 text-white px-3 py-1 rounded-full">Premium Unlocked</span>
-                    ) : (
-                        <Button variant="secondary" className="text-xs" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>View Plans (Coming Soon)</Button>
-                    )}
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">All 4 Templates Included</span>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
