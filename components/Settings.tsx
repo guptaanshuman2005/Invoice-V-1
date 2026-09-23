@@ -514,7 +514,7 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
                     {activeCompany.subscription?.plan === 'premium' ? (
                         <span className="text-xs font-bold uppercase tracking-wider bg-amber-500 text-white px-3 py-1 rounded-full">Premium Unlocked</span>
                     ) : (
-                        <Button variant="secondary" className="text-xs" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>Upgrade to Premium</Button>
+                        <Button variant="secondary" className="text-xs" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>View Plans (Coming Soon)</Button>
                     )}
                 </div>
                 
@@ -756,7 +756,7 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
 
                     <div className="space-y-3">
                         <Button className="w-full !py-3" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>
-                            Upgrade Plan
+                            View Plans (Coming Soon)
                         </Button>
                         {activeCompany.subscription && activeCompany.subscription.plan !== 'free' && (
                             <Button variant="secondary" className="w-full !py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900/30" onClick={() => {
@@ -776,9 +776,9 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
                     <h2 className="text-lg font-bold text-slate-900 dark:text-light-text mb-6 border-b border-slate-100 dark:border-slate-700/50 pb-4">Invoice Usage</h2>
                     
                     {(() => {
-                        const sub = activeCompany.subscription || { plan: 'free', invoiceCount: 0, invoiceLimit: 10, addonInvoices: 0 };
-                        const totalLimit = sub.invoiceLimit + (sub.addonInvoices || 0);
-                        const used = sub.invoiceCount;
+                        const sub = activeCompany.subscription || { plan: 'free', invoiceCount: 0, invoiceLimit: 5, addonInvoices: 0 };
+                        const totalLimit = (sub.plan === 'free' ? 5 : sub.invoiceLimit) + (sub.addonInvoices || 0);
+                        const used = Math.max(sub.invoiceCount || 0, activeCompany.invoices.length);
                         const remaining = Math.max(0, totalLimit - used);
                         const percentUsed = Math.min(100, (used / totalLimit) * 100);
                         
@@ -796,16 +796,16 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
                                 
                                 <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-6">
                                     <div 
-                                        className={`h-full rounded-full transition-all duration-500 ${percentUsed > 90 ? 'bg-red-500' : percentUsed > 75 ? 'bg-amber-500' : 'bg-accent'}`}
+                                        className={`h-full rounded-full transition-all duration-500 ${percentUsed >= 100 ? 'bg-red-500' : percentUsed > 75 ? 'bg-amber-500' : 'bg-accent'}`}
                                         style={{ width: `${percentUsed}%` }}
                                     ></div>
                                 </div>
 
                                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-100 dark:border-slate-700">
-                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Need more invoices?</h4>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">You can buy add-on packs that never expire and stack with your monthly limit.</p>
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Free Testing Tier (5 Invoices)</h4>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">You have 5 free invoices during our testing preview. Higher-tier plans and add-on packs are Coming Soon!</p>
                                     <Button variant="secondary" className="w-full text-sm" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>
-                                        Buy Add-on Invoices
+                                        View Upcoming Plans
                                     </Button>
                                 </div>
                             </div>

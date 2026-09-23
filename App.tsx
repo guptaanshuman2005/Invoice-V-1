@@ -367,6 +367,23 @@ const App: React.FC = () => {
   };
 
   const handleSetActiveView = (view: string) => {
+    if (view === 'NewInvoice' && !isDemoMode && activeCompany && !invoiceToEdit) {
+      const sub = activeCompany.subscription;
+      const limit = (!sub || sub.plan === 'free') ? 5 : sub.invoiceLimit;
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const invoicesThisMonth = activeCompany.invoices.filter(inv => {
+        const d = new Date(inv.issueDate);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      }).length;
+      const addons = sub?.addonInvoices || 0;
+
+      if (invoicesThisMonth >= limit && addons <= 0) {
+        toast.error('Free tier testing limit reached (5 invoices). Paid plans are Coming Soon!');
+        setIsSubscriptionPromptOpen(true);
+        return;
+      }
+    }
     setActiveView(view);
     sessionStorage.setItem('activeView', view);
   };
@@ -680,14 +697,14 @@ const App: React.FC = () => {
             }).length;
 
             const sub = activeCompany.subscription;
-            const monthlyLimit = (!sub || sub.plan === 'free') ? 10 : sub.invoiceLimit;
+            const monthlyLimit = (!sub || sub.plan === 'free') ? 5 : sub.invoiceLimit;
             let newAddonInvoices = sub?.addonInvoices || 0;
 
-            if (invoicesThisMonth >= monthlyLimit) {
+            if (!isDemoMode && invoicesThisMonth >= monthlyLimit) {
                 if (newAddonInvoices > 0) {
                     newAddonInvoices -= 1;
                 } else {
-                    alert('You have reached your invoice limit for this month. Please purchase an add-on or upgrade your plan.');
+                    toast.error('Free tier testing limit reached (5 invoices). Pro plans are Coming Soon!');
                     setIsSubscriptionPromptOpen(true);
                     return;
                 }
@@ -730,7 +747,7 @@ const App: React.FC = () => {
             status: 'active' as const,
             currentPeriodEnd: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
             invoiceCount: ('id' in invoiceData) ? 0 : 1,
-            invoiceLimit: 10,
+            invoiceLimit: 5,
             addonInvoices: 0
         };
 
@@ -742,7 +759,7 @@ const App: React.FC = () => {
                 const d = new Date(inv.issueDate);
                 return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
             }).length;
-            const monthlyLimit = (!activeCompany.subscription || activeCompany.subscription.plan === 'free') ? 10 : activeCompany.subscription.invoiceLimit;
+            const monthlyLimit = (!activeCompany.subscription || activeCompany.subscription.plan === 'free') ? 5 : activeCompany.subscription.invoiceLimit;
             
             if (invoicesThisMonth >= monthlyLimit && updatedSubscription.addonInvoices && updatedSubscription.addonInvoices > 0) {
                 updatedSubscription.addonInvoices -= 1;
@@ -1234,38 +1251,8 @@ const App: React.FC = () => {
           isOpen={isSubscriptionPromptOpen} 
           onClose={() => setIsSubscriptionPromptOpen(false)} 
           onSubscribe={(plan) => {
-            if (!activeCompany) return;
-            try {
-              let invoiceLimit = 50;
-              if (plan === 'standard') invoiceLimit = 200;
-              if (plan === 'premium') invoiceLimit = 1000;
-              let extraInvoices = 0;
-              if (plan.startsWith('addon_')) {
-                extraInvoices = parseInt(plan.split('_')[1], 10) || 50;
-              }
-              
-              const currentEnd = new Date();
-              currentEnd.setFullYear(currentEnd.getFullYear() + 1);
-
-              const updatedSubscription = {
-                plan: plan.startsWith('addon_') ? (activeCompany.subscription?.plan || 'free') : plan,
-                status: 'active' as const,
-                currentPeriodEnd: currentEnd.toISOString(),
-                invoiceCount: 0,
-                invoiceLimit: plan.startsWith('addon_') ? (activeCompany.subscription?.invoiceLimit || 10) : invoiceLimit,
-                addonInvoices: (activeCompany.subscription?.addonInvoices || 0) + extraInvoices,
-              };
-
-              handleUpdateCompany({
-                ...activeCompany,
-                subscription: updatedSubscription
-              });
-              setIsSubscriptionPromptOpen(false);
-              toast.success(`Plan ${plan.toUpperCase()} activated successfully! (Launch Preview Mode)`);
-            } catch (error) {
-              console.error('Error activating plan:', error);
-              toast.error('Failed to activate plan.');
-            }
+            toast.info(`The ${plan.toUpperCase()} tier is Coming Soon! You can currently create up to 5 free invoices during this preview.`);
+            setIsSubscriptionPromptOpen(false);
           }} 
         />
     </div>
