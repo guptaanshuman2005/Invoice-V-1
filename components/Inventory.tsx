@@ -58,7 +58,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, setItems, onBulkStockUpdat
     const filteredItems = useMemo(() => {
         let result = items;
         if (stockFilter === 'low') result = result.filter(i => i.quantityInStock > 0 && i.quantityInStock <= 5);
-        else if (stockFilter === 'out') result = result.filter(i => i.quantityInStock === 0);
+        else if (stockFilter === 'out') result = result.filter(i => i.quantityInStock <= 0);
         else if (stockFilter === 'in') result = result.filter(i => i.quantityInStock > 0);
 
         const query = searchQuery.trim();
@@ -117,8 +117,8 @@ const Inventory: React.FC<InventoryProps> = ({ items, setItems, onBulkStockUpdat
                     <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value as any)} className={`${inputClasses} h-[42px] mt-0.5 cursor-pointer`}>
                         <option value="all">All Items</option>
                         <option value="in">In Stock (&gt; 0)</option>
-                        <option value="low">Low Stock (&le; 5)</option>
-                        <option value="out">Out of Stock (0)</option>
+                        <option value="low">Low Stock (1-5)</option>
+                        <option value="out">Out of Stock (&le; 0)</option>
                     </select>
                 </div>
             </div>
@@ -138,25 +138,60 @@ const Inventory: React.FC<InventoryProps> = ({ items, setItems, onBulkStockUpdat
                         </thead>
                         <tbody>
                             {filteredItems.map((item) => {
+                                const isNegativeStock = item.quantityInStock < 0;
+                                const isOutOfStock = item.quantityInStock <= 0;
                                 const isLowStock = item.quantityInStock <= 5 && item.quantityInStock > 0;
-                                const isOutOfStock = item.quantityInStock === 0;
                                 const isSelected = selectedIds.includes(item.id);
                                 let rowClass = "bg-transparent";
                                 if (isSelected) rowClass = "bg-blue-50/50 dark:bg-blue-900/20";
+                                else if (isNegativeStock) rowClass = "bg-red-100/60 dark:bg-red-950/40";
                                 else if (isOutOfStock) rowClass = "bg-red-50/50 dark:bg-red-900/20";
                                 else if (isLowStock) rowClass = "bg-orange-50/50 dark:bg-orange-900/20";
 
                                 return (
                                 <tr key={item.id} className={`${rowClass} border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors`}>
                                     <td className="px-6 py-4"><input type="checkbox" checked={isSelected} onChange={() => handleSelectOne(item.id)} className="rounded border-slate-300 text-accent focus:ring-accent" /></td>
-                                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-light-text whitespace-nowrap"><div className="flex items-center gap-2">{isOutOfStock && <AlertIcon />}{isLowStock && <WarningIcon />}<span className={isOutOfStock ? 'text-red-700 dark:text-red-300 font-semibold' : ''}>{item.name}</span></div></td>
+                                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-light-text whitespace-nowrap">
+                                        <div className="flex items-center gap-2">
+                                            {isOutOfStock && <AlertIcon />}
+                                            {isLowStock && <WarningIcon />}
+                                            <span className={isOutOfStock ? 'text-red-700 dark:text-red-400 font-bold' : ''}>{item.name}</span>
+                                        </div>
+                                        {isNegativeStock && (
+                                            <div className="text-[11px] text-red-600 dark:text-red-400 font-bold mt-0.5">
+                                                ⚠️ Negative Stock ({item.quantityInStock}) • Please restock in Items section
+                                            </div>
+                                        )}
+                                        {item.quantityInStock === 0 && (
+                                            <div className="text-[11px] text-red-600 dark:text-red-400 font-medium mt-0.5">
+                                                No item available • Please update in Items section
+                                            </div>
+                                        )}
+                                        {isLowStock && (
+                                            <div className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">
+                                                Low on item • Only {item.quantityInStock} left
+                                            </div>
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4">{item.hsn}</td>
                                     <td className="px-6 py-4 text-center uppercase">{item.unit}</td>
                                     <td className="px-6 py-4">
                                         {editingItemId === item.id ? (
                                             <div className="relative"><Input label="" type="number" value={stockValue} onChange={e => setStockValue(parseInt(e.target.value) || 0)} className="!py-1 w-24" error={stockError || undefined} /></div>
                                         ) : (
-                                            <div className="flex items-center gap-2"><span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold shadow-sm ${isOutOfStock ? 'bg-white text-red-700 border border-red-200' : isLowStock ? 'bg-white text-orange-700 border border-orange-200' : 'bg-green-100 text-green-800'}`}>{item.quantityInStock}</span></div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
+                                                    isNegativeStock 
+                                                        ? 'bg-red-600 text-white font-black animate-pulse' 
+                                                        : item.quantityInStock === 0 
+                                                            ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 border border-red-300 dark:border-red-800' 
+                                                            : isLowStock 
+                                                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700' 
+                                                                : 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                                                }`}>
+                                                    {item.quantityInStock} {isNegativeStock ? '(Negative)' : item.quantityInStock === 0 ? '(Out of Stock)' : isLowStock ? '(Low)' : 'In Stock'}
+                                                </span>
+                                            </div>
                                         )}
                                     </td>
                                     <td className="px-6 py-4 text-right space-x-2">

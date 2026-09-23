@@ -119,7 +119,7 @@ const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
       details: { 
           ...mockCompany.details, 
           // Our visual template names vs actual: 'modern', 'classic' -> 'traditional', 'minimal' -> 'premium'
-          invoiceTemplate: template === 'classic' ? 'traditional' : template === 'minimal' ? 'premium' : template === 'tally' ? 'tally' : 'modern',
+          invoiceTemplate: template === 'classic' ? 'traditional' : template === 'minimal' ? 'premium' : template === 'tally' ? 'tally' : template === 'custom' ? 'custom' : 'modern',
           brandColor: brandColor,
           showShipping: showShipping,
           showHsn: showHsn,

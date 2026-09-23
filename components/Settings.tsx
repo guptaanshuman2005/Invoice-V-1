@@ -10,6 +10,7 @@ import { Building, Image as ImageIcon, Zap } from 'lucide-react';
 import { trackEvent } from '../utils/analytics';
 import TemplatePreviewModal from './TemplatePreviewModal';
 import { supabase } from '../supabase';
+import { toast } from 'sonner';
 
 interface SettingsProps {
   activeCompany: Company;
@@ -68,6 +69,14 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
     setSignaturePreview(activeCompany.details.signature || null);
     setDetailErrors({});
   }, [activeCompany]);
+
+  const handleSelectTemplateCard = (templateName: 'modern' | 'classic' | 'minimal' | 'tally' | 'custom') => {
+    const updatedDetails = { ...details, invoiceTemplate: templateName };
+    setDetails(updatedDetails);
+    updateCompany({ ...activeCompany, details: updatedDetails });
+    trackEvent('update_invoice_template', { template: templateName });
+    toast.success(`Template updated to ${templateName.charAt(0).toUpperCase() + templateName.slice(1)}`);
+  };
 
   // Live preview of brand color
   useEffect(() => {
@@ -517,7 +526,7 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {/* Modern Template */}
                     <div 
-                        onClick={() => setPreviewTemplate('modern')}
+                        onClick={() => handleSelectTemplateCard('modern')}
                         className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'modern' ? 'border-accent bg-accent/5' : 'border-slate-200 dark:border-slate-700 hover:border-accent/50'}`}
                     >
                         <div className="aspect-[1/1.4] bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 mb-4 overflow-hidden flex flex-col relative">
@@ -549,7 +558,7 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
 
                     {/* Classic Template */}
                     <div 
-                        onClick={() => setPreviewTemplate('classic')}
+                        onClick={() => handleSelectTemplateCard('classic')}
                         className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'classic' ? 'border-accent bg-accent/5' : 'border-slate-200 dark:border-slate-700 hover:border-accent/50'}`}
                     >
                         <div className="aspect-[1/1.4] bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 mb-4 overflow-hidden flex flex-col p-3 relative">
@@ -578,7 +587,7 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
 
                     {/* Minimal Template */}
                     <div 
-                        onClick={() => setPreviewTemplate('minimal')}
+                        onClick={() => handleSelectTemplateCard('minimal')}
                         className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'minimal' ? 'border-accent bg-accent/5' : 'border-slate-200 dark:border-slate-700 hover:border-accent/50'}`}
                     >
                         <div className="aspect-[1/1.4] bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 mb-4 overflow-hidden flex flex-col p-4 relative">
@@ -604,7 +613,7 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
 
                     {/* Tally Prime Template */}
                     <div 
-                        onClick={() => setPreviewTemplate('tally')}
+                        onClick={() => handleSelectTemplateCard('tally')}
                         className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'tally' ? 'border-accent bg-accent/5' : 'border-slate-200 dark:border-slate-700 hover:border-accent/50'}`}
                     >
                         <div className="aspect-[1/1.4] bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 mb-4 overflow-hidden flex flex-col p-4 relative justify-center">
@@ -635,8 +644,7 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
 
                     {/* Custom (Premium) Template */}
                     <div 
-
-                        onClick={() => setPreviewTemplate('custom')}
+                        onClick={() => handleSelectTemplateCard('custom')}
                         className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'custom' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/10' : 'border-slate-200 dark:border-slate-700 hover:border-amber-500/50'}`}
                     >
                         <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">PREMIUM</div>
@@ -837,8 +845,8 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
           onClose={() => setPreviewTemplate(null)} 
           template={previewTemplate} 
           onSelectTemplate={(template, config) => {
-              setDetails(prev => ({ 
-                  ...prev, 
+              const updatedDetails = { 
+                  ...details, 
                   invoiceTemplate: template as any,
                   brandColor: config.brandColor,
                   showShipping: config.showShipping,
@@ -847,7 +855,10 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
                   showTerms: config.showTerms,
                   showQr: config.showQr,
                   logoPosition: config.logoPosition
-              }));
+              };
+              setDetails(updatedDetails);
+              updateCompany({ ...activeCompany, details: updatedDetails });
+              toast.success(`Template ${template.charAt(0).toUpperCase() + template.slice(1)} applied and saved!`);
               setPreviewTemplate(null);
           }}
           isPremium={true}

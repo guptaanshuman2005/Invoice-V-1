@@ -325,7 +325,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Modern Template */}
                                 <div 
-                                    onClick={() => setPreviewTemplate('modern')}
+                                    onClick={() => setDetails(prev => ({ ...prev, invoiceTemplate: 'modern' }))}
                                     className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'modern' ? 'border-accent bg-accent/5' : 'border-slate-200 dark:border-slate-700 hover:border-accent/50'}`}
                                 >
                                     <div className="aspect-[1/1.4] bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 mb-4 overflow-hidden flex flex-col relative">
@@ -356,7 +356,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
 
                                 {/* Classic Template */}
                                 <div 
-                                    onClick={() => setPreviewTemplate('classic')}
+                                    onClick={() => setDetails(prev => ({ ...prev, invoiceTemplate: 'classic' }))}
                                     className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'classic' ? 'border-accent bg-accent/5' : 'border-slate-200 dark:border-slate-700 hover:border-accent/50'}`}
                                 >
                                     <div className="aspect-[1/1.4] bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 mb-4 overflow-hidden flex flex-col p-3 relative">
@@ -384,7 +384,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
 
                                 {/* Minimal Template */}
                                 <div 
-                                    onClick={() => setPreviewTemplate('minimal')}
+                                    onClick={() => setDetails(prev => ({ ...prev, invoiceTemplate: 'minimal' }))}
                                     className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'minimal' ? 'border-accent bg-accent/5' : 'border-slate-200 dark:border-slate-700 hover:border-accent/50'}`}
                                 >
                                     <div className="aspect-[1/1.4] bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 mb-4 overflow-hidden flex flex-col p-4 relative">
@@ -409,7 +409,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
 
                                 {/* Tally Prime Template */}
                                 <div 
-                                    onClick={() => setPreviewTemplate('tally')}
+                                    onClick={() => setDetails(prev => ({ ...prev, invoiceTemplate: 'tally' }))}
                                     className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'tally' ? 'border-accent bg-accent/5' : 'border-slate-200 dark:border-slate-700 hover:border-accent/50'}`}
                                 >
                                     <div className="aspect-[1/1.4] bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 mb-4 overflow-hidden flex flex-col p-4 relative justify-center">
@@ -439,7 +439,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
 
                                 {/* Custom (Premium) Template */}
                                 <div 
-                                    onClick={() => setPreviewTemplate('custom')}
+                                    onClick={() => setDetails(prev => ({ ...prev, invoiceTemplate: 'custom' }))}
                                     className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'custom' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/10' : 'border-slate-200 dark:border-slate-700 hover:border-amber-500/50'}`}
                                 >
                                     <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">PREMIUM</div>

@@ -138,7 +138,7 @@ const Items: React.FC<ItemsProps> = ({ items, setItems, company, onBulkDelete, i
       if (filterGstRate) result = result.filter(i => i.gstRate === parseFloat(filterGstRate));
       
       if (filterStockStatus === 'Low') result = result.filter(i => i.quantityInStock > 0 && i.quantityInStock <= 5);
-      else if (filterStockStatus === 'Out') result = result.filter(i => i.quantityInStock === 0);
+      else if (filterStockStatus === 'Out') result = result.filter(i => i.quantityInStock <= 0);
       else if (filterStockStatus === 'In') result = result.filter(i => i.quantityInStock > 0);
 
       return result;
@@ -314,9 +314,32 @@ const Items: React.FC<ItemsProps> = ({ items, setItems, company, onBulkDelete, i
                             <td className="px-6 py-4">{currency}{item.price.toFixed(2)}</td>
                             <td className="px-6 py-4">{item.gstRate}%</td>
                             <td className="px-6 py-4">
-                                <span className={`font-semibold ${item.quantityInStock <= 5 ? 'text-red-500' : 'text-green-600 dark:text-green-400'}`}>
-                                    {item.quantityInStock}
-                                </span>
+                                {item.quantityInStock < 0 ? (
+                                    <div>
+                                        <span className="inline-flex items-center gap-1 font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-950/50 px-2 py-0.5 rounded border border-red-300 dark:border-red-800 text-xs">
+                                            ⚠️ {item.quantityInStock} (Negative)
+                                        </span>
+                                        <p className="text-[10px] text-red-600 dark:text-red-400 font-bold mt-0.5">Out of stock • Please update item</p>
+                                    </div>
+                                ) : item.quantityInStock === 0 ? (
+                                    <div>
+                                        <span className="inline-flex items-center gap-1 font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded border border-red-200 dark:border-red-800 text-xs">
+                                            ⚠️ 0 (Out of stock)
+                                        </span>
+                                        <p className="text-[10px] text-red-600 dark:text-red-400 font-medium mt-0.5">Please update item</p>
+                                    </div>
+                                ) : item.quantityInStock <= 5 ? (
+                                    <div>
+                                        <span className="inline-flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800 text-xs">
+                                            ⚠️ {item.quantityInStock} (Low)
+                                        </span>
+                                        <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">Low on item</p>
+                                    </div>
+                                ) : (
+                                    <span className="font-semibold text-green-600 dark:text-green-400">
+                                        {item.quantityInStock}
+                                    </span>
+                                )}
                             </td>
                             <td className="px-6 py-4 text-right space-x-2"><Button variant="secondary" onClick={() => handleOpenModal(item)}>Edit</Button><Button variant="secondary" onClick={() => handleDeleteItem(item.id)} className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-800/80 dark:hover:bg-red-700/80">Delete</Button></td>
                         </tr>

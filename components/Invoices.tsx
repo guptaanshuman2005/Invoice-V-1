@@ -477,14 +477,415 @@ const PremiumInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docu
     );
 };
 
+const TallyInvoiceContent: React.FC<{ invoice: Invoice, company: Company, documentTitle?: string }> = ({ invoice, company, documentTitle = 'Invoice' }) => {
+    const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+    const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
+    const borderCol = 'border-slate-800';
+
+    return (
+        <div className="bg-white text-slate-900 font-sans text-xs leading-normal max-w-[210mm] mx-auto box-border h-full flex flex-col p-6 shadow-xl">
+            {/* Outer Box Frame */}
+            <div className={`border-2 ${borderCol} flex-grow flex flex-col`}>
+                {/* Header Title */}
+                <div className={`border-b-2 ${borderCol} bg-slate-100 py-1 text-center font-bold text-sm tracking-widest uppercase`}>
+                    {documentTitle}
+                </div>
+
+                {/* Company & Meta Split */}
+                <div className={`flex border-b ${borderCol} min-h-[110px]`}>
+                    {/* Left: Company Details */}
+                    <div className={`w-1/2 p-3 border-r ${borderCol} flex flex-col justify-between`}>
+                        <div>
+                            <h2 className="font-bold text-sm text-slate-950">{company.details?.name || 'Company Name'}</h2>
+                            <p className="text-slate-600 mt-1">{company.details?.address || ''}</p>
+                            <p className="text-slate-600">{company.details?.city || ''} {company.details?.zip ? `- ${company.details.zip}` : ''}, {company.details?.state || ''}</p>
+                            <p className="text-slate-600 mt-1">Phone: {company.details?.phone || 'N/A'}</p>
+                        </div>
+                        {company.details?.gstin && (
+                            <p className="font-bold text-slate-950 text-xs mt-2">GSTIN/UIN: {company.details.gstin}</p>
+                        )}
+                    </div>
+                    {/* Right: Invoice Metadata */}
+                    <div className="w-1/2 flex flex-col text-[11px]">
+                        <div className={`flex border-b ${borderCol} flex-1`}>
+                            <div className={`w-1/2 p-2 border-r ${borderCol}`}>
+                                <span className="text-slate-500 text-[10px] block">Invoice No.</span>
+                                <span className="font-bold text-slate-900">{docNumber}</span>
+                            </div>
+                            <div className="w-1/2 p-2">
+                                <span className="text-slate-500 text-[10px] block">Dated</span>
+                                <span className="font-bold text-slate-900">{invoice.issueDate}</span>
+                            </div>
+                        </div>
+                        <div className={`flex border-b ${borderCol} flex-1`}>
+                            <div className={`w-1/2 p-2 border-r ${borderCol}`}>
+                                <span className="text-slate-500 text-[10px] block">Delivery Note</span>
+                                <span className="text-slate-800">N/A</span>
+                            </div>
+                            <div className="w-1/2 p-2">
+                                <span className="text-slate-500 text-[10px] block">Mode/Terms of Payment</span>
+                                <span className="text-slate-800">Immediate / Net Bank</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-1">
+                            <div className={`w-1/2 p-2 border-r ${borderCol}`}>
+                                <span className="text-slate-500 text-[10px] block">Buyer's Order No.</span>
+                                <span className="text-slate-800">N/A</span>
+                            </div>
+                            <div className="w-1/2 p-2">
+                                <span className="text-slate-500 text-[10px] block">Dated</span>
+                                <span className="text-slate-800">N/A</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Buyer & Consignee Split */}
+                <div className={`flex border-b ${borderCol} min-h-[90px]`}>
+                    <div className={`w-1/2 p-3 border-r ${borderCol}`}>
+                        <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Buyer (Bill to)</span>
+                        <p className="font-bold text-slate-900 text-xs">{invoice.client?.name || 'Unknown Client'}</p>
+                        <p className="text-slate-600">{invoice.client?.address || ''}</p>
+                        <p className="text-slate-600">{invoice.client?.city || ''}, {invoice.client?.state || ''} {invoice.client?.zip || ''}</p>
+                        {invoice.client?.gstin && <p className="font-bold text-slate-900 mt-1">GSTIN/UIN: {invoice.client.gstin}</p>}
+                    </div>
+                    <div className="w-1/2 p-3">
+                        <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Consignee (Ship to)</span>
+                        {invoice.shippingName ? (
+                            <>
+                                <p className="font-bold text-slate-900 text-xs">{invoice.shippingName}</p>
+                                <p className="text-slate-600">{invoice.shippingAddress}</p>
+                                <p className="text-slate-600">{invoice.shippingCity}, {invoice.shippingState} {invoice.shippingZip}</p>
+                            </>
+                        ) : (
+                            <p className="text-slate-400 italic mt-2">Same as Billing Address</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Main Items Table */}
+                <div className="flex-grow flex flex-col">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className={`border-b ${borderCol} bg-slate-50 text-[11px] font-bold`}>
+                                <th className={`p-2 text-center w-12 border-r ${borderCol}`}>Sl No.</th>
+                                <th className={`p-2 border-r ${borderCol}`}>Description of Goods</th>
+                                <th className={`p-2 text-center w-20 border-r ${borderCol}`}>HSN/SAC</th>
+                                <th className={`p-2 text-right w-24 border-r ${borderCol}`}>Quantity</th>
+                                <th className={`p-2 text-right w-24 border-r ${borderCol}`}>Rate</th>
+                                <th className="p-2 text-right w-28">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {invoice.items.map((item, index) => {
+                                const itemTotal = item.price * item.quantity;
+                                return (
+                                    <tr key={index} className="text-xs">
+                                        <td className={`p-2 text-center text-slate-500 border-r ${borderCol}`}>{index + 1}</td>
+                                        <td className={`p-2 font-medium border-r ${borderCol}`}>{item.name}</td>
+                                        <td className={`p-2 text-center text-slate-600 border-r ${borderCol}`}>{item.hsn || '-'}</td>
+                                        <td className={`p-2 text-right border-r ${borderCol}`}>{item.quantity} {item.unit}</td>
+                                        <td className={`p-2 text-right border-r ${borderCol}`}>{item.price.toFixed(2)}</td>
+                                        <td className="p-2 text-right font-bold">{itemTotal.toFixed(2)}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+
+                    <div className="flex-grow min-h-[40px]"></div>
+
+                    {/* Table Totals Row */}
+                    <div className={`flex border-t border-b ${borderCol} bg-slate-50 font-bold text-xs py-2 px-2`}>
+                        <div className="w-12 text-center"></div>
+                        <div className="flex-1 pl-2">Total</div>
+                        <div className="w-20"></div>
+                        <div className="w-24 text-right">{invoice.items.reduce((sum, item) => sum + item.quantity, 0)} pcs</div>
+                        <div className="w-24"></div>
+                        <div className="w-28 text-right pr-2">₹{invoice.subTotal.toFixed(2)}</div>
+                    </div>
+                </div>
+
+                {/* Tax Breakdown */}
+                <div className={`border-b ${borderCol} p-3`}>
+                    <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Tax Amount (in words):</p>
+                    <p className="font-bold text-xs text-slate-900 mb-2">INR {numberToWords(invoice.cgst + invoice.sgst + invoice.igst)}</p>
+                    <div className={`border ${borderCol} rounded overflow-hidden text-[11px]`}>
+                        <div className={`flex bg-slate-100 font-bold border-b ${borderCol} py-1 px-2`}>
+                            <div className="w-2/5">Taxable Value</div>
+                            <div className="w-1/5 text-right">CGST Amt</div>
+                            <div className="w-1/5 text-right">SGST Amt</div>
+                            <div className="w-1/5 text-right">Total Tax</div>
+                        </div>
+                        <div className="flex py-1 px-2 font-medium">
+                            <div className="w-2/5">₹{invoice.subTotal.toFixed(2)}</div>
+                            <div className="w-1/5 text-right">₹{invoice.cgst.toFixed(2)}</div>
+                            <div className="w-1/5 text-right">₹{invoice.sgst.toFixed(2)}</div>
+                            <div className="w-1/5 text-right font-bold">₹{(invoice.cgst + invoice.sgst + invoice.igst).toFixed(2)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Bank Details & Amount Chargeable */}
+                <div className={`flex border-b ${borderCol}`}>
+                    <div className={`w-1/2 p-3 border-r ${borderCol}`}>
+                        {selectedBankAccount && (
+                            <div>
+                                <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Company's Bank Details:</p>
+                                <p className="font-bold text-xs text-slate-900">Bank Name: {selectedBankAccount.bankName}</p>
+                                <p className="text-slate-700">A/c No.: {selectedBankAccount.accountNumber}</p>
+                                <p className="text-slate-700">IFSC Code: {selectedBankAccount.ifsc}</p>
+                            </div>
+                        )}
+                    </div>
+                    <div className="w-1/2 p-3 flex flex-col justify-between">
+                        <div>
+                            <p className="text-[10px] uppercase font-bold text-slate-500">Amount Chargeable (in words):</p>
+                            <p className="font-bold text-xs text-slate-900 mt-1">INR {numberToWords(invoice.grandTotal)}</p>
+                        </div>
+                        <div className="text-right mt-2">
+                            <span className="text-[10px] uppercase text-slate-500 mr-2">Grand Total:</span>
+                            <span className="text-lg font-black text-slate-900">₹{invoice.grandTotal.toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Declaration & Signature */}
+                <div className="flex min-h-[90px]">
+                    <div className={`w-3/5 p-3 border-r ${borderCol} flex flex-col justify-between`}>
+                        <div>
+                            <p className="font-bold underline text-[11px] mb-1">Declaration:</p>
+                            <p className="text-[10px] text-slate-600 leading-tight">
+                                We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
+                            </p>
+                        </div>
+                        {invoice.notes && (
+                            <p className="text-[10px] text-slate-500 mt-2 italic">Notes: {invoice.notes}</p>
+                        )}
+                    </div>
+                    <div className="w-2/5 p-3 flex flex-col justify-between text-right">
+                        <p className="font-bold text-[11px]">for {company.details?.name || 'Company Name'}</p>
+                        <div>
+                            {company.details?.signature && (
+                                <img src={company.details.signature} className="h-10 w-auto ml-auto mb-1" alt="Sign" />
+                            )}
+                            <p className="text-[10px] text-slate-500 uppercase tracking-wider">Authorized Signatory</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const CustomInvoiceContent: React.FC<{ invoice: Invoice, company: Company, documentTitle?: string }> = ({ invoice, company, documentTitle = 'Invoice' }) => {
+    const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+    const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
+    const dateLabel = documentTitle === 'Quotation' ? 'Date' : 'Invoice Date';
+    const validUntilLabel = documentTitle === 'Quotation' ? 'Valid Until' : 'Due Date';
+    const validUntilValue = documentTitle === 'Quotation' ? ((invoice as any).validUntil || invoice.dueDate) : invoice.dueDate;
+
+    const brandColor = company.details?.brandColor || '#4F46E5';
+    const showShipping = company.details?.showShipping !== false;
+    const showHsn = company.details?.showHsn !== false;
+    const showTerms = company.details?.showTerms !== false;
+    const showQr = company.details?.showQr === true;
+    const logoPosition = company.details?.logoPosition || 'Left';
+    const accentStyle = company.details?.accentStyle || 'Line';
+
+    let upiUrl = '';
+    if (selectedBankAccount) {
+        const payeeName = encodeURIComponent(company.details?.name || 'InvoicePay');
+        const upiAddress = `${selectedBankAccount.accountNumber}@${selectedBankAccount.ifsc}.ifsc.npci`;
+        const amount = invoice.grandTotal.toFixed(2);
+        upiUrl = `upi://pay?pa=${upiAddress}&pn=${payeeName}&am=${amount}&cu=INR`;
+    }
+    const qrCodeUrl = upiUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiUrl)}` : '';
+
+    return (
+        <div 
+            className="bg-white text-slate-800 font-sans text-sm leading-normal max-w-[210mm] mx-auto box-border h-full flex flex-col p-10 relative shadow-2xl"
+            style={{ 
+                borderWidth: accentStyle === 'Frame' ? '3px' : '0px',
+                borderColor: brandColor
+            }}
+        >
+            {/* Header */}
+            <div 
+                className={`flex justify-between items-start pb-6 mb-8 ${logoPosition === 'Right' ? 'flex-row-reverse' : 'flex-row'}`}
+                style={{
+                    borderBottomWidth: accentStyle === 'Line' ? '2px' : accentStyle === 'Frame' ? '1px' : '0px',
+                    borderBottomColor: brandColor
+                }}
+            >
+                <div className="flex gap-4 items-center">
+                    {company.details?.logo && (
+                        <img src={company.details.logo} alt="Logo" className="h-16 w-auto object-contain rounded-lg shadow-sm" />
+                    )}
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-900 tracking-tight">{company.details?.name || 'Company Name'}</h1>
+                        <p className="text-xs text-slate-500 mt-1">{company.details?.address || ''}, {company.details?.city || ''} {company.details?.state || ''}</p>
+                        <p className="text-xs text-slate-500">Ph: {company.details?.phone || 'N/A'} | Email: {company.details?.email || 'N/A'}</p>
+                        {company.details?.gstin && <p className="text-xs font-bold text-slate-700 mt-1">GSTIN: {company.details.gstin}</p>}
+                    </div>
+                </div>
+                <div className="text-right">
+                    <span 
+                        className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full text-white inline-block mb-2"
+                        style={{ backgroundColor: brandColor }}
+                    >
+                        {documentTitle}
+                    </span>
+                    <p className="text-xl font-bold text-slate-900">#{docNumber}</p>
+                    <p className="text-xs text-slate-500 mt-1">{dateLabel}: {invoice.issueDate}</p>
+                    <p className="text-xs text-slate-500">{validUntilLabel}: {validUntilValue}</p>
+                </div>
+            </div>
+
+            {/* Bill & Ship Section */}
+            <div className="grid grid-cols-2 gap-8 mb-8 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Billed To:</p>
+                    <p className="font-bold text-slate-900 text-sm">{invoice.client?.name || 'Unknown Client'}</p>
+                    <p className="text-xs text-slate-600 mt-0.5">{invoice.client?.address || ''}</p>
+                    <p className="text-xs text-slate-600">{invoice.client?.city || ''}, {invoice.client?.state || ''} {invoice.client?.zip || ''}</p>
+                    {invoice.client?.gstin && <p className="text-xs font-bold text-slate-700 mt-1">GSTIN: {invoice.client.gstin}</p>}
+                </div>
+                {showShipping && (
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Shipped To:</p>
+                        {invoice.shippingName ? (
+                            <>
+                                <p className="font-bold text-slate-900 text-sm">{invoice.shippingName}</p>
+                                <p className="text-xs text-slate-600 mt-0.5">{invoice.shippingAddress}</p>
+                                <p className="text-xs text-slate-600">{invoice.shippingCity}, {invoice.shippingState} {invoice.shippingZip}</p>
+                            </>
+                        ) : (
+                            <p className="text-xs text-slate-400 italic mt-1">Same as billing address</p>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Items Table */}
+            <div className="flex-grow">
+                <table className="w-full text-left">
+                    <thead>
+                        <tr className="border-b-2 text-xs uppercase font-bold text-slate-600" style={{ borderBottomColor: brandColor }}>
+                            <th className="py-2 px-2 w-10">#</th>
+                            <th className="py-2 px-2">Description</th>
+                            {showHsn && <th className="py-2 px-2 text-center w-20">HSN</th>}
+                            <th className="py-2 px-2 text-right w-20">Qty</th>
+                            <th className="py-2 px-2 text-right w-24">Rate</th>
+                            <th className="py-2 px-2 text-right w-28">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs">
+                        {invoice.items.map((item, index) => (
+                            <tr key={index}>
+                                <td className="py-3 px-2 text-slate-400">{index + 1}</td>
+                                <td className="py-3 px-2 font-medium text-slate-900">{item.name}</td>
+                                {showHsn && <td className="py-3 px-2 text-center text-slate-500">{item.hsn || '-'}</td>}
+                                <td className="py-3 px-2 text-right">{item.quantity} {item.unit}</td>
+                                <td className="py-3 px-2 text-right">₹{item.price.toFixed(2)}</td>
+                                <td className="py-3 px-2 text-right font-bold text-slate-900">₹{(item.price * item.quantity).toFixed(2)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Totals & Bank Details */}
+            <div className="mt-8 pt-6 border-t border-slate-200 grid grid-cols-2 gap-8 items-start">
+                <div>
+                    {selectedBankAccount && (
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Bank Transfer:</p>
+                            <p className="text-xs font-semibold text-slate-800">{selectedBankAccount.bankName}</p>
+                            <p className="text-xs text-slate-600">A/c: {selectedBankAccount.accountNumber}</p>
+                            <p className="text-xs text-slate-600">IFSC: {selectedBankAccount.ifsc}</p>
+                        </div>
+                    )}
+                    {showQr && qrCodeUrl && (
+                        <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 w-fit">
+                            <img src={qrCodeUrl} alt="UPI QR" className="w-16 h-16 rounded" />
+                            <div>
+                                <p className="text-xs font-bold text-slate-800">Scan & Pay</p>
+                                <p className="text-[10px] text-slate-500">Pay via any UPI App</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-2 text-xs">
+                    <div className="flex justify-between text-slate-600">
+                        <span>Subtotal:</span>
+                        <span>₹{invoice.subTotal.toFixed(2)}</span>
+                    </div>
+                    {invoice.cgst > 0 && (
+                        <div className="flex justify-between text-slate-600">
+                            <span>CGST:</span>
+                            <span>₹{invoice.cgst.toFixed(2)}</span>
+                        </div>
+                    )}
+                    {invoice.sgst > 0 && (
+                        <div className="flex justify-between text-slate-600">
+                            <span>SGST:</span>
+                            <span>₹{invoice.sgst.toFixed(2)}</span>
+                        </div>
+                    )}
+                    {invoice.igst > 0 && (
+                        <div className="flex justify-between text-slate-600">
+                            <span>IGST:</span>
+                            <span>₹{invoice.igst.toFixed(2)}</span>
+                        </div>
+                    )}
+                    <div 
+                        className="flex justify-between text-base font-black pt-3 border-t-2 mt-2"
+                        style={{ borderTopColor: brandColor, color: brandColor }}
+                    >
+                        <span>Grand Total:</span>
+                        <span>₹{invoice.grandTotal.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Terms and Signature */}
+            <div className="mt-8 flex justify-between items-end pt-6 border-t border-slate-100">
+                <div className="text-xs text-slate-500 max-w-sm">
+                    {showTerms && (
+                        <>
+                            <p className="font-bold text-slate-700 mb-1">Terms & Conditions:</p>
+                            <p>{invoice.notes || 'Payment is due within 15 days of invoice date.'}</p>
+                        </>
+                    )}
+                </div>
+                <div className="text-center">
+                    {company.details?.signature && (
+                        <img src={company.details.signature} className="h-12 w-auto mx-auto mb-1" alt="Sign" />
+                    )}
+                    <p className="font-bold text-slate-900 text-xs">{company.details?.name || 'Company Name'}</p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Authorized Signatory</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const InvoiceContent: React.FC<{ invoice: Invoice, company: Company, documentTitle?: string }> = ({ invoice, company, documentTitle = 'Invoice' }) => {
     const template = company.details?.invoiceTemplate || 'modern';
     
-    if (template === 'traditional') {
+    if (template === 'traditional' || template === 'classic') {
         return <TraditionalInvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />;
     }
-    if (template === 'premium' && company.subscription?.plan === 'premium') {
+    if (template === 'premium' || template === 'minimal') {
         return <PremiumInvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />;
+    }
+    if (template === 'tally') {
+        return <TallyInvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />;
+    }
+    if (template === 'custom') {
+        return <CustomInvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />;
     }
     
     return <ModernInvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />;

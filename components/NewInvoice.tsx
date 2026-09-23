@@ -1,17 +1,18 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import type { Invoice, Item, InvoiceItem, Company, DraftInvoice, Quotation } from '../types';
+import type { Invoice, Item, InvoiceItem, Company, DraftInvoice, Quotation, Client } from '../types';
 import Input from './common/Input';
 import Button from './common/Button';
 import Modal from './common/Modal';
 import { INDIAN_STATES } from '../constants';
 import { InvoiceView } from './Invoices';
-import { MessageCircle, ArrowLeft, Trash2, Check, Info, Eye } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Trash2, Check, Info, Eye, UserPlus, Plus } from 'lucide-react';
 import { Dropdown } from './common/Dropdown';
 import { InvoicePDF } from './InvoicePDF';
 import { PDFViewer } from '@react-pdf/renderer';
 import { numberToWords } from './Invoices';
+import { toast } from 'sonner';
 
 interface NewInvoiceProps {
   company: Company;
@@ -37,11 +38,23 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
 }) => {
     const isEditing = !!invoiceToEdit;
     const [isCreateItemModalOpen, setIsCreateItemModalOpen] = useState(false);
-    const [newItemData, setNewItemData] = useState<Partial<Item>>({ name: '', price: 0, gstRate: 18, unit: 'pcs', quantityInStock: 0 });
+    const [newItemData, setNewItemData] = useState<Partial<Item>>({ name: '', price: 0, gstRate: 18, unit: 'pcs', quantityInStock: 0, hsn: '' });
+    const [itemModalError, setItemModalError] = useState<string | null>(null);
     const [activeDropdownIndex, setActiveDropdownIndex] = useState<number | null>(null);
     const [itemSearchTerms, setItemSearchTerms] = useState<string[]>([]);
     const [viewItemDetails, setViewItemDetails] = useState<Item | null>(null);
     const [newItemIndex, setNewItemIndex] = useState<number | null>(null);
+
+    // Client Creation Modal State
+    const [isCreateClientModalOpen, setIsCreateClientModalOpen] = useState(false);
+    const [newClientData, setNewClientData] = useState<{
+        name: string; phone: string; email: string; gstin: string;
+        address: string; city: string; state: string; zip: string;
+    }>({
+        name: '', phone: '', email: '', gstin: '',
+        address: '', city: '', state: '', zip: ''
+    });
+    const [clientError, setClientError] = useState<string | null>(null);
     
     // Success Modal State
     const [savedInvoice, setSavedInvoice] = useState<Invoice | Quotation | null>(null);
@@ -195,15 +208,47 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
         }));
     };
 
+    const handleCreateNewClient = () => {
+        if (!newClientData.name.trim()) {
+            setClientError("Client name is required.");
+            return;
+        }
+        const newClient: Client = {
+            id: `client_${Date.now()}`,
+            name: newClientData.name.trim(),
+            phone: newClientData.phone.trim(),
+            email: newClientData.email.trim(),
+            gstin: newClientData.gstin.trim(),
+            address: newClientData.address.trim(),
+            city: newClientData.city.trim(),
+            state: newClientData.state.trim(),
+            zip: newClientData.zip.trim(),
+            shippingAddress: newClientData.address.trim(),
+            shippingCity: newClientData.city.trim(),
+            shippingState: newClientData.state.trim(),
+            shippingZip: newClientData.zip.trim(),
+            tags: []
+        };
+        onUpdateCompany({ ...company, clients: [...company.clients, newClient] });
+        handleClientChange(newClient.id);
+        setIsCreateClientModalOpen(false);
+        setNewClientData({ name: '', phone: '', email: '', gstin: '', address: '', city: '', state: '', zip: '' });
+        setClientError(null);
+        toast.success(`Client "${newClient.name}" created and selected!`);
+    };
+
     const handleCreateNewItem = () => {
-        if (!newItemData.name) return;
+        if (!newItemData.name || !newItemData.name.trim()) {
+            setItemModalError("Item name is required.");
+            return;
+        }
         const newItem: Item = {
             id: `item_${Date.now()}`,
-            name: newItemData.name,
+            name: newItemData.name.trim(),
             price: Number(newItemData.price) || 0,
             gstRate: Number(newItemData.gstRate) || 0,
             unit: newItemData.unit || 'pcs',
-            hsn: newItemData.hsn || '',
+            hsn: newItemData.hsn ? newItemData.hsn.trim() : '',
             quantityInStock: Number(newItemData.quantityInStock) || 0
         };
         onUpdateCompany({ ...company, items: [...company.items, newItem] });
@@ -223,9 +268,19 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
             newTerms[newItemIndex] = newItem.name;
             setItemSearchTerms(newTerms);
             setNewItemIndex(null);
+        } else {
+            // Append as a new row to invoice items
+            setDraftInvoice(prev => ({
+                ...prev,
+                items: [...prev.items, { ...newItem, id: newItem.id, quantity: 1 }]
+            }));
+            setItemSearchTerms(prev => [...prev, newItem.name]);
         }
         
         setIsCreateItemModalOpen(false);
+        setNewItemData({ name: '', price: 0, gstRate: 18, unit: 'pcs', quantityInStock: 0, hsn: '' });
+        setItemModalError(null);
+        toast.success(`Item "${newItem.name}" saved to items catalog and added!`);
     };
 
     const calculateTotals = () => {
@@ -412,14 +467,31 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                      <div className="glass-panel p-6 rounded-2xl">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div>
-                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Bill To</label>
+                                 <div className="flex justify-between items-center mb-2">
+                                     <label className="block text-xs font-bold text-slate-500 uppercase">Bill To</label>
+                                     <button 
+                                         type="button" 
+                                         onClick={() => { setClientError(null); setIsCreateClientModalOpen(true); }}
+                                         className="text-xs font-bold text-accent hover:underline flex items-center gap-1 cursor-pointer"
+                                     >
+                                         <UserPlus className="w-3.5 h-3.5" /> + Add Client
+                                     </button>
+                                 </div>
                                  <select 
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-accent focus:outline-none transition-shadow mb-4 cursor-pointer"
                                     value={draftInvoice.clientId}
-                                    onChange={(e) => handleClientChange(e.target.value)}
+                                    onChange={(e) => {
+                                        if (e.target.value === '__NEW__') {
+                                            setClientError(null);
+                                            setIsCreateClientModalOpen(true);
+                                        } else {
+                                            handleClientChange(e.target.value);
+                                        }
+                                    }}
                                  >
                                      <option value="">Select Client</option>
                                      {company.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                     <option value="__NEW__" className="text-accent font-bold bg-accent/5">+ Create New Client...</option>
                                  </select>
                                  
                                  <div className="grid grid-cols-2 gap-4">
@@ -576,26 +648,42 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                                                 }}
                                                             >
                                                                 <div className="font-medium">{i.name}</div>
-                                                                <div className="text-[10px] text-slate-400">₹{i.price} | Stock: {i.quantityInStock}</div>
+                                                                <div className="text-[10px]">
+                                                                    {i.quantityInStock < 0 ? (
+                                                                        <span className="text-red-600 dark:text-red-400 font-bold">₹{i.price} | Stock: {i.quantityInStock} (Negative - Out of stock)</span>
+                                                                    ) : i.quantityInStock === 0 ? (
+                                                                        <span className="text-red-600 dark:text-red-400 font-bold">₹{i.price} | Stock: 0 (Out of stock)</span>
+                                                                    ) : i.quantityInStock <= 5 ? (
+                                                                        <span className="text-amber-600 dark:text-amber-400 font-semibold">₹{i.price} | Stock: {i.quantityInStock} (Low on item)</span>
+                                                                    ) : (
+                                                                        <span className="text-slate-400">₹{i.price} | Stock: {i.quantityInStock}</span>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         ))
                                                     ) : (
                                                         <div className="px-4 py-3 text-sm text-slate-500 text-center">
-                                                            No items found.
-                                                            <button 
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    setNewItemData({ ...newItemData, name: itemSearchTerms[index] || '' });
-                                                                    setNewItemIndex(index);
-                                                                    setIsCreateItemModalOpen(true);
-                                                                    setActiveDropdownIndex(null);
-                                                                }}
-                                                                className="block w-full mt-2 text-accent font-medium hover:underline"
-                                                            >
-                                                                + Create "{itemSearchTerms[index]}"
-                                                            </button>
+                                                            No matching items found.
                                                         </div>
                                                     )}
+                                                    
+                                                    {/* Persistent + Create New Item action button */}
+                                                    <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 sticky bottom-0">
+                                                        <button 
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                setNewItemData({ name: itemSearchTerms[index] || '', price: 0, gstRate: 18, unit: 'pcs', quantityInStock: 0, hsn: '' });
+                                                                setNewItemIndex(index);
+                                                                setIsCreateItemModalOpen(true);
+                                                                setActiveDropdownIndex(null);
+                                                            }}
+                                                            className="w-full text-left text-xs font-bold text-accent hover:underline flex items-center gap-1.5 py-1 px-1 cursor-pointer"
+                                                        >
+                                                            <Plus className="w-3.5 h-3.5" /> + Create New Item {itemSearchTerms[index] ? `"${itemSearchTerms[index]}"` : ''}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </Dropdown>
                                             {item.id && (
@@ -613,9 +701,34 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                             )}
                                         </div>
                                         <div className="mt-1">
-                                            {item.id && (
-                                                <div className="text-[10px] text-slate-400">HSN: {item.hsn || 'N/A'} | Stock: {item.quantityInStock}</div>
-                                            )}
+                                            {item.id && (() => {
+                                                const fullItem = company.items.find(ci => ci.id === item.id) || item;
+                                                const stock = typeof fullItem.quantityInStock === 'number' ? fullItem.quantityInStock : (item as any).quantityInStock ?? 0;
+                                                if (stock < 0) {
+                                                    return (
+                                                        <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded border border-red-200 dark:border-red-800 w-fit mt-1">
+                                                            <span>⚠️ Out of stock ({stock} in inventory)! Please update item in Items section</span>
+                                                        </div>
+                                                    );
+                                                }
+                                                if (stock === 0) {
+                                                    return (
+                                                        <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded border border-red-200 dark:border-red-800 w-fit mt-1">
+                                                            <span>⚠️ No item available (0 in stock)! Please update item in Items section</span>
+                                                        </div>
+                                                    );
+                                                }
+                                                if (stock <= 5) {
+                                                    return (
+                                                        <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800 w-fit mt-1">
+                                                            <span>⚠️ Low on item: only {stock} left in stock</span>
+                                                        </div>
+                                                    );
+                                                }
+                                                return (
+                                                    <div className="text-[10px] text-slate-400">HSN: {item.hsn || 'N/A'} | Stock: {stock}</div>
+                                                );
+                                            })()}
                                         </div>
                                     </td>
                                     <td className="p-3">
@@ -689,17 +802,179 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                  </div>
              </div>
 
-             <Modal isOpen={isCreateItemModalOpen} onClose={() => setIsCreateItemModalOpen(false)} title="Create New Item">
+             <Modal isOpen={isCreateItemModalOpen} onClose={() => { setIsCreateItemModalOpen(false); setItemModalError(null); }} title="Create New Item" size="md">
                  <div className="p-6 space-y-4">
-                     <Input label="Name" value={newItemData.name || ''} onChange={e => setNewItemData({...newItemData, name: e.target.value})} required />
-                     <div className="grid grid-cols-2 gap-4">
-                         <Input label="Price (₹)" type="number" min="0" value={newItemData.price} onChange={e => setNewItemData({...newItemData, price: parseFloat(e.target.value) || 0})} required />
-                         <Input label="GST Rate (%)" type="number" min="0" value={newItemData.gstRate} onChange={e => setNewItemData({...newItemData, gstRate: parseFloat(e.target.value) || 0})} required />
+                     {itemModalError && (
+                         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400 font-medium">
+                             {itemModalError}
+                         </div>
+                     )}
+                     
+                     <Input 
+                         label="Item / Product Name *" 
+                         placeholder="e.g. Wireless Keyboard or Web Development Service" 
+                         value={newItemData.name || ''} 
+                         onChange={e => setNewItemData({...newItemData, name: e.target.value})} 
+                         required 
+                         autoFocus 
+                     />
+
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                         <Input 
+                             label="HSN / SAC Code" 
+                             placeholder="e.g. 84713010 or 998314" 
+                             value={newItemData.hsn || ''} 
+                             onChange={e => setNewItemData({...newItemData, hsn: e.target.value})} 
+                         />
+                         <div>
+                             <label className="block text-xs font-bold text-slate-500 mb-1">Unit</label>
+                             <select 
+                                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-accent focus:border-accent outline-none"
+                                 value={newItemData.unit || 'pcs'}
+                                 onChange={e => setNewItemData({...newItemData, unit: e.target.value})}
+                             >
+                                 {ITEM_UNITS.map(u => (
+                                     <option key={u} value={u}>{u}</option>
+                                 ))}
+                             </select>
+                         </div>
+                     </div>
+
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                         <Input 
+                             label="Selling Price (₹) *" 
+                             type="number" 
+                             min="0" 
+                             step="0.01" 
+                             value={newItemData.price ?? 0} 
+                             onChange={e => setNewItemData({...newItemData, price: parseFloat(e.target.value) || 0})} 
+                             required 
+                         />
+                         <div>
+                             <label className="block text-xs font-bold text-slate-500 mb-1">GST Rate (%)</label>
+                             <select 
+                                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-accent focus:border-accent outline-none"
+                                 value={newItemData.gstRate ?? 18}
+                                 onChange={e => setNewItemData({...newItemData, gstRate: parseFloat(e.target.value) || 0})}
+                             >
+                                 {[0, 5, 12, 18, 28].map(rate => (
+                                     <option key={rate} value={rate}>{rate}%</option>
+                                 ))}
+                             </select>
+                         </div>
+                     </div>
+
+                     <div>
+                         <Input 
+                             label="Opening / Initial Stock Quantity" 
+                             type="number" 
+                             min="0" 
+                             value={newItemData.quantityInStock ?? 0} 
+                             onChange={e => setNewItemData({...newItemData, quantityInStock: parseFloat(e.target.value) || 0})} 
+                         />
+                         <p className="text-xs text-slate-400 mt-1">
+                             Stock will be tracked automatically in Inventory. Items reaching 0 or negative stock display warning alerts.
+                         </p>
                      </div>
                  </div>
-                 <div className="p-6 pt-0 flex justify-end gap-3">
-                     <Button variant="secondary" onClick={() => setIsCreateItemModalOpen(false)}>Cancel</Button>
-                     <Button onClick={handleCreateNewItem}>Create Item</Button>
+                 <div className="p-6 pt-0 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800 mt-2">
+                     <Button variant="secondary" onClick={() => { setIsCreateItemModalOpen(false); setItemModalError(null); }}>
+                         Cancel
+                     </Button>
+                     <Button onClick={handleCreateNewItem}>
+                         Save & Add Item
+                     </Button>
+                 </div>
+             </Modal>
+
+             {/* Inline Create Client Modal */}
+             <Modal isOpen={isCreateClientModalOpen} onClose={() => { setIsCreateClientModalOpen(false); setClientError(null); }} title="Add New Client" size="lg">
+                 <div className="p-6 space-y-4">
+                     {clientError && (
+                         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400 font-medium">
+                             {clientError}
+                         </div>
+                     )}
+                     
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <Input 
+                             label="Client / Business Name *" 
+                             placeholder="e.g. Acme Corp or John Doe" 
+                             value={newClientData.name} 
+                             onChange={e => setNewClientData({...newClientData, name: e.target.value})} 
+                             required 
+                             autoFocus 
+                         />
+                         <Input 
+                             label="GSTIN (Optional)" 
+                             placeholder="e.g. 29ABCDE1234F1Z5" 
+                             value={newClientData.gstin} 
+                             onChange={e => setNewClientData({...newClientData, gstin: e.target.value.toUpperCase()})} 
+                         />
+                     </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <Input 
+                             label="Phone Number" 
+                             placeholder="e.g. 9876543210" 
+                             value={newClientData.phone} 
+                             onChange={e => setNewClientData({...newClientData, phone: e.target.value})} 
+                         />
+                         <Input 
+                             label="Email Address" 
+                             type="email" 
+                             placeholder="e.g. billing@acme.com" 
+                             value={newClientData.email} 
+                             onChange={e => setNewClientData({...newClientData, email: e.target.value})} 
+                         />
+                     </div>
+
+                     <div>
+                         <label className="block text-xs font-bold text-slate-500 mb-1">Billing Street Address</label>
+                         <textarea 
+                             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm focus:ring-accent focus:border-accent outline-none" 
+                             placeholder="Street address, building, suite..." 
+                             rows={2} 
+                             value={newClientData.address} 
+                             onChange={e => setNewClientData({...newClientData, address: e.target.value})} 
+                         />
+                     </div>
+
+                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                         <Input 
+                             label="City" 
+                             placeholder="e.g. Mumbai" 
+                             value={newClientData.city} 
+                             onChange={e => setNewClientData({...newClientData, city: e.target.value})} 
+                         />
+                         <div>
+                             <label className="block text-xs font-bold text-slate-500 mb-1">State</label>
+                             <select 
+                                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-accent focus:border-accent outline-none"
+                                 value={newClientData.state}
+                                 onChange={e => setNewClientData({...newClientData, state: e.target.value})}
+                             >
+                                 <option value="">Select State</option>
+                                 {INDIAN_STATES.map(s => (
+                                     <option key={s} value={s}>{s}</option>
+                                 ))}
+                             </select>
+                         </div>
+                         <Input 
+                             label="PIN Code" 
+                             placeholder="e.g. 400001" 
+                             value={newClientData.zip} 
+                             onChange={e => setNewClientData({...newClientData, zip: e.target.value})} 
+                         />
+                     </div>
+                 </div>
+                 <div className="p-6 pt-0 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800 mt-2">
+                     <Button variant="secondary" onClick={() => { setIsCreateClientModalOpen(false); setClientError(null); }}>
+                         Cancel
+                     </Button>
+                     <Button onClick={handleCreateNewClient}>
+                         Save & Select Client
+                     </Button>
                  </div>
              </Modal>
 
