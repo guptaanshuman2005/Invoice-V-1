@@ -151,7 +151,7 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             <div className="bg-accent/5 dark:bg-accent/10 rounded-xl p-3 mb-4 border border-accent/30 text-center">
               <div className="text-2xl font-black text-slate-900 dark:text-white">200</div>
               <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Invoices / Quarter</div>
-              <div className="text-[10px] text-accent mt-0.5 font-medium">₹0.64 per invoice (~67/mo)</div>
+              <div className="text-[10px] text-accent mt-0.5 font-medium">₹0.64 per invoice</div>
             </div>
 
             <ul className="space-y-2 mb-6 flex-1 text-xs text-slate-600 dark:text-slate-400">
@@ -192,7 +192,7 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             <div className="bg-purple-500/5 dark:bg-purple-500/10 rounded-xl p-3 mb-4 border border-purple-500/20 text-center">
               <div className="text-2xl font-black text-slate-900 dark:text-white">1,000</div>
               <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Invoices / Year</div>
-              <div className="text-[10px] text-purple-600 dark:text-purple-400 mt-0.5 font-medium">₹0.39 per invoice (~83/mo)</div>
+              <div className="text-[10px] text-purple-600 dark:text-purple-400 mt-0.5 font-medium">₹0.39 per invoice</div>
             </div>
 
             <ul className="space-y-2 mb-6 flex-1 text-xs text-slate-600 dark:text-slate-400">
