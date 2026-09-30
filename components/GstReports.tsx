@@ -17,7 +17,8 @@ import {
     Layers, 
     Receipt, 
     Sparkles, 
-    FileJson 
+    FileJson,
+    Users 
 } from 'lucide-react';
 import Button from './common/Button';
 import Input from './common/Input';
