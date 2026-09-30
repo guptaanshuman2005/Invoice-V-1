@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { NAV_ITEMS } from '../constants';
 import type { Company, User } from '../types';
-import { Sun, Moon, LogOut, ChevronDown, X, Check, User as UserIcon, Receipt, PlusCircle } from 'lucide-react';
+import { Sun, Moon, LogOut, ChevronDown, X, Check, User as UserIcon, Receipt, PlusCircle, Download } from 'lucide-react';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface SidebarProps {
   activeView: string;
@@ -27,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isOpen, onClose, currentUser, isCollapsed, onToggleCollapse
 }) => {
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
+  const { isInstallable, isInstalled, installApp } = usePWAInstall();
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -163,6 +165,20 @@ const Sidebar: React.FC<SidebarProps> = ({
             )})}
           </ul>
         </nav>
+
+        {/* PWA Install Button */}
+        {isInstallable && !isInstalled && (
+          <div className="px-4 mb-2 shrink-0 animate-fade-in">
+            <button
+              onClick={installApp}
+              title="Install InvoicePro App"
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center p-2.5' : 'gap-2 px-3 py-2'} bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 text-white rounded-xl shadow-md shadow-accent/25 text-xs font-bold transition-all active:scale-95 group`}
+            >
+              <Download className="w-4 h-4 shrink-0 animate-bounce" />
+              {!isCollapsed && <span className="truncate">Install App</span>}
+            </button>
+          </div>
+        )}
 
         {/* User Profile & Actions bottom section */}
         <div className="p-4 border-t border-slate-200/50 dark:border-slate-800/50 bg-slate-100/30 dark:bg-slate-900/20 shrink-0">

@@ -28,6 +28,7 @@ import Button from './components/common/Button';
 import Inventory from './components/Inventory';
 import Expenses from './components/Expenses';
 import Quotations from './components/Quotations';
+import GstReports from './components/GstReports';
 import CompanyLogo from './components/common/CompanyLogo';
 import { supabase } from './supabase';
 import { trackPageView, trackEvent } from './utils/analytics';
@@ -1003,6 +1004,7 @@ const App: React.FC = () => {
       case 'NewQuotation': return <NewInvoice company={activeCompany} saveInvoice={handleSaveInvoice} setActiveView={handleSetActiveView} invoiceToEdit={invoiceToEdit as Quotation} clearEditingInvoice={() => setInvoiceToEdit(null)} onUpdateCompany={handleUpdateCompany} draftInvoice={draftInvoice} setDraftInvoice={setDraftInvoice} mode="quote" />;
       case 'Invoices': return <Invoices invoices={activeCompany.invoices} company={activeCompany} setActiveView={handleSetActiveView} onEdit={handleEditInvoice} onDelete={handleDeleteInvoice} onStatusChange={handleUpdateInvoiceStatus} onBulkDelete={handleBulkDeleteInvoices} onBulkStatusChange={handleBulkStatusChange} onAddRecurring={handleAddRecurring} onUpdateRecurring={handleUpdateRecurring} onDeleteRecurring={handleDeleteRecurring} initialFilter={invoiceFilter} initialSearchQuery={activeSearchQuery} />;
       case 'Quotations': return <Quotations quotations={activeCompany.quotations || []} company={activeCompany} setActiveView={handleSetActiveView} onEdit={handleEditQuotation} onDelete={handleDeleteQuotation} onConvert={handleConvertQuoteToInvoice} onStatusChange={handleUpdateQuotationStatus} />;
+      case 'GstReports': return <GstReports company={activeCompany} />;
       case 'Clients': return <Clients clients={activeCompany.clients} setClients={setClients} invoices={activeCompany.invoices} company={activeCompany} onEditInvoice={handleEditInvoice} onDeleteInvoice={handleDeleteInvoice} onStatusChange={handleUpdateInvoiceStatus} onBulkDelete={handleBulkDeleteClients} initialSearchQuery={activeSearchQuery} />;
       case 'Items': return <Items items={activeCompany.items} setItems={setItems} company={activeCompany} onBulkDelete={handleBulkDeleteItems} initialSearchQuery={activeSearchQuery} />;
       case 'Inventory': return <Inventory items={activeCompany.items} setItems={setItems} onBulkStockUpdate={handleBulkStockUpdate} stockHistory={activeCompany.stockHistory || []} initialFilter={inventoryFilter} />;

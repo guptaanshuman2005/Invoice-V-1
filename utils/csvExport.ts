@@ -1,4 +1,5 @@
 import type { Invoice, Company } from '../types';
+import { STATE_TO_GST_CODE } from '../constants';
 
 export const downloadCSV = (content: string, filename: string) => {
     try {
@@ -210,3 +211,234 @@ export const generateGSTR3BCSV = (invoices: Invoice[], company: Company) => {
         return '';
     }
 };
+
+export const downloadJSON = (data: any, filename: string) => {
+    try {
+        const jsonStr = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        return true;
+    } catch (error) {
+        console.error("Failed to download JSON:", error);
+        alert("Failed to download JSON file. Please try again.");
+        return false;
+    }
+};
+
+export const getStateCode = (stateName: string): string => {
+    if (!stateName) return '99';
+    const trimmed = stateName.trim();
+    if (/^\d{2}$/.test(trimmed)) return trimmed;
+    return STATE_TO_GST_CODE[trimmed] || '99';
+};
+
+export const generateGSTR1JSON = (invoices: Invoice[], company: Company, fp: string = '') => {
+    const companyState = (company.details.state || '').trim().toLowerCase();
+    
+    // Group B2B by Client GSTIN
+    const b2bMap: Record<string, { ctin: string, inv: any[] }> = {};
+    const b2csMap: Record<string, { sply_ty: string, pos: string, typ: string, rt: number, txval: number, iamt: number, camt: number, samt: number, csamt: number }> = {};
+    const hsnMap: Record<string, { hsn_sc: string, desc: string, uqc: string, qty: number, val: number, txval: number, iamt: number, camt: number, samt: number, csamt: number }> = {};
+    
+    const invoiceNumbers: string[] = [];
+
+    invoices.forEach(inv => {
+        const rawPos = (inv.shippingState || inv.client.state || '').trim();
+        const posCode = getStateCode(rawPos);
+        const isInterState = rawPos.toLowerCase() !== companyState && rawPos !== '';
+        const isB2B = !!(inv.client.gstin && inv.client.gstin.trim().length > 0);
+        
+        invoiceNumbers.push(inv.invoiceNumber);
+
+        // Parse date to DD-MM-YYYY
+        let formattedDate = inv.issueDate;
+        try {
+            const d = new Date(inv.issueDate);
+            if (!isNaN(d.getTime())) {
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                formattedDate = `${day}-${month}-${year}`;
+            }
+        } catch (_) {}
+
+        if (isB2B) {
+            const ctin = inv.client.gstin.trim().toUpperCase();
+            if (!b2bMap[ctin]) {
+                b2bMap[ctin] = { ctin, inv: [] };
+            }
+
+            // Group items by rate
+            const rateItems: Record<number, { txval: number, iamt: number, camt: number, samt: number }> = {};
+            inv.items.forEach(item => {
+                const rt = Number(item.gstRate) || 0;
+                const txval = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+                const tax = (txval * rt) / 100;
+                if (!rateItems[rt]) {
+                    rateItems[rt] = { txval: 0, iamt: 0, camt: 0, samt: 0 };
+                }
+                rateItems[rt].txval += txval;
+                if (isInterState) {
+                    rateItems[rt].iamt += tax;
+                } else {
+                    rateItems[rt].camt += tax / 2;
+                    rateItems[rt].samt += tax / 2;
+                }
+            });
+
+            const itms = Object.entries(rateItems).map(([rtStr, vals], idx) => ({
+                num: idx + 1,
+                itm_det: {
+                    rt: Number(rtStr),
+                    txval: parseFloat(vals.txval.toFixed(2)),
+                    iamt: parseFloat(vals.iamt.toFixed(2)),
+                    camt: parseFloat(vals.camt.toFixed(2)),
+                    samt: parseFloat(vals.samt.toFixed(2)),
+                    csamt: 0
+                }
+            }));
+
+            b2bMap[ctin].inv.push({
+                inum: inv.invoiceNumber,
+                idt: formattedDate,
+                val: parseFloat(inv.grandTotal.toFixed(2)),
+                pos: posCode,
+                rchrg: "N",
+                inv_typ: "R",
+                itms
+            });
+        } else {
+            // B2CS (Unregistered recipient)
+            const sply_ty = isInterState ? "INTER" : "INTRA";
+            inv.items.forEach(item => {
+                const rt = Number(item.gstRate) || 0;
+                const txval = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+                const tax = (txval * rt) / 100;
+                const key = `${sply_ty}_${posCode}_${rt}`;
+
+                if (!b2csMap[key]) {
+                    b2csMap[key] = {
+                        sply_ty,
+                        pos: posCode,
+                        typ: "OE",
+                        rt,
+                        txval: 0,
+                        iamt: 0,
+                        camt: 0,
+                        samt: 0,
+                        csamt: 0
+                    };
+                }
+
+                b2csMap[key].txval += txval;
+                if (isInterState) {
+                    b2csMap[key].iamt += tax;
+                } else {
+                    b2csMap[key].camt += tax / 2;
+                    b2csMap[key].samt += tax / 2;
+                }
+            });
+        }
+
+        // HSN aggregation
+        inv.items.forEach(item => {
+            const hsn = (item.hsn || '9999').trim();
+            const rt = Number(item.gstRate) || 0;
+            const txval = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+            const tax = (txval * rt) / 100;
+            const val = txval + tax;
+            const uqc = (item.unit || 'PCS').toUpperCase();
+
+            if (!hsnMap[hsn]) {
+                hsnMap[hsn] = {
+                    hsn_sc: hsn,
+                    desc: item.name || 'Goods/Services',
+                    uqc,
+                    qty: 0,
+                    val: 0,
+                    txval: 0,
+                    iamt: 0,
+                    camt: 0,
+                    samt: 0,
+                    csamt: 0
+                };
+            }
+
+            hsnMap[hsn].qty += Number(item.quantity) || 0;
+            hsnMap[hsn].val += val;
+            hsnMap[hsn].txval += txval;
+            if (isInterState) {
+                hsnMap[hsn].iamt += tax;
+            } else {
+                hsnMap[hsn].camt += tax / 2;
+                hsnMap[hsn].samt += tax / 2;
+            }
+        });
+    });
+
+    const b2b = Object.values(b2bMap);
+    const b2cs = Object.values(b2csMap).map(b => ({
+        ...b,
+        txval: parseFloat(b.txval.toFixed(2)),
+        iamt: parseFloat(b.iamt.toFixed(2)),
+        camt: parseFloat(b.camt.toFixed(2)),
+        samt: parseFloat(b.samt.toFixed(2))
+    }));
+
+    const hsnData = Object.values(hsnMap).map((h, i) => ({
+        num: i + 1,
+        hsn_sc: h.hsn_sc,
+        desc: h.desc,
+        uqc: h.uqc,
+        qty: parseFloat(h.qty.toFixed(2)),
+        val: parseFloat(h.val.toFixed(2)),
+        txval: parseFloat(h.txval.toFixed(2)),
+        iamt: parseFloat(h.iamt.toFixed(2)),
+        camt: parseFloat(h.camt.toFixed(2)),
+        samt: parseFloat(h.samt.toFixed(2)),
+        csamt: 0
+    }));
+
+    // Document Issue
+    const sortedInvoices = [...invoiceNumbers].sort();
+    const doc_issue = {
+        doc_det: [
+            {
+                doc_num: 1,
+                doc_typ: "Invoices for outward supply",
+                docs: [
+                    {
+                        num: 1,
+                        from: sortedInvoices[0] || 'INV-001',
+                        to: sortedInvoices[sortedInvoices.length - 1] || 'INV-001',
+                        totnum: sortedInvoices.length,
+                        canc: 0,
+                        net_issue: sortedInvoices.length
+                    }
+                ]
+            }
+        ]
+    };
+
+    const cur_gt = invoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0);
+
+    return {
+        gstin: (company.details.gstin || '27AAAAA0000A1Z5').toUpperCase(),
+        fp: fp || `${String(new Date().getMonth() + 1).padStart(2, '0')}${new Date().getFullYear()}`,
+        cur_gt: parseFloat(cur_gt.toFixed(2)),
+        gt: parseFloat(cur_gt.toFixed(2)),
+        b2b,
+        b2cs,
+        hsn: { data: hsnData },
+        doc_issue
+    };
+};
+
