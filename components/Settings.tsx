@@ -620,10 +620,10 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
                             <div className="border border-slate-300 dark:border-slate-700 p-2 flex flex-col gap-2 rounded">
                                 <div className="h-2 w-12 bg-slate-200 dark:bg-slate-700 rounded"></div>
                                 <div className="border-t border-slate-200 dark:border-slate-700 pt-1 flex justify-between">
-                                    <div className="h-1.5 w-6 bg-slate-150 dark:bg-slate-600 rounded"></div>
-                                    <div className="h-1.5 w-6 bg-slate-150 dark:bg-slate-650 rounded"></div>
+                                    <div className="h-1.5 w-6 bg-slate-200 dark:bg-slate-600 rounded"></div>
+                                    <div className="h-1.5 w-6 bg-slate-200 dark:bg-slate-700 rounded"></div>
                                 </div>
-                                <div className="h-4 w-full bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-750 rounded"></div>
+                                <div className="h-4 w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded"></div>
                             </div>
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <button 

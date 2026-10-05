@@ -26,7 +26,7 @@ interface InvoicePDFProps {
 }
 
 const ModernInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documentTitle = 'Invoice', numberToWords }) => {
-  const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+  const selectedBankAccount = (company.bankAccounts || []).find(ba => ba.id === invoice.selectedBankAccountId);
   const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
   const dateLabel = documentTitle === 'Quotation' ? 'Date' : 'Invoice Date';
   const validUntilLabel = documentTitle === 'Quotation' ? 'Valid Until' : 'Due Date';
@@ -172,7 +172,7 @@ const ModernInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documen
 };
 
 const TraditionalInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documentTitle = 'Invoice', numberToWords }) => {
-  const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+  const selectedBankAccount = (company.bankAccounts || []).find(ba => ba.id === invoice.selectedBankAccountId);
   const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
   const dateLabel = documentTitle === 'Quotation' ? 'Date' : 'Invoice Date';
   const validUntilLabel = documentTitle === 'Quotation' ? 'Valid Until' : 'Due Date';
@@ -306,7 +306,7 @@ const TraditionalInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, do
 };
 
 const PremiumInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documentTitle = 'Invoice', numberToWords }) => {
-  const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+  const selectedBankAccount = (company.bankAccounts || []).find(ba => ba.id === invoice.selectedBankAccountId);
   const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
   const dateLabel = documentTitle === 'Quotation' ? 'Date' : 'Invoice Date';
   const validUntilLabel = documentTitle === 'Quotation' ? 'Valid Until' : 'Due Date';
@@ -469,7 +469,7 @@ const PremiumInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, docume
 };
 
 const CustomInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documentTitle = 'Invoice', numberToWords }) => {
-  const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+  const selectedBankAccount = (company.bankAccounts || []).find(ba => ba.id === invoice.selectedBankAccountId);
   const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
   const dateLabel = documentTitle === 'Quotation' ? 'Date' : 'Invoice Date';
   const validUntilLabel = documentTitle === 'Quotation' ? 'Valid Until' : 'Due Date';
@@ -707,7 +707,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, docume
 };
 
 const TallyInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documentTitle = 'Invoice', numberToWords }) => {
-  const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+  const selectedBankAccount = (company.bankAccounts || []).find(ba => ba.id === invoice.selectedBankAccountId);
   const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
   const dateLabel = documentTitle === 'Quotation' ? 'Date' : 'Invoice Date';
   const borderCol = '#1e293b';

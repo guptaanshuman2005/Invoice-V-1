@@ -6,8 +6,8 @@
   --color-accent: var(--accent-color, #4F46E5);
   --color-accent-hover: var(--accent-hover-color, #4338CA);
   --color-primary-dark: #0A0A0A;
-  --color-secondary-dark: #171717;
-  --color-tertiary-dark: #262626;
+  --color-secondary-dark: #111113;
+  --color-tertiary-dark: #1C1C1F;
   --color-light-text: #FAFAFA;
   --color-medium-text: #A1A1AA;
 
@@ -18,6 +18,7 @@
   --animate-fade-in-up: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-slide-in: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-scale-in: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-float: float 6s ease-in-out infinite;
 
   @keyframes fadeIn {
     0% { opacity: 0; }
@@ -35,6 +36,14 @@
     0% { transform: scale(0.95); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
   }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
 }
 
 @layer base {
@@ -48,27 +57,55 @@
   }
   
   body {
-    @apply bg-[#FAFAFA] dark:bg-[#0A0A0A] text-zinc-900 dark:text-zinc-100 antialiased selection:bg-accent/20;
+    @apply bg-[#F8F9FB] dark:bg-[#0A0A0A] text-zinc-900 dark:text-zinc-100 antialiased selection:bg-accent/20;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   /* Custom Scrollbar for a premium feel */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-zinc-300 dark:bg-zinc-700 rounded-full;
+    @apply bg-zinc-300/60 dark:bg-zinc-700/60 rounded-full;
   }
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-zinc-400 dark:bg-zinc-600;
+  }
+
+  /* Custom inner-scrollbar for panels */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-zinc-200/80 dark:bg-zinc-700/50 rounded-full;
   }
 }
 
 @layer components {
   .glass-panel {
-    @apply bg-white/70 dark:bg-[#171717]/75 backdrop-blur-xl border border-white/20 dark:border-zinc-800/40 shadow-xl transition-all duration-300;
+    @apply bg-white/80 dark:bg-[#161618]/80 backdrop-blur-xl border border-zinc-200/40 dark:border-zinc-800/50 shadow-sm transition-all duration-300;
+  }
+  
+  .glass-panel-elevated {
+    @apply bg-white/90 dark:bg-[#161618]/90 backdrop-blur-2xl border border-zinc-200/30 dark:border-zinc-800/40 shadow-lg shadow-zinc-900/[0.03] dark:shadow-zinc-900/20 transition-all duration-300;
+  }
+
+  .shimmer-bg {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.04) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
   }
 }

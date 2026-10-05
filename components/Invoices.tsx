@@ -46,7 +46,7 @@ export const numberToWords = (num: number): string => {
 // --- Invoice Templates ---
 
 const ModernInvoiceContent: React.FC<{ invoice: Invoice, company: Company, documentTitle?: string }> = ({ invoice, company, documentTitle = 'Invoice' }) => {
-    const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+    const selectedBankAccount = (company.bankAccounts || []).find(ba => ba.id === invoice.selectedBankAccountId);
     const currency = '₹';
     const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
     const dateLabel = documentTitle === 'Quotation' ? 'Date' : 'Invoice Date';
@@ -208,7 +208,7 @@ const ModernInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docum
 };
 
 const TraditionalInvoiceContent: React.FC<{ invoice: Invoice, company: Company, documentTitle?: string }> = ({ invoice, company, documentTitle = 'Invoice' }) => {
-    const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+    const selectedBankAccount = (company.bankAccounts || []).find(ba => ba.id === invoice.selectedBankAccountId);
     const currency = 'Rs.';
     const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
     const dateLabel = documentTitle === 'Quotation' ? 'Date' : 'Invoice Date';
@@ -343,7 +343,7 @@ const TraditionalInvoiceContent: React.FC<{ invoice: Invoice, company: Company, 
 };
 
 const PremiumInvoiceContent: React.FC<{ invoice: Invoice, company: Company, documentTitle?: string }> = ({ invoice, company, documentTitle = 'Invoice' }) => {
-    const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+    const selectedBankAccount = (company.bankAccounts || []).find(ba => ba.id === invoice.selectedBankAccountId);
     const currency = '₹';
     const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
     const dateLabel = documentTitle === 'Quotation' ? 'Date' : 'Invoice Date';
@@ -516,7 +516,7 @@ const PremiumInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docu
 };
 
 const TallyInvoiceContent: React.FC<{ invoice: Invoice, company: Company, documentTitle?: string }> = ({ invoice, company, documentTitle = 'Invoice' }) => {
-    const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+    const selectedBankAccount = (company.bankAccounts || []).find(ba => ba.id === invoice.selectedBankAccountId);
     const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
     const borderCol = 'border-slate-800';
 
@@ -729,7 +729,7 @@ const TallyInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docume
 };
 
 const CustomInvoiceContent: React.FC<{ invoice: Invoice, company: Company, documentTitle?: string }> = ({ invoice, company, documentTitle = 'Invoice' }) => {
-    const selectedBankAccount = company.bankAccounts.find(ba => ba.id === invoice.selectedBankAccountId);
+    const selectedBankAccount = (company.bankAccounts || []).find(ba => ba.id === invoice.selectedBankAccountId);
     const docNumber = invoice.invoiceNumber || (invoice as any).quotationNumber;
     const dateLabel = documentTitle === 'Quotation' ? 'Date' : 'Invoice Date';
     const validUntilLabel = documentTitle === 'Quotation' ? 'Valid Until' : 'Due Date';

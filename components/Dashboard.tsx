@@ -63,12 +63,12 @@ interface StatCardProps {
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, sparklineData, color, onClick, delay = 0 }) => {
     const isPositive = trend && trend.value >= 0;
     const colorStyles = {
-        blue: { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-600 dark:text-blue-400', stroke: '#3b82f6', shadow: 'hover:shadow-blue-500/10 hover:border-blue-500/30' },
-        green: { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-600 dark:text-green-400', stroke: '#22c55e', shadow: 'hover:shadow-green-500/10 hover:border-green-500/30' },
-        yellow: { bg: 'bg-yellow-50 dark:bg-yellow-900/20', text: 'text-yellow-600 dark:text-yellow-400', stroke: '#eab308', shadow: 'hover:shadow-yellow-500/10 hover:border-yellow-500/30' },
-        purple: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-600 dark:text-purple-400', stroke: '#a855f7', shadow: 'hover:shadow-purple-500/10 hover:border-purple-500/30' },
-        red: { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-600 dark:text-red-400', stroke: '#ef4444', shadow: 'hover:shadow-red-500/10 hover:border-red-500/30' },
-        orange: { bg: 'bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-600 dark:text-orange-400', stroke: '#f97316', shadow: 'hover:shadow-orange-500/10 hover:border-orange-500/30' },
+        blue: { bg: 'bg-blue-50/80 dark:bg-blue-900/15', text: 'text-blue-600 dark:text-blue-400', stroke: '#3b82f6', shadow: 'hover:shadow-blue-500/8 hover:border-blue-200/40 dark:hover:border-blue-800/40' },
+        green: { bg: 'bg-emerald-50/80 dark:bg-emerald-900/15', text: 'text-emerald-600 dark:text-emerald-400', stroke: '#10b981', shadow: 'hover:shadow-emerald-500/8 hover:border-emerald-200/40 dark:hover:border-emerald-800/40' },
+        yellow: { bg: 'bg-amber-50/80 dark:bg-amber-900/15', text: 'text-amber-600 dark:text-amber-400', stroke: '#f59e0b', shadow: 'hover:shadow-amber-500/8 hover:border-amber-200/40 dark:hover:border-amber-800/40' },
+        purple: { bg: 'bg-violet-50/80 dark:bg-violet-900/15', text: 'text-violet-600 dark:text-violet-400', stroke: '#8b5cf6', shadow: 'hover:shadow-violet-500/8 hover:border-violet-200/40 dark:hover:border-violet-800/40' },
+        red: { bg: 'bg-rose-50/80 dark:bg-rose-900/15', text: 'text-rose-600 dark:text-rose-400', stroke: '#f43f5e', shadow: 'hover:shadow-rose-500/8 hover:border-rose-200/40 dark:hover:border-rose-800/40' },
+        orange: { bg: 'bg-orange-50/80 dark:bg-orange-900/15', text: 'text-orange-600 dark:text-orange-400', stroke: '#f97316', shadow: 'hover:shadow-orange-500/8 hover:border-orange-200/40 dark:hover:border-orange-800/40' },
     };
     const style = colorStyles[color];
 
@@ -77,32 +77,32 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, sparklin
             onClick={onClick}
             className={`
                 relative p-4 sm:p-5 rounded-2xl glass-panel overflow-hidden
-                hover:-translate-y-1.5 transition-all duration-300 cursor-pointer group h-full
+                hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer group h-full
                 opacity-0 animate-fade-in-up ${style.shadow}
             `}
             style={{ animationDelay: `${delay}ms` }}
         >
-            <div className="flex justify-between items-start mb-2.5">
-                <div className={`p-2.5 rounded-xl ${style.bg} ${style.text} transition-transform duration-300 group-hover:scale-110`}>
+            <div className="flex justify-between items-start mb-3">
+                <div className={`p-2.5 rounded-xl ${style.bg} ${style.text} transition-transform duration-300 group-hover:scale-105`}>
                     {icon}
                 </div>
                 <div className="flex flex-col items-end gap-1">
                     {trend && (
-                        <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isPositive ? 'text-green-600 bg-green-100/50 dark:bg-green-900/30' : 'text-red-600 bg-red-100/50 dark:bg-red-900/30'}`}>
+                        <div className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${isPositive ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/25 dark:text-emerald-400' : 'text-rose-600 bg-rose-50 dark:bg-rose-900/25 dark:text-rose-400'}`}>
                             {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             {Math.abs(trend.value).toFixed(1)}%
                         </div>
                     )}
                     {sparklineData && (
-                        <div className="opacity-80 group-hover:opacity-100 transition-opacity mt-0.5">
+                        <div className="opacity-70 group-hover:opacity-100 transition-opacity mt-0.5">
                             <Sparkline data={sparklineData} color={style.stroke} />
                         </div>
                     )}
                 </div>
             </div>
             <div className="mt-1">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{title}</p>
-                <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white mt-1 font-display whitespace-nowrap">{value}</h3>
+                <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{title}</p>
+                <h3 className="text-xl lg:text-2xl font-extrabold text-slate-800 dark:text-white mt-1 font-display whitespace-nowrap tracking-tight">{value}</h3>
             </div>
         </div>
     );
@@ -646,31 +646,38 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
         }
     };
 
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 17) return 'Good afternoon';
+        return 'Good evening';
+    };
+
     return (
-        <div className="space-y-8 animate-fade-in pb-10 relative">
+        <div className="space-y-6 animate-fade-in pb-10 relative">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 glass-panel p-8 rounded-3xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-accent/5 rounded-full blur-3xl"></div>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 glass-panel p-6 sm:p-8 rounded-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 -mt-16 -mr-16 w-48 h-48 bg-accent/[0.04] rounded-full blur-3xl pointer-events-none"></div>
                 <div className="relative z-10">
-                    <p className="text-xs font-bold text-accent uppercase tracking-widest mb-1">Overview</p>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                        Welcome back, <span className="text-accent">{company.details.name}</span>
+                    <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">{getGreeting()}</p>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
+                        {company.details.name}
                     </h1>
                 </div>
-                <div className="flex flex-wrap gap-3 relative z-10">
+                <div className="flex flex-wrap gap-2.5 relative z-10">
                     {setActiveView && (
                         <>
                             <button
                                 onClick={() => setActiveView('Clients')}
-                                className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2"
+                                className="bg-slate-100/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700/60 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/60"
                             >
                                 <Users className="w-4 h-4" /> Add Client
                             </button>
                             <button
                                 onClick={() => setActiveView('NewInvoice')}
-                                className="bg-accent text-white hover:shadow-lg hover:shadow-accent/25 px-6 py-3 rounded-xl font-bold transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-2"
+                                className="bg-accent text-white hover:shadow-lg hover:shadow-accent/20 px-5 py-2.5 rounded-xl font-semibold transition-all transform hover:-translate-y-0.5 active:scale-[0.97] flex items-center gap-2"
                             >
-                                <PlusCircle className="w-5 h-5" /> Create Invoice
+                                <PlusCircle className="w-4.5 h-4.5" /> New Invoice
                             </button>
                         </>
                     )}
@@ -679,22 +686,22 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
             {/* Overdue Receivables Alert Banner */}
             {metrics.totalOverdue > 0 && (
-                <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+                <div className="bg-rose-50/60 dark:bg-rose-950/15 border border-rose-200/40 dark:border-rose-900/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-600 dark:text-rose-400 shrink-0">
+                        <div className="p-2 rounded-xl bg-rose-100/80 dark:bg-rose-900/25 text-rose-600 dark:text-rose-400 shrink-0">
                             <ShieldAlert className="w-5 h-5" />
                         </div>
                         <div>
-                            <div className="flex items-center gap-2">
-                                <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                                    {currency}{metrics.totalOverdue.toLocaleString()} in Overdue Receivables
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="text-sm font-bold text-slate-800 dark:text-white">
+                                    {currency}{metrics.totalOverdue.toLocaleString()} overdue
                                 </h4>
-                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
-                                    {invoiceStatusCounts.overdue} Overdue
+                                <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400">
+                                    {invoiceStatusCounts.overdue} invoice{invoiceStatusCounts.overdue !== 1 ? 's' : ''}
                                 </span>
                             </div>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                                Pending payments past their due date. Send reminders or review aging schedule to accelerate cash flow.
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                Send reminders or review the aging schedule to keep cash flow healthy.
                             </p>
                         </div>
                     </div>
@@ -704,14 +711,14 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                                 setSelectedAgingBucket('all');
                                 setIsAgingModalOpen(true);
                             }}
-                            className="text-xs font-bold px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition-all shadow-sm shadow-rose-600/20 active:scale-95 flex items-center gap-1.5"
+                            className="text-xs font-semibold px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition-all shadow-sm active:scale-[0.97] flex items-center gap-1.5"
                         >
                             <Clock className="w-3.5 h-3.5" />
                             Aging Schedule
                         </button>
                         <button
                             onClick={() => navigateToInvoices('Overdue')}
-                            className="text-xs font-bold px-3.5 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl transition-all"
+                            className="text-xs font-semibold px-3.5 py-2 bg-white dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200/60 dark:border-slate-700/60 rounded-xl transition-all"
                         >
                             View All
                         </button>
@@ -719,21 +726,21 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                 </div>
             )}
 
-            {/* Stat Cards Row - Staggered Animation */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                <StatCard title="Total Revenue" value={`${currency}${metrics.totalRevenue.toLocaleString()}`} icon={<IndianRupee className="w-6 h-6" />} color="green" trend={{ value: metrics.trends.revenue, label: 'vs last month' }} sparklineData={metrics.revenueData} onClick={() => navigateToInvoices('Paid')} delay={0} />
-                <StatCard title="Total Receivables" value={`${currency}${metrics.totalReceivables.toLocaleString()}`} icon={<Scale className="w-6 h-6" />} color="yellow" trend={{ value: metrics.trends.outstanding, label: 'vs last month' }} sparklineData={metrics.outstandingData} onClick={() => navigateToInvoices('Unpaid')} delay={100} />
-                <StatCard title="Overdue Amount" value={`${currency}${metrics.totalOverdue.toLocaleString()}`} icon={<TrendingDown className="w-6 h-6" />} color="red" trend={{ value: 0, label: 'Needs attention' }} onClick={() => navigateToInvoices('Overdue')} delay={200} />
-                <StatCard title="Low Stock Items" value={metrics.lowStockItems.toString()} icon={<AlertTriangle className="w-6 h-6" />} color="orange" onClick={() => navigateToInventory('low')} delay={300} />
-                <StatCard title="Active Clients" value={metrics.totalClients.toString()} icon={<Users className="w-6 h-6" />} color="blue" trend={{ value: metrics.trends.clients, label: 'Growth' }} onClick={() => setActiveView && setActiveView('Clients')} delay={400} />
+            {/* Stat Cards Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <StatCard title="Revenue" value={`${currency}${metrics.totalRevenue.toLocaleString()}`} icon={<IndianRupee className="w-5 h-5" />} color="green" trend={{ value: metrics.trends.revenue, label: 'vs last month' }} sparklineData={metrics.revenueData} onClick={() => navigateToInvoices('Paid')} delay={0} />
+                <StatCard title="Receivables" value={`${currency}${metrics.totalReceivables.toLocaleString()}`} icon={<Scale className="w-5 h-5" />} color="yellow" trend={{ value: metrics.trends.outstanding, label: 'vs last month' }} sparklineData={metrics.outstandingData} onClick={() => navigateToInvoices('Unpaid')} delay={60} />
+                <StatCard title="Overdue" value={`${currency}${metrics.totalOverdue.toLocaleString()}`} icon={<TrendingDown className="w-5 h-5" />} color="red" trend={{ value: 0, label: 'Needs attention' }} onClick={() => navigateToInvoices('Overdue')} delay={120} />
+                <StatCard title="Low Stock" value={metrics.lowStockItems.toString()} icon={<AlertTriangle className="w-5 h-5" />} color="orange" onClick={() => navigateToInventory('low')} delay={180} />
+                <StatCard title="Clients" value={metrics.totalClients.toString()} icon={<Users className="w-5 h-5" />} color="blue" trend={{ value: metrics.trends.clients, label: 'Growth' }} onClick={() => setActiveView && setActiveView('Clients')} delay={240} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Left Column: Quick Actions & Insights */}
-                <div className="lg:col-span-1 space-y-8">
+                <div className="lg:col-span-1 space-y-5">
                     {/* Quick Actions */}
-                    <div className="glass-panel p-6 rounded-3xl">
-                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Quick Actions</h2>
+                    <div className="glass-panel p-5 rounded-2xl">
+                        <h2 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Quick Actions</h2>
                         <div className="space-y-3">
                             <div className="grid grid-cols-2 gap-3">
                                 <button
@@ -779,11 +786,11 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                     </div>
 
                     {/* Receivables Aging Report (0-30, 31-60, 61-90, 90+ Days) */}
-                    <div className="glass-panel p-6 rounded-3xl">
+                    <div className="glass-panel p-5 rounded-2xl">
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest font-display">Receivables Aging</h2>
-                                <p className="text-[11px] text-slate-500 font-medium">Overdue breakdown & cash flow risk</p>
+                                <h2 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Receivables Aging</h2>
+                                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Cash flow risk breakdown</p>
                             </div>
                             <button
                                 onClick={() => {
@@ -893,8 +900,8 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                     </div>
 
                     {/* GST collected Breakdown */}
-                    <div className="glass-panel p-6 rounded-3xl">
-                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 font-display">GST collected</h2>
+                    <div className="glass-panel p-5 rounded-2xl">
+                        <h2 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-5">GST Collected</h2>
                         <div className="space-y-4">
                             <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800/60">
                                 <span className="text-xs font-bold text-slate-500">CGST</span>
@@ -916,10 +923,10 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                     </div>
 
                     {/* Dynamic Insights */}
-                    <div className="glass-panel p-6 rounded-3xl">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Smart Insights</h2>
-                            <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse"></span>
+                    <div className="glass-panel p-5 rounded-2xl">
+                        <div className="flex justify-between items-center mb-5">
+                            <h2 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Insights</h2>
+                            <span className="flex h-1.5 w-1.5 rounded-full bg-accent/60 animate-pulse"></span>
                         </div>
                         <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                             {metrics.insights.length === 0 ? (
@@ -994,17 +1001,17 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                 </div>
 
                 {/* Right Column: Charts & Activity */}
-                <div className="lg:col-span-3 space-y-8">
+                <div className="lg:col-span-3 space-y-6">
                     {/* Main Charts Section */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
-                        <div onClick={() => navigateToInvoices()} className="lg:col-span-2 glass-panel p-8 rounded-3xl cursor-pointer hover:shadow-xl transition-all group relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 opacity-0 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+                        <div onClick={() => navigateToInvoices()} className="lg:col-span-2 glass-panel p-6 sm:p-8 rounded-2xl cursor-pointer hover:shadow-lg transition-all group relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity pointer-events-none">
                                 <TrendingUp className="w-24 h-24 -mr-8 -mt-8" />
                             </div>
-                            <div className="flex justify-between items-center mb-8 relative z-10">
+                            <div className="flex justify-between items-center mb-6 relative z-10">
                                 <div>
-                                    <h2 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-accent transition-colors">Revenue Trend</h2>
-                                    <p className="text-xs text-slate-500 font-medium mt-1">Monthly performance overview</p>
+                                    <h2 className="text-lg font-bold text-slate-800 dark:text-white group-hover:text-accent transition-colors">Revenue Trend</h2>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Monthly performance</p>
                                 </div>
                                 <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full p-1">
                                     <button
@@ -1036,8 +1043,8 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                             </div>
                         </div>
 
-                        <div onClick={() => navigateToInvoices()} className="glass-panel p-8 rounded-3xl flex flex-col cursor-pointer hover:shadow-xl transition-all group relative overflow-hidden">
-                            <h2 className="text-xl font-black text-slate-900 dark:text-white mb-6 group-hover:text-accent transition-colors relative z-10">Invoice Status</h2>
+                        <div onClick={() => navigateToInvoices()} className="glass-panel p-6 rounded-2xl flex flex-col cursor-pointer hover:shadow-lg transition-all group relative overflow-hidden">
+                            <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-5 group-hover:text-accent transition-colors relative z-10">Invoice Status</h2>
                             <div className="flex-grow flex items-center justify-center relative z-10" style={{ minHeight: '220px' }}>
                                 <ResponsiveContainer width="100%" height={220}>
                                     <PieChart>
@@ -1097,17 +1104,17 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                     </div>
 
                     {/* Bottom Row: Recent Collections, Recent Activity, Top Clients & Top Selling Items */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-2 gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-2 gap-5 opacity-0 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
                         {/* Recent Collections & Money Receipts */}
-                        <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between">
+                        <div className="glass-panel p-5 rounded-2xl flex flex-col justify-between">
                             <div>
-                                <div className="flex justify-between items-center mb-6">
+                                <div className="flex justify-between items-center mb-5">
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                            <h2 className="text-lg font-black text-slate-900 dark:text-white">Recent Collections</h2>
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            <h2 className="text-base font-bold text-slate-800 dark:text-white">Recent Collections</h2>
                                         </div>
-                                        <p className="text-xs text-slate-500 font-medium mt-0.5">Realized payments & receipt vouchers</p>
+                                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Payments & receipts</p>
                                     </div>
                                     <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
                                         <Receipt className="w-4 h-4" />
@@ -1176,13 +1183,13 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                             </div>
                         </div>
                         {/* Recent Activity */}
-                        <div className="glass-panel p-6 rounded-3xl">
-                            <div className="flex justify-between items-center mb-6">
+                        <div className="glass-panel p-5 rounded-2xl">
+                            <div className="flex justify-between items-center mb-5">
                                 <div>
-                                    <h2 className="text-lg font-black text-slate-900 dark:text-white">Recent Activity</h2>
-                                    <p className="text-xs text-slate-500 font-medium mt-0.5">Latest transactions</p>
+                                    <h2 className="text-base font-bold text-slate-800 dark:text-white">Recent Activity</h2>
+                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Latest transactions</p>
                                 </div>
-                                <button onClick={() => setActiveView && setActiveView('Invoices')} className="text-[10px] font-black text-accent uppercase tracking-widest hover:underline bg-accent/5 px-3 py-1.5 rounded-full">View All</button>
+                                <button onClick={() => setActiveView && setActiveView('Invoices')} className="text-[10px] font-semibold text-accent uppercase tracking-wider hover:underline bg-accent/5 px-2.5 py-1 rounded-full transition-colors">View All</button>
                             </div>
                             <div className="space-y-3">
                                 {invoices.length === 0 ? (
@@ -1262,11 +1269,11 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                         </div>
 
                         {/* Top Clients */}
-                        <div className="glass-panel p-6 rounded-3xl">
-                            <div className="flex justify-between items-center mb-6">
+                        <div className="glass-panel p-5 rounded-2xl">
+                            <div className="flex justify-between items-center mb-5">
                                 <div>
-                                    <h2 className="text-lg font-black text-slate-900 dark:text-white">Top Clients</h2>
-                                    <p className="text-xs text-slate-500 font-medium mt-0.5">By revenue contribution</p>
+                                    <h2 className="text-base font-bold text-slate-800 dark:text-white">Top Clients</h2>
+                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">By revenue</p>
                                 </div>
                                 <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
                                     <Users className="w-4 h-4 text-slate-400" />
@@ -1304,10 +1311,10 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                         </div>
 
                         {/* Top Selling Items */}
-                        <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between md:col-span-2 2xl:col-span-1">
+                        <div className="glass-panel p-5 rounded-2xl flex flex-col justify-between md:col-span-2 2xl:col-span-1">
                             <div>
-                                <h2 className="text-lg font-black text-slate-900 dark:text-white">Top Selling Items</h2>
-                                <p className="text-xs text-slate-500 font-medium mt-0.5">Best performing inventory</p>
+                                <h2 className="text-base font-bold text-slate-800 dark:text-white">Top Selling Items</h2>
+                                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Best performing inventory</p>
                             </div>
                             <div className="h-56 w-full mt-4 relative z-10 flex items-center justify-center">
                                 {metrics.topSellingItems.length === 0 ? (

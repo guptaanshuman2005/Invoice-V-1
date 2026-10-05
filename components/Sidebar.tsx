@@ -44,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Overlay with Blur */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-45 md:hidden transition-all duration-300" 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-40 md:hidden transition-all duration-300" 
           onClick={onClose}
         ></div>
       )}
@@ -107,16 +107,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                         onSwitchCompany(comp.id);
                         setIsCompanyDropdownOpen(false);
                       }}
-                      className={`w-full flex items-center gap-2.5 p-2 rounded-xl text-left text-xs transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 ${comp.id === activeCompany.id ? 'bg-slate-50 dark:bg-slate-800/60 font-bold text-accent' : 'text-slate-700 dark:text-slate-350'}`}
+                      className={`w-full flex items-center gap-2.5 p-2 rounded-xl text-left text-xs transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 ${comp.id === activeCompany.id ? 'bg-slate-50 dark:bg-slate-800/60 font-bold text-accent' : 'text-slate-700 dark:text-slate-300'}`}
                     >
-                      <div className="w-5 h-5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-650 dark:text-slate-300 flex items-center justify-center font-bold text-[9px]">
+                      <div className="w-5 h-5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-[9px]">
                         {comp.details.name.substring(0, 2).toUpperCase()}
                       </div>
                       <span className="truncate">{comp.details.name}</span>
                       {comp.id === activeCompany.id && <Check className="w-3.5 h-3.5 text-accent ml-auto shrink-0" />}
                     </button>
                   ))}
-                  <div className="border-t border-slate-150 dark:border-slate-800 my-1"></div>
+                  <div className="border-t border-slate-200 dark:border-slate-800 my-1"></div>
                   <button
                     onClick={() => {
                       onAddCompany();
@@ -124,7 +124,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     }}
                     className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left text-xs text-accent hover:bg-accent/5 font-bold"
                   >
-                    <PlusCircle className="w-4.5 h-4.5" />
+                    <PlusCircle className="w-4 h-4" />
                     <span>Create Workspace</span>
                   </button>
                 </div>

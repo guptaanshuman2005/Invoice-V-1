@@ -318,7 +318,7 @@ const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
                                             </div>
                                         </div>
                                         <div 
-                                            className="text-slate-400 dark:text-slate-600 flex justify-between border-t border-slate-100 dark:border-slate-850"
+                                            className="text-slate-400 dark:text-slate-600 flex justify-between border-t border-slate-100 dark:border-slate-800"
                                             style={{
                                                 padding: tablePadding === 'Compact' ? '6px 12px' : tablePadding === 'Spacious' ? '16px 24px' : '10px 16px'
                                             }}
@@ -368,7 +368,7 @@ const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
                 </div>
             )}
         </div>
-        <div className="p-4 border-t border-slate-200 dark:border-slate-850 flex justify-end gap-4 bg-white dark:bg-slate-900 rounded-b-2xl shadow-inner shrink-0">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-4 bg-white dark:bg-slate-900 rounded-b-2xl shadow-inner shrink-0">
             <Button variant="secondary" onClick={onClose}>Cancel</Button>
             <Button onClick={() => {
                 onSelectTemplate(template, {

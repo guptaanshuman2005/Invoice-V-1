@@ -154,7 +154,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
 
     // Handlers
     const handleClientChange = (clientId: string) => {
-        const client = company.clients.find(c => c.id === clientId);
+        const client = (company.clients || []).find(c => c.id === clientId);
         setDraftInvoice(prev => ({
             ...prev,
             clientId: clientId,
@@ -318,7 +318,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
 
     const calculateTotals = () => {
         let subTotal = 0, cgst = 0, sgst = 0, igst = 0;
-        const client = company.clients.find(c => c.id === draftInvoice.clientId);
+        const client = (company.clients || []).find(c => c.id === draftInvoice.clientId);
         
         const posState = !draftInvoice.isShippingSameAsBilling && draftInvoice.shippingDetails.state 
             ? draftInvoice.shippingDetails.state 
@@ -365,7 +365,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
             return;
         }
         
-        const client = company.clients.find(c => c.id === draftInvoice.clientId);
+        const client = (company.clients || []).find(c => c.id === draftInvoice.clientId);
         if(!client) return;
 
         const shippingData = draftInvoice.isShippingSameAsBilling ? {
@@ -403,7 +403,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
             shippingState: shippingData.state,
             shippingZip: shippingData.zip,
             shippingGstin: shippingData.gstin,
-            transporterName: draftInvoice.transporterId === 'self' ? 'Self' : company.transporters.find(t => t.id === draftInvoice.transporterId)?.name,
+            transporterName: draftInvoice.transporterId === 'self' ? 'Self' : (company.transporters || []).find(t => t.id === draftInvoice.transporterId)?.name,
             vehicleNumber: draftInvoice.vehicleNumber,
             ewayBillNumber: draftInvoice.ewayBillNumber
         };
@@ -641,7 +641,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                     }}
                                  >
                                      <option value="">Select Client</option>
-                                     {company.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                     {(company.clients || []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                      <option value="__NEW__" className="text-accent font-bold bg-accent/5">+ Create New Client...</option>
                                  </select>
                                  
@@ -712,14 +712,14 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                 <label className="block text-xs font-bold text-slate-500 mb-1">Bank Account</label>
                                 <select className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm" value={draftInvoice.selectedBankAccountId || ''} onChange={e => setDraftInvoice({...draftInvoice, selectedBankAccountId: e.target.value})}>
                                     <option value="">None (Cash/Cheque)</option>
-                                    {company.bankAccounts.map(b => <option key={b.id} value={b.id}>{b.bankName} - {b.accountNumber}</option>)}
+                                    {(company.bankAccounts || []).map(b => <option key={b.id} value={b.id}>{b.bankName} - {b.accountNumber}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 mb-1">Transporter</label>
                                 <select className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm" value={draftInvoice.transporterId} onChange={e => setDraftInvoice({...draftInvoice, transporterId: e.target.value})}>
                                     <option value="self">Self (Own Vehicle)</option>
-                                    {company.transporters.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                    {(company.transporters || []).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                 </select>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -1289,7 +1289,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                  invoice={{
                                      id: 'draft',
                                      invoiceNumber: draftInvoice.invoiceNumber,
-                                     client: company.clients.find(c => c.id === draftInvoice.clientId) || {
+                                     client: (company.clients || []).find(c => c.id === draftInvoice.clientId) || {
                                          id: 'temp',
                                          name: 'Client Name Placeholder',
                                          gstin: '',
