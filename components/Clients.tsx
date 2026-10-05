@@ -165,7 +165,7 @@ const ClientForm: React.FC<{
         }
     }, [client.shippingZip, isSameAsBilling, setClient, setErrors]);
 
-    const inputClasses = "w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg shadow-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none text-sm px-4 py-3 transition-all duration-200 ease-in-out border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 focus:ring-2 focus:ring-accent/20 focus:border-accent";
+    const inputClasses = "w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl shadow-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none text-sm px-4 py-3 transition-all duration-200 ease-in-out border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 focus:ring-2 focus:ring-accent/20 focus:border-accent";
 
     return (
         <div className="p-6 space-y-4">
@@ -728,7 +728,7 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
     };
 
     return (
-        <div className="animate-fade-in bg-slate-50/70 dark:bg-slate-800/40 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-lg backdrop-blur-md">
+        <div className="animate-fade-in glass-panel-elevated p-4 sm:p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-xl backdrop-blur-xl">
             {/* Header with Title, Client Badge & Window Controls */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-200/60 dark:border-slate-700/60">
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -1516,8 +1516,8 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                                               {client.city ? `${client.city}${client.state ? `, ${client.state}` : ''}` : '—'}
                                           </td>
                                           <td className="px-3 sm:px-4 py-3.5 text-right space-x-1" onClick={e => e.stopPropagation()}>
-                                              <button onClick={() => handleOpenModal(client)} className="text-slate-400 hover:text-indigo-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700" title="Edit Client"><Edit className="h-4 w-4" strokeWidth={2} /></button>
-                                              <button onClick={() => handleDeleteClient(client.id)} className="text-slate-400 hover:text-red-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700" title="Delete Client"><Trash2 className="h-4 w-4" strokeWidth={2} /></button>
+                                              <button onClick={() => handleOpenModal(client)} className="text-slate-400 hover:text-accent p-1.5 rounded-lg hover:bg-accent/10 active:scale-95 transition-all" title="Edit Client"><Edit className="h-4 w-4" strokeWidth={2} /></button>
+                                              <button onClick={() => handleDeleteClient(client.id)} className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 active:scale-95 transition-all" title="Delete Client"><Trash2 className="h-4 w-4" strokeWidth={2} /></button>
                                           </td>
                                       </tr>
                                   );

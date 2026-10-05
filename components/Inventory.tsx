@@ -100,21 +100,21 @@ const Inventory: React.FC<InventoryProps> = ({ items, setItems, onBulkStockUpdat
         <div className="animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-light-text">Inventory</h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage stock levels</p>
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-display tracking-tight">Inventory</h1>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Manage warehouse stock levels, low-stock warnings, and historical audits.</p>
                 </div>
-                <div className="flex gap-3">
-                    <Button variant="secondary" onClick={() => setIsHistoryModalOpen(true)}>History</Button>
-                    {selectedIds.length > 0 && <Button onClick={openBulkModal}>Update ({selectedIds.length})</Button>}
+                <div className="flex gap-2.5">
+                    <Button variant="secondary" onClick={() => setIsHistoryModalOpen(true)} className="gap-2">History</Button>
+                    {selectedIds.length > 0 && <Button onClick={openBulkModal} className="shadow-lg shadow-accent/20">Update ({selectedIds.length})</Button>}
                 </div>
             </div>
             
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex flex-col md:flex-row gap-3 mb-6">
                 <div className="flex-grow">
-                    <Input label="" placeholder="Search items..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="!py-2.5" />
+                    <Input label="" placeholder="Search items by name, HSN, or ID..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="!py-2.5 !rounded-xl" />
                 </div>
                 <div className="w-full md:w-64">
-                    <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value as any)} className={`${inputClasses} h-[42px] mt-0.5 cursor-pointer`}>
+                    <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value as any)} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl shadow-sm px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer transition-all">
                         <option value="all">All Items</option>
                         <option value="in">In Stock (&gt; 0)</option>
                         <option value="low">Low Stock (1-5)</option>
@@ -123,7 +123,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, setItems, onBulkStockUpdat
                 </div>
             </div>
             
-            <div className="glass-panel shadow-lg rounded-lg overflow-hidden">
+            <div className="glass-panel rounded-2xl overflow-hidden shadow-sm border border-slate-200/50 dark:border-slate-800/50">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[700px] text-sm text-left text-slate-600 dark:text-medium-text">
                         <thead className="text-xs text-slate-700 dark:text-light-text uppercase bg-slate-100/50 dark:bg-tertiary-dark/50">
@@ -195,7 +195,14 @@ const Inventory: React.FC<InventoryProps> = ({ items, setItems, onBulkStockUpdat
                                         )}
                                     </td>
                                     <td className="px-6 py-4 text-right space-x-2">
-                                        {editingItemId === item.id ? ( <><Button variant="secondary" onClick={() => handleSaveClick(item)}>Save</Button><Button variant="secondary" onClick={handleCancelClick}>Cancel</Button></>) : ( <Button variant="secondary" onClick={() => handleEditClick(item)}>Update</Button> )}
+                                        {editingItemId === item.id ? (
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button onClick={() => handleSaveClick(item)} className="px-3 py-1.5 text-xs font-bold rounded-xl bg-accent text-white hover:bg-accent-hover shadow-sm active:scale-95 transition-all">Save</button>
+                                                <button onClick={handleCancelClick} className="px-3 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all">Cancel</button>
+                                            </div>
+                                        ) : (
+                                            <button onClick={() => handleEditClick(item)} className="px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 hover:text-accent hover:bg-accent/10 border border-slate-200 dark:border-slate-700 active:scale-95 transition-all shadow-sm">Update</button>
+                                        )}
                                     </td>
                                 </tr>
                             )})}
@@ -213,15 +220,15 @@ const Inventory: React.FC<InventoryProps> = ({ items, setItems, onBulkStockUpdat
                             const item = items.find(i => i.id === id);
                             if (!item) return null;
                             return (
-                                <div key={id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                                    <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate pr-4">{item.name}</span>
-                                    <input type="number" className="w-20 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-sm focus:ring-accent focus:border-accent" value={bulkUpdates[id] ?? item.quantityInStock} onChange={(e) => handleBulkUpdateChange(id, e.target.value)} min="0" />
+                                <div key={id} className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/70">
+                                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate pr-4">{item.name}</span>
+                                    <input type="number" className="w-24 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-accent focus:outline-none" value={bulkUpdates[id] ?? item.quantityInStock} onChange={(e) => handleBulkUpdateChange(id, e.target.value)} min="0" />
                                 </div>
                             );
                         })}
                     </div>
                 </div>
-                <div className="p-6 pt-0 flex justify-end gap-3"><Button variant="secondary" onClick={() => setIsBulkModalOpen(false)}>Cancel</Button><Button onClick={saveBulkUpdates}>Update All</Button></div>
+                <div className="p-6 pt-0 flex justify-end gap-3"><Button variant="secondary" onClick={() => setIsBulkModalOpen(false)}>Cancel</Button><Button onClick={saveBulkUpdates} className="shadow-lg shadow-accent/20">Update All</Button></div>
             </Modal>
 
             <Modal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} title="Stock Movement Log">

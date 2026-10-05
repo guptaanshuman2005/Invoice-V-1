@@ -138,13 +138,13 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Search description or vendor..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent border-none"
+            className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent border border-slate-200 dark:border-slate-700/80 shadow-sm"
           />
         </div>
 
@@ -153,7 +153,7 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-2 rounded-xl text-xs font-bold focus:outline-none cursor-pointer border-none"
+            className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 px-3 py-2 rounded-xl text-xs font-bold focus:outline-none cursor-pointer shadow-sm"
           >
             <option value="all">All Categories</option>
             {CATEGORIES.map(cat => (
@@ -164,11 +164,11 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
       </div>
 
       {/* Expenses Table */}
-      <div className="glass-panel rounded-3xl border border-slate-200/50 dark:border-slate-800/50 overflow-hidden shadow-sm">
+      <div className="glass-panel rounded-2xl border border-slate-200/50 dark:border-slate-800/50 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-100/50 dark:bg-slate-800/40 text-[10px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200/50 dark:border-slate-800/50">
+              <tr className="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200/60 dark:border-slate-800/60">
                 <th className="py-4 px-6">Description</th>
                 <th className="py-4 px-6">Category</th>
                 <th className="py-4 px-6">Vendor</th>
@@ -187,7 +187,7 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
                 </tr>
               ) : (
                 filteredExpenses.map((exp) => (
-                  <tr key={exp.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                  <tr key={exp.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                     <td className="py-4 px-6 font-bold text-slate-900 dark:text-white">{exp.description}</td>
                     <td className="py-4 px-6">
                       <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/10 text-accent">
@@ -195,15 +195,15 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
                       </span>
                     </td>
                     <td className="py-4 px-6 text-slate-600 dark:text-slate-300">{exp.vendorName || '-'}</td>
-                    <td className="py-4 px-6 text-slate-500">{exp.date}</td>
-                    <td className="py-4 px-6 text-slate-600 dark:text-slate-300">{exp.paymentMode}</td>
-                    <td className="py-4 px-6 text-right font-black text-rose-500">
+                    <td className="py-4 px-6 text-slate-500 font-mono text-xs">{exp.date}</td>
+                    <td className="py-4 px-6 text-slate-600 dark:text-slate-300 font-semibold">{exp.paymentMode}</td>
+                    <td className="py-4 px-6 text-right font-black text-rose-500 font-mono">
                       ₹{Number(exp.amount).toFixed(2)}
                     </td>
                     <td className="py-4 px-6 text-center">
                       <button
                         onClick={() => onDeleteExpense(exp.id)}
-                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg active:scale-95 transition-all"
                         title="Delete expense"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -228,7 +228,7 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
               placeholder="e.g. Office Rent payment for July"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent border-none"
+              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent border border-slate-200 dark:border-slate-700/80 shadow-sm"
             />
           </div>
 
@@ -243,7 +243,7 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
                 placeholder="e.g. 15000"
                 value={formData.amount || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent border-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent border border-slate-200 dark:border-slate-700/80 shadow-sm"
               />
             </div>
             <div>
@@ -251,7 +251,7 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
               <select
                 value={formData.category}
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as any }))}
-                className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 rounded-xl text-xs font-bold focus:outline-none border-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl text-xs font-bold focus:outline-none border border-slate-200 dark:border-slate-700/80 shadow-sm cursor-pointer"
               >
                 {CATEGORIES.map(cat => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -268,7 +268,7 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
                 placeholder="e.g. Acme Commercial Real Estate"
                 value={formData.vendorName || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, vendorName: e.target.value }))}
-                className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent border-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent border border-slate-200 dark:border-slate-700/80 shadow-sm"
               />
             </div>
             <div>
@@ -276,7 +276,7 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
               <select
                 value={formData.paymentMode}
                 onChange={(e) => setFormData(prev => ({ ...prev, paymentMode: e.target.value as any }))}
-                className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 rounded-xl text-xs font-bold focus:outline-none border-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl text-xs font-bold focus:outline-none border border-slate-200 dark:border-slate-700/80 shadow-sm cursor-pointer"
               >
                 {PAYMENT_MODES.map(mode => (
                   <option key={mode} value={mode}>{mode}</option>
@@ -291,13 +291,13 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
               type="date"
               value={formData.date}
               onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-              className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent border-none"
+              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent border border-slate-200 dark:border-slate-700/80 shadow-sm"
             />
           </div>
 
           <div className="pt-4 flex justify-end gap-3">
             <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit">Save Expense</Button>
+            <Button type="submit" className="shadow-lg shadow-accent/20">Save Expense</Button>
           </div>
         </form>
       </Modal>

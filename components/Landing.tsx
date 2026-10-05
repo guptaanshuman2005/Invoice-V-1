@@ -17,7 +17,7 @@ const Landing: React.FC<LandingProps> = ({
   onNavigateToTerms 
 }) => {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-accent selection:text-white relative overflow-hidden">
+    <div className="min-h-screen bg-[#F8F9FB] dark:bg-[#0A0A0A] font-sans selection:bg-accent/20 text-slate-900 dark:text-zinc-100 relative overflow-hidden">
       
       {/* Decorative Glowing Gradients */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-accent/10 dark:bg-accent/15 rounded-full blur-[120px] -z-10 animate-pulse duration-[8s]"></div>
@@ -27,7 +27,7 @@ const Landing: React.FC<LandingProps> = ({
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] -z-10"></div>
 
       {/* Sticky Glassmorphic Navbar */}
-      <nav className="sticky top-6 z-50 flex items-center justify-between px-6 sm:px-8 py-4 max-w-5xl mx-auto rounded-3xl glass-panel shadow-lg border border-white/20 dark:border-slate-800/40 backdrop-blur-xl mt-6">
+      <nav className="sticky top-6 z-50 flex items-center justify-between px-6 sm:px-8 py-3.5 max-w-5xl mx-auto rounded-3xl glass-panel-elevated shadow-lg border border-slate-200/50 dark:border-slate-800/50 backdrop-blur-xl mt-6">
         <div className="flex items-center gap-2.5">
           <div className="bg-gradient-to-r from-accent to-indigo-600 text-white p-2 rounded-xl shadow-md h-9 w-9 flex items-center justify-center">
             <Zap className="w-full h-full" strokeWidth={2.5} />
@@ -104,7 +104,7 @@ const Landing: React.FC<LandingProps> = ({
         </div>
 
         {/* Demo Callout Showcase Card */}
-        <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl glass-panel border border-accent/30 shadow-2xl relative overflow-hidden text-left bg-gradient-to-r from-white/90 via-white/80 to-indigo-50/60 dark:from-slate-900/90 dark:via-slate-900/80 dark:to-indigo-950/40 backdrop-blur-xl">
+        <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl glass-panel-elevated border border-accent/25 shadow-xl relative overflow-hidden text-left bg-gradient-to-r from-white/90 via-white/80 to-indigo-50/50 dark:from-[#161618]/90 dark:via-[#161618]/80 dark:to-indigo-950/30 backdrop-blur-2xl">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-accent">
@@ -142,7 +142,7 @@ const Landing: React.FC<LandingProps> = ({
       </main>
 
       {/* Features Grid */}
-      <section className="bg-white/60 dark:bg-slate-900/40 py-28 border-y border-slate-200/50 dark:border-slate-800/50 backdrop-blur-md relative">
+      <section className="bg-white/50 dark:bg-[#111113]/50 py-24 border-y border-slate-200/50 dark:border-slate-800/50 backdrop-blur-md relative">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4 font-display">Everything you need to scale</h2>
@@ -150,7 +150,7 @@ const Landing: React.FC<LandingProps> = ({
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             
-            <div className="p-8 rounded-3xl glass-panel border border-slate-200/10 dark:border-slate-800/20 hover:-translate-y-2 transition-all duration-300 group">
+            <div className="p-8 rounded-3xl glass-panel border border-slate-200/50 dark:border-slate-800/50 hover:-translate-y-1.5 transition-all duration-300 group shadow-sm hover:shadow-md">
               <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform">
                 <BarChart3 className="w-6 h-6" />
               </div>
@@ -158,7 +158,7 @@ const Landing: React.FC<LandingProps> = ({
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Track total revenue, overdue accounts, Receivables Aging and GST tax breakdowns with live, interactive graphs.</p>
             </div>
 
-            <div className="p-8 rounded-3xl glass-panel border border-slate-200/10 dark:border-slate-800/20 hover:-translate-y-2 transition-all duration-300 group">
+            <div className="p-8 rounded-3xl glass-panel border border-slate-200/50 dark:border-slate-800/50 hover:-translate-y-1.5 transition-all duration-300 group shadow-sm hover:shadow-md">
               <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform">
                 <IndianRupee className="w-6 h-6" />
               </div>
@@ -166,7 +166,7 @@ const Landing: React.FC<LandingProps> = ({
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Complete Indian GST council compliance with automatic CGST, SGST, IGST calculation and E-Way bill consignment numbers.</p>
             </div>
 
-            <div className="p-8 rounded-3xl glass-panel border border-slate-200/10 dark:border-slate-800/20 hover:-translate-y-2 transition-all duration-300 group">
+            <div className="p-8 rounded-3xl glass-panel border border-slate-200/50 dark:border-slate-800/50 hover:-translate-y-1.5 transition-all duration-300 group shadow-sm hover:shadow-md">
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform">
                 <Cpu className="w-6 h-6" />
               </div>
@@ -188,7 +188,7 @@ const Landing: React.FC<LandingProps> = ({
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
           
           {/* Monthly Tier */}
-          <div className="p-8 rounded-3xl glass-panel border border-slate-200/20 dark:border-slate-800/20 flex flex-col hover:-translate-y-2 transition-all duration-300">
+          <div className="p-8 rounded-3xl glass-panel border border-slate-200/50 dark:border-slate-800/50 flex flex-col hover:-translate-y-1.5 transition-all duration-300 shadow-sm hover:shadow-md">
             <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Monthly</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Pay as you go, cancel anytime.</p>
             <div className="mb-8">
@@ -202,20 +202,20 @@ const Landing: React.FC<LandingProps> = ({
                 </li>
               ))}
             </ul>
-            <div className="p-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl mb-8 border border-slate-200/10 dark:border-slate-700/20">
+            <div className="p-4 bg-slate-100/60 dark:bg-slate-800/40 rounded-2xl mb-8 border border-slate-200/60 dark:border-slate-700/60">
                 <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold mb-1">Need more invoices?</p>
                 <p className="text-sm font-black text-slate-700 dark:text-slate-300 font-display">+ ₹29 per 50 extra invoices</p>
             </div>
             <button 
               onClick={onGetStarted}
-              className="w-full py-3 rounded-xl font-bold border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-accent hover:text-accent dark:hover:text-accent transition-all hover:shadow-sm"
+              className="w-full py-3 rounded-xl font-bold border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-accent hover:text-accent dark:hover:text-accent transition-all active:scale-95 shadow-sm"
             >
               Get Started
             </button>
           </div>
 
           {/* Quarterly Tier */}
-          <div className="p-8 rounded-3xl bg-slate-950 dark:bg-black border-2 border-accent/60 shadow-[0_20px_50px_rgba(79,70,229,0.25)] relative flex flex-col md:-translate-y-4 transition-all hover:-translate-y-6 duration-300">
+          <div className="p-8 rounded-3xl bg-slate-950 dark:bg-[#111113] border-2 border-accent/60 shadow-[0_20px_50px_rgba(79,70,229,0.25)] relative flex flex-col md:-translate-y-4 transition-all hover:-translate-y-5 duration-300">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-accent to-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase shadow-md shadow-accent/20">
               MOST POPULAR
             </div>
@@ -233,20 +233,20 @@ const Landing: React.FC<LandingProps> = ({
                 </li>
               ))}
             </ul>
-            <div className="p-4 bg-slate-800/30 rounded-2xl mb-8 border border-slate-700/20">
+            <div className="p-4 bg-white/5 dark:bg-white/5 rounded-2xl mb-8 border border-white/10">
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Need more invoices?</p>
                 <p className="text-sm font-black text-white font-display">+ ₹89 per 200 extra invoices</p>
             </div>
             <button 
               onClick={onGetStarted}
-              className="w-full py-3 rounded-xl font-black bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 text-white transition-all shadow-md shadow-accent/15"
+              className="w-full py-3 rounded-xl font-black bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 text-white transition-all active:scale-95 shadow-md shadow-accent/15"
             >
               Choose Quarterly
             </button>
           </div>
 
           {/* Yearly Tier */}
-          <div className="p-8 rounded-3xl glass-panel border border-slate-200/20 dark:border-slate-800/20 flex flex-col hover:-translate-y-2 transition-all duration-300 relative">
+          <div className="p-8 rounded-3xl glass-panel border border-slate-200/50 dark:border-slate-800/50 flex flex-col hover:-translate-y-1.5 transition-all duration-300 relative shadow-sm hover:shadow-md">
 
             <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Yearly</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Best value for growing companies.</p>
@@ -262,13 +262,13 @@ const Landing: React.FC<LandingProps> = ({
                 </li>
               ))}
             </ul>
-            <div className="p-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl mb-8 border border-slate-200/10 dark:border-slate-700/20">
+            <div className="p-4 bg-slate-100/60 dark:bg-slate-800/40 rounded-2xl mb-8 border border-slate-200/60 dark:border-slate-700/60">
                 <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold mb-1">Need more invoices?</p>
                 <p className="text-sm font-black text-slate-700 dark:text-slate-300 font-display">+ ₹199 per 500 extra invoices</p>
             </div>
             <button 
               onClick={onGetStarted}
-              className="w-full py-3 rounded-xl font-bold border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-accent hover:text-accent dark:hover:text-accent transition-all hover:shadow-sm"
+              className="w-full py-3 rounded-xl font-bold border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-accent hover:text-accent dark:hover:text-accent transition-all active:scale-95 shadow-sm"
             >
               Choose Yearly
             </button>
@@ -278,7 +278,7 @@ const Landing: React.FC<LandingProps> = ({
       </section>
 
       {/* Footer */}
-      <footer className="bg-white/60 dark:bg-slate-900/60 border-t border-slate-200/40 dark:border-slate-800/40 backdrop-blur-md py-12 relative z-10">
+      <footer className="bg-white/50 dark:bg-[#0A0A0A]/80 border-t border-slate-200/50 dark:border-slate-800/50 backdrop-blur-md py-12 relative z-10">
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
             <Zap className="w-5 h-5 text-accent" />
