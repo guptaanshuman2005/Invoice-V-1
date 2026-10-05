@@ -719,7 +719,8 @@ const App: React.FC = () => {
                 const itemIndex = updatedItems.findIndex(i => i.id === soldItem.id);
                 if (itemIndex > -1) {
                     const prevStock = Number(updatedItems[itemIndex].quantityInStock) || 0;
-                    const newStock = prevStock - soldItem.quantity;
+                    const isCreditReturn = newInvoiceData.documentType === 'credit_note' && newInvoiceData.reason === 'Sales Return';
+                    const newStock = isCreditReturn ? prevStock + soldItem.quantity : prevStock - soldItem.quantity;
                     updatedItems[itemIndex] = { ...updatedItems[itemIndex], quantityInStock: newStock };
                     
                     newHistoryLogs.push(createStockLog(
@@ -727,7 +728,7 @@ const App: React.FC = () => {
                         updatedItems[itemIndex].name,
                         prevStock,
                         newStock,
-                        'Invoice Created',
+                        isCreditReturn ? 'Sales Return Credit Note' : 'Invoice Created',
                         newInvoiceData.invoiceNumber
                     ));
                 }
@@ -735,8 +736,9 @@ const App: React.FC = () => {
             const newInvoice: Invoice = { ...newInvoiceData, id: `inv_${Date.now()}`, status: 'Unpaid' };
             updatedInvoices.push(newInvoice);
             if (newInvoiceData.invoiceNumber === expectedInvoiceNumber) updatedDetails.nextInvoiceNumber = nextNumber + 1;
-            trackEvent('create_invoice', { invoiceId: newInvoice.id });
-            toast.success(`Invoice ${newInvoice.invoiceNumber} saved to database`);
+            trackEvent('create_invoice', { invoiceId: newInvoice.id, docType: newInvoice.documentType || 'invoice' });
+            const docLabel = newInvoice.documentType === 'credit_note' ? 'Credit Note' : newInvoice.documentType === 'debit_note' ? 'Debit Note' : 'Invoice';
+            toast.success(`${docLabel} ${newInvoice.invoiceNumber} saved to database`);
         }
         
         const updatedSubscription = activeCompany.subscription ? {
@@ -921,6 +923,68 @@ const App: React.FC = () => {
       handleSetActiveView('NewInvoice');
   };
 
+  const handleIssueCreditNote = (originalInvoice: Invoice) => {
+      setInvoiceToEdit(null);
+      setDraftInvoice({
+          invoiceNumber: `CN-${Date.now().toString().slice(-4)}`,
+          clientId: originalInvoice.client.id,
+          items: originalInvoice.items.map(it => ({ ...it })),
+          issueDate: new Date().toISOString().split('T')[0],
+          dueDate: new Date().toISOString().split('T')[0],
+          notes: `Credit Note issued against invoice #${originalInvoice.invoiceNumber}`,
+          selectedBankAccountId: originalInvoice.selectedBankAccountId,
+          shippingDetails: {
+              name: originalInvoice.shippingName || originalInvoice.client.name,
+              address: originalInvoice.shippingAddress || originalInvoice.client.address || '',
+              city: originalInvoice.shippingCity || originalInvoice.client.city || '',
+              state: originalInvoice.shippingState || originalInvoice.client.state || '',
+              zip: originalInvoice.shippingZip || originalInvoice.client.zip || '',
+              gstin: originalInvoice.shippingGstin || originalInvoice.client.gstin || ''
+          },
+          isShippingSameAsBilling: !originalInvoice.shippingAddress,
+          transporterId: '',
+          vehicleNumber: originalInvoice.vehicleNumber || '',
+          ewayBillNumber: originalInvoice.ewayBillNumber || '',
+          type: 'credit_note',
+          documentType: 'credit_note',
+          originalInvoiceNumber: originalInvoice.invoiceNumber,
+          originalInvoiceDate: originalInvoice.issueDate,
+          reason: 'Sales Return'
+      });
+      handleSetActiveView('NewCreditNote');
+  };
+
+  const handleIssueDebitNote = (originalInvoice: Invoice) => {
+      setInvoiceToEdit(null);
+      setDraftInvoice({
+          invoiceNumber: `DN-${Date.now().toString().slice(-4)}`,
+          clientId: originalInvoice.client.id,
+          items: originalInvoice.items.map(it => ({ ...it })),
+          issueDate: new Date().toISOString().split('T')[0],
+          dueDate: new Date().toISOString().split('T')[0],
+          notes: `Debit Note issued against invoice #${originalInvoice.invoiceNumber}`,
+          selectedBankAccountId: originalInvoice.selectedBankAccountId,
+          shippingDetails: {
+              name: originalInvoice.shippingName || originalInvoice.client.name,
+              address: originalInvoice.shippingAddress || originalInvoice.client.address || '',
+              city: originalInvoice.shippingCity || originalInvoice.client.city || '',
+              state: originalInvoice.shippingState || originalInvoice.client.state || '',
+              zip: originalInvoice.shippingZip || originalInvoice.client.zip || '',
+              gstin: originalInvoice.shippingGstin || originalInvoice.client.gstin || ''
+          },
+          isShippingSameAsBilling: !originalInvoice.shippingAddress,
+          transporterId: '',
+          vehicleNumber: originalInvoice.vehicleNumber || '',
+          ewayBillNumber: originalInvoice.ewayBillNumber || '',
+          type: 'debit_note',
+          documentType: 'debit_note',
+          originalInvoiceNumber: originalInvoice.invoiceNumber,
+          originalInvoiceDate: originalInvoice.issueDate,
+          reason: 'Correction in Invoice'
+      });
+      handleSetActiveView('NewDebitNote');
+  };
+
   if (!isAuthReady || (isLoadingCompanies && !isDemoMode)) {
     return <div className="w-full h-screen bg-slate-100 dark:bg-secondary-dark flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div></div>;
   }
@@ -1002,7 +1066,9 @@ const App: React.FC = () => {
         />;
       case 'NewInvoice': return <NewInvoice company={activeCompany} saveInvoice={handleSaveInvoice} setActiveView={handleSetActiveView} invoiceToEdit={invoiceToEdit as Invoice} clearEditingInvoice={() => setInvoiceToEdit(null)} onUpdateCompany={handleUpdateCompany} draftInvoice={draftInvoice} setDraftInvoice={setDraftInvoice} mode="invoice" />;
       case 'NewQuotation': return <NewInvoice company={activeCompany} saveInvoice={handleSaveInvoice} setActiveView={handleSetActiveView} invoiceToEdit={invoiceToEdit as Quotation} clearEditingInvoice={() => setInvoiceToEdit(null)} onUpdateCompany={handleUpdateCompany} draftInvoice={draftInvoice} setDraftInvoice={setDraftInvoice} mode="quote" />;
-      case 'Invoices': return <Invoices invoices={activeCompany.invoices} company={activeCompany} setActiveView={handleSetActiveView} onEdit={handleEditInvoice} onDelete={handleDeleteInvoice} onStatusChange={handleUpdateInvoiceStatus} onBulkDelete={handleBulkDeleteInvoices} onBulkStatusChange={handleBulkStatusChange} onAddRecurring={handleAddRecurring} onUpdateRecurring={handleUpdateRecurring} onDeleteRecurring={handleDeleteRecurring} initialFilter={invoiceFilter} initialSearchQuery={activeSearchQuery} />;
+      case 'NewCreditNote': return <NewInvoice company={activeCompany} saveInvoice={handleSaveInvoice} setActiveView={handleSetActiveView} invoiceToEdit={invoiceToEdit as Invoice} clearEditingInvoice={() => setInvoiceToEdit(null)} onUpdateCompany={handleUpdateCompany} draftInvoice={draftInvoice} setDraftInvoice={setDraftInvoice} mode="credit_note" />;
+      case 'NewDebitNote': return <NewInvoice company={activeCompany} saveInvoice={handleSaveInvoice} setActiveView={handleSetActiveView} invoiceToEdit={invoiceToEdit as Invoice} clearEditingInvoice={() => setInvoiceToEdit(null)} onUpdateCompany={handleUpdateCompany} draftInvoice={draftInvoice} setDraftInvoice={setDraftInvoice} mode="debit_note" />;
+      case 'Invoices': return <Invoices invoices={activeCompany.invoices} company={activeCompany} setActiveView={handleSetActiveView} onEdit={handleEditInvoice} onDelete={handleDeleteInvoice} onStatusChange={handleUpdateInvoiceStatus} onBulkDelete={handleBulkDeleteInvoices} onBulkStatusChange={handleBulkStatusChange} onAddRecurring={handleAddRecurring} onUpdateRecurring={handleUpdateRecurring} onDeleteRecurring={handleDeleteRecurring} onIssueCreditNote={handleIssueCreditNote} onIssueDebitNote={handleIssueDebitNote} initialFilter={invoiceFilter} initialSearchQuery={activeSearchQuery} />;
       case 'Quotations': return <Quotations quotations={activeCompany.quotations || []} company={activeCompany} setActiveView={handleSetActiveView} onEdit={handleEditQuotation} onDelete={handleDeleteQuotation} onConvert={handleConvertQuoteToInvoice} onStatusChange={handleUpdateQuotationStatus} />;
       case 'GstReports': return <GstReports company={activeCompany} />;
       case 'Clients': return <Clients clients={activeCompany.clients} setClients={setClients} invoices={activeCompany.invoices} company={activeCompany} onEditInvoice={handleEditInvoice} onDeleteInvoice={handleDeleteInvoice} onStatusChange={handleUpdateInvoiceStatus} onBulkDelete={handleBulkDeleteClients} initialSearchQuery={activeSearchQuery} />;

@@ -102,6 +102,12 @@ export interface Invoice {
   transporterGstin?: string;
   vehicleNumber?: string;
   ewayBillNumber?: string;
+
+  // Credit / Debit Note Details
+  documentType?: 'invoice' | 'credit_note' | 'debit_note';
+  originalInvoiceNumber?: string;
+  originalInvoiceDate?: string;
+  reason?: 'Sales Return' | 'Post Sale Discount' | 'Deficiency in Services' | 'Correction in Invoice' | 'Change in POS' | 'Other';
 }
 
 export interface Quotation extends Omit<Invoice, 'status' | 'invoiceNumber'> {
@@ -131,7 +137,7 @@ export interface StockHistoryEntry {
     itemName: string;
     previousQuantity: number;
     newQuantity: number;
-    action: 'Manual Update' | 'Bulk Update' | 'Invoice Created' | 'Invoice Edited' | 'Invoice Deleted' | 'Voice Update' | 'Initial' | 'Bill Scan';
+    action: 'Manual Update' | 'Bulk Update' | 'Invoice Created' | 'Invoice Edited' | 'Invoice Deleted' | 'Voice Update' | 'Initial' | 'Bill Scan' | 'Sales Return Credit Note';
     timestamp: string;
     referenceId?: string; // e.g., Invoice Number
 }
@@ -199,7 +205,10 @@ export interface DraftInvoice {
     transporterId: string;
     vehicleNumber: string;
     ewayBillNumber: string;
-    // Added for Quotation support
-    type?: 'invoice' | 'quote';
+    // Added for Quotation, Credit Note, and Debit Note support
+    type?: 'invoice' | 'quote' | 'credit_note' | 'debit_note';
     validUntil?: string;
+    originalInvoiceNumber?: string;
+    originalInvoiceDate?: string;
+    reason?: 'Sales Return' | 'Post Sale Discount' | 'Deficiency in Services' | 'Correction in Invoice' | 'Change in POS' | 'Other';
 }

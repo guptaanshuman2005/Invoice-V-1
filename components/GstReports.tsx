@@ -38,7 +38,7 @@ interface GstReportsProps {
   company: Company;
 }
 
-type TabType = 'b2b' | 'b2cs' | 'hsn' | 'docs' | 'gstr3b';
+type TabType = 'b2b' | 'b2cs' | 'cdnr' | 'hsn' | 'docs' | 'gstr3b';
 
 const MONTH_NAMES = [
   { label: 'April', num: 4 },
@@ -122,6 +122,23 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
     });
   }, [company.invoices, dateRange]);
 
+  // Segregate standard invoices, credit notes, and debit notes
+  const regularInvoices = useMemo(() => {
+    return filteredInvoices.filter(inv => inv.documentType !== 'credit_note' && inv.documentType !== 'debit_note');
+  }, [filteredInvoices]);
+
+  const creditNotes = useMemo(() => {
+    return filteredInvoices.filter(inv => inv.documentType === 'credit_note');
+  }, [filteredInvoices]);
+
+  const debitNotes = useMemo(() => {
+    return filteredInvoices.filter(inv => inv.documentType === 'debit_note');
+  }, [filteredInvoices]);
+
+  const creditDebitNotes = useMemo(() => {
+    return filteredInvoices.filter(inv => inv.documentType === 'credit_note' || inv.documentType === 'debit_note');
+  }, [filteredInvoices]);
+
   // Filter expenses within period to compute Input Tax Credit (ITC)
   const filteredExpenses = useMemo(() => {
     return (company.expenses || []).filter(exp => {
@@ -133,21 +150,21 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
 
   const companyState = (company.details.state || '').trim().toLowerCase();
 
-  // B2B Invoices (registered buyers with GSTIN)
+  // B2B Invoices (registered buyers with GSTIN, excluding CN/DN)
   const b2bInvoices = useMemo(() => {
-    return filteredInvoices.filter(inv => {
+    return regularInvoices.filter(inv => {
       const gstin = inv.client.gstin?.trim() || '';
       return gstin.length > 0;
     });
-  }, [filteredInvoices]);
+  }, [regularInvoices]);
 
-  // B2CS Invoices (unregistered buyers)
+  // B2CS Invoices (unregistered buyers, excluding CN/DN)
   const b2csInvoices = useMemo(() => {
-    return filteredInvoices.filter(inv => {
+    return regularInvoices.filter(inv => {
       const gstin = inv.client.gstin?.trim() || '';
       return gstin.length === 0;
     });
-  }, [filteredInvoices]);
+  }, [regularInvoices]);
 
   // Aggregated B2CS by POS & Tax Rate
   const b2csSummary = useMemo(() => {
@@ -185,12 +202,13 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
     filteredInvoices.forEach(inv => {
       const pos = (inv.shippingState || inv.client.state || '').trim();
       const isInter = pos.toLowerCase() !== companyState && pos !== '';
+      const mult = inv.documentType === 'credit_note' ? -1 : 1;
 
       inv.items.forEach(item => {
         const hsn = (item.hsn || '9999').trim();
         const rate = Number(item.gstRate) || 0;
-        const qty = Number(item.quantity) || 0;
-        const taxable = (Number(item.price) || 0) * qty;
+        const qty = (Number(item.quantity) || 0) * mult;
+        const taxable = ((Number(item.price) || 0) * (Number(item.quantity) || 0)) * mult;
         const tax = (taxable * rate) / 100;
         const total = taxable + tax;
         const uqc = (item.unit || 'PCS').toUpperCase();
@@ -222,29 +240,52 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
     return Object.values(map);
   }, [filteredInvoices, companyState]);
 
-  // Overall Totals
+  // Overall Totals Net of Credit/Debit Notes
   const totals = useMemo(() => {
-    let taxable = 0;
-    let igst = 0;
-    let cgst = 0;
-    let sgst = 0;
-    let grandTotal = 0;
+    let grossInvoiceTaxable = 0;
+    let grossInvoiceIgst = 0;
+    let grossInvoiceCgst = 0;
+    let grossInvoiceSgst = 0;
+    let grossInvoiceTotal = 0;
 
-    filteredInvoices.forEach(inv => {
-      taxable += Number(inv.subTotal) || 0;
-      igst += Number(inv.igst) || 0;
-      cgst += Number(inv.cgst) || 0;
-      sgst += Number(inv.sgst) || 0;
-      grandTotal += Number(inv.grandTotal) || 0;
+    regularInvoices.forEach(inv => {
+      grossInvoiceTaxable += Number(inv.subTotal) || 0;
+      grossInvoiceIgst += Number(inv.igst) || 0;
+      grossInvoiceCgst += Number(inv.cgst) || 0;
+      grossInvoiceSgst += Number(inv.sgst) || 0;
+      grossInvoiceTotal += Number(inv.grandTotal) || 0;
     });
 
-    const totalOutputTax = igst + cgst + sgst;
+    let cnTaxable = 0, cnIgst = 0, cnCgst = 0, cnSgst = 0, cnTotal = 0;
+    creditNotes.forEach(cn => {
+      cnTaxable += Number(cn.subTotal) || 0;
+      cnIgst += Number(cn.igst) || 0;
+      cnCgst += Number(cn.cgst) || 0;
+      cnSgst += Number(cn.sgst) || 0;
+      cnTotal += Number(cn.grandTotal) || 0;
+    });
+
+    let dnTaxable = 0, dnIgst = 0, dnCgst = 0, dnSgst = 0, dnTotal = 0;
+    debitNotes.forEach(dn => {
+      dnTaxable += Number(dn.subTotal) || 0;
+      dnIgst += Number(dn.igst) || 0;
+      dnCgst += Number(dn.cgst) || 0;
+      dnSgst += Number(dn.sgst) || 0;
+      dnTotal += Number(dn.grandTotal) || 0;
+    });
+
+    const netTaxable = Math.max(0, grossInvoiceTaxable + dnTaxable - cnTaxable);
+    const netIgst = Math.max(0, grossInvoiceIgst + dnIgst - cnIgst);
+    const netCgst = Math.max(0, grossInvoiceCgst + dnCgst - cnCgst);
+    const netSgst = Math.max(0, grossInvoiceSgst + dnSgst - cnSgst);
+    const netGrandTotal = Math.max(0, grossInvoiceTotal + dnTotal - cnTotal);
+
+    const totalOutputTax = netIgst + netCgst + netSgst;
 
     // Estimate ITC from business expenses: assume standard 18% GST on business expenses if not explicitly given
     let itcEligible = 0;
     filteredExpenses.forEach(exp => {
       const amount = Number(exp.amount) || 0;
-      // GST portion estimated as 18% embedded in purchase or taxable expense
       const estimatedGst = (amount * 18) / 118;
       itcEligible += estimatedGst;
     });
@@ -252,34 +293,54 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
     const netTaxPayable = Math.max(0, totalOutputTax - itcEligible);
 
     return {
-      taxable,
-      igst,
-      cgst,
-      sgst,
+      taxable: netTaxable,
+      grossInvoiceTaxable,
+      cnTaxable,
+      dnTaxable,
+      igst: netIgst,
+      cgst: netCgst,
+      sgst: netSgst,
+      grossInvoiceIgst,
+      grossInvoiceCgst,
+      grossInvoiceSgst,
+      cnIgst,
+      cnCgst,
+      cnSgst,
+      dnIgst,
+      dnCgst,
+      dnSgst,
       totalOutputTax,
       itcEligible,
       netTaxPayable,
-      grandTotal,
-      invoiceCount: filteredInvoices.length,
+      grandTotal: netGrandTotal,
+      invoiceCount: regularInvoices.length,
+      creditNoteCount: creditNotes.length,
+      debitNoteCount: debitNotes.length,
       b2bCount: b2bInvoices.length,
       b2csCount: b2csInvoices.length
     };
-  }, [filteredInvoices, filteredExpenses, b2bInvoices, b2csInvoices]);
+  }, [regularInvoices, creditNotes, debitNotes, filteredExpenses, b2bInvoices, b2csInvoices]);
 
   // Document Summary
   const docSummary = useMemo(() => {
-    if (!filteredInvoices.length) {
-      return { from: '-', to: '-', total: 0, cancelled: 0, net: 0 };
-    }
-    const numbers = filteredInvoices.map(i => i.invoiceNumber).sort();
-    return {
-      from: numbers[0],
-      to: numbers[numbers.length - 1],
-      total: numbers.length,
-      cancelled: 0,
-      net: numbers.length
+    const summarize = (list: Invoice[]) => {
+      if (!list.length) return { from: '-', to: '-', total: 0, cancelled: 0, net: 0 };
+      const numbers = list.map(i => i.invoiceNumber).sort();
+      return {
+        from: numbers[0],
+        to: numbers[numbers.length - 1],
+        total: numbers.length,
+        cancelled: 0,
+        net: numbers.length
+      };
     };
-  }, [filteredInvoices]);
+
+    return {
+      invoices: summarize(regularInvoices),
+      creditNotes: summarize(creditNotes),
+      debitNotes: summarize(debitNotes)
+    };
+  }, [regularInvoices, creditNotes, debitNotes]);
 
   // JSON payload for download and modal
   const gstr1JsonPayload = useMemo(() => {
@@ -332,6 +393,18 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
       (inv.client.gstin && inv.client.gstin.toLowerCase().includes(q))
     );
   }, [b2bInvoices, searchQuery]);
+
+  // Filtered CDNR table items based on search query
+  const searchedCDNR = useMemo(() => {
+    if (!searchQuery.trim()) return creditDebitNotes;
+    const q = searchQuery.toLowerCase();
+    return creditDebitNotes.filter(n => 
+      n.invoiceNumber.toLowerCase().includes(q) ||
+      (n.originalInvoiceNumber && n.originalInvoiceNumber.toLowerCase().includes(q)) ||
+      n.client.name.toLowerCase().includes(q) ||
+      (n.client.gstin && n.client.gstin.toLowerCase().includes(q))
+    );
+  }, [creditDebitNotes, searchQuery]);
 
   return (
     <div className="space-y-6 animate-fade-in print:p-0">
@@ -576,6 +649,13 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
             </button>
 
             <button
+              onClick={() => setActiveTab('cdnr')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${activeTab === 'cdnr' ? 'bg-white dark:bg-slate-800 text-accent shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+            >
+              Table 9B: Credit / Debit Notes ({creditDebitNotes.length})
+            </button>
+
+            <button
               onClick={() => setActiveTab('hsn')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${activeTab === 'hsn' ? 'bg-white dark:bg-slate-800 text-accent shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
             >
@@ -597,13 +677,13 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
             </button>
           </div>
 
-          {/* Search filter for B2B */}
-          {activeTab === 'b2b' && (
+          {/* Search filter for B2B and CDNR */}
+          {(activeTab === 'b2b' || activeTab === 'cdnr') && (
             <div className="relative w-full sm:w-64">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search Client or GSTIN..."
+                placeholder={activeTab === 'cdnr' ? 'Search Note #, Inv # or Client...' : 'Search Client or GSTIN...'}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-accent"
@@ -724,6 +804,96 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
           </div>
         )}
 
+        {/* TAB: CDNR / CDNUR (CREDIT & DEBIT NOTES) */}
+        {activeTab === 'cdnr' && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/40 text-slate-500 font-bold uppercase tracking-wider">
+                  <th className="p-3.5">Doc Type</th>
+                  <th className="p-3.5">Note # & Date</th>
+                  <th className="p-3.5">Original Inv Ref</th>
+                  <th className="p-3.5">Recipient Details</th>
+                  <th className="p-3.5">Reason (GST 9B)</th>
+                  <th className="p-3.5">Place of Supply</th>
+                  <th className="p-3.5 text-right">Taxable Val (₹)</th>
+                  <th className="p-3.5 text-right">IGST (₹)</th>
+                  <th className="p-3.5 text-right">CGST (₹)</th>
+                  <th className="p-3.5 text-right">SGST (₹)</th>
+                  <th className="p-3.5 text-right">Note Val (₹)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {searchedCDNR.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="p-8 text-center text-slate-400">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <FileSpreadsheet className="w-8 h-8 opacity-40 text-slate-400" />
+                        <p className="font-semibold">No Credit or Debit Notes issued for this filing period.</p>
+                        <p className="text-[11px] opacity-70">Credit and Debit notes issued from the Invoices view will appear here automatically.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  searchedCDNR.map(note => {
+                    const isCredit = note.documentType === 'credit_note';
+                    const pos = note.shippingState || note.client.state || '';
+                    const posCode = getStateCode(pos);
+                    return (
+                      <tr key={note.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
+                        <td className="p-3.5">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${isCredit ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800' : 'bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800'}`}>
+                            {isCredit ? 'Credit Note (C)' : 'Debit Note (D)'}
+                          </span>
+                        </td>
+                        <td className="p-3.5">
+                          <div className="font-mono font-bold text-slate-900 dark:text-white">{note.invoiceNumber}</div>
+                          <div className="text-[11px] text-slate-400">{note.issueDate}</div>
+                        </td>
+                        <td className="p-3.5">
+                          {note.originalInvoiceNumber ? (
+                            <div>
+                              <div className="font-mono text-accent font-semibold">{note.originalInvoiceNumber}</div>
+                              <div className="text-[11px] text-slate-400">{note.originalInvoiceDate || '-'}</div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic">None specified</span>
+                          )}
+                        </td>
+                        <td className="p-3.5">
+                          <div className="font-medium text-slate-900 dark:text-white">{note.client.name}</div>
+                          {note.client.gstin ? (
+                            <div className="font-mono text-[10px] text-accent font-bold">{note.client.gstin}</div>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-semibold">Unregistered (CDNUR)</span>
+                          )}
+                        </td>
+                        <td className="p-3.5">
+                          <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            {note.reason || 'Correction in Invoice'}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-slate-600 dark:text-slate-300 font-medium">
+                          {posCode} - {pos || 'Same State'}
+                        </td>
+                        <td className={`p-3.5 text-right font-medium ${isCredit ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>
+                          {isCredit ? '-' : ''}₹{(note.subTotal || 0).toFixed(2)}
+                        </td>
+                        <td className="p-3.5 text-right text-slate-600 dark:text-slate-400">₹{(note.igst || 0).toFixed(2)}</td>
+                        <td className="p-3.5 text-right text-slate-600 dark:text-slate-400">₹{(note.cgst || 0).toFixed(2)}</td>
+                        <td className="p-3.5 text-right text-slate-600 dark:text-slate-400">₹{(note.sgst || 0).toFixed(2)}</td>
+                        <td className={`p-3.5 text-right font-black ${isCredit ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>
+                          {isCredit ? '-' : ''}₹{note.grandTotal.toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* TAB 3: HSN SUMMARY */}
         {activeTab === 'hsn' && (
           <div className="overflow-x-auto">
@@ -787,11 +957,27 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   <tr>
                     <td className="p-3.5 font-medium text-slate-900 dark:text-white">Invoices for Outward Supply</td>
-                    <td className="p-3.5 font-mono text-accent">{docSummary.from}</td>
-                    <td className="p-3.5 font-mono text-accent">{docSummary.to}</td>
-                    <td className="p-3.5 text-right font-medium">{docSummary.total}</td>
-                    <td className="p-3.5 text-right text-slate-400">{docSummary.cancelled}</td>
-                    <td className="p-3.5 text-right font-bold text-emerald-600 dark:text-emerald-400">{docSummary.net}</td>
+                    <td className="p-3.5 font-mono text-accent">{docSummary.invoices.from}</td>
+                    <td className="p-3.5 font-mono text-accent">{docSummary.invoices.to}</td>
+                    <td className="p-3.5 text-right font-medium">{docSummary.invoices.total}</td>
+                    <td className="p-3.5 text-right text-slate-400">{docSummary.invoices.cancelled}</td>
+                    <td className="p-3.5 text-right font-bold text-emerald-600 dark:text-emerald-400">{docSummary.invoices.net}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3.5 font-medium text-slate-900 dark:text-white">Credit Notes (GSTR-1 Table 9B)</td>
+                    <td className="p-3.5 font-mono text-rose-500">{docSummary.creditNotes.from}</td>
+                    <td className="p-3.5 font-mono text-rose-500">{docSummary.creditNotes.to}</td>
+                    <td className="p-3.5 text-right font-medium">{docSummary.creditNotes.total}</td>
+                    <td className="p-3.5 text-right text-slate-400">{docSummary.creditNotes.cancelled}</td>
+                    <td className="p-3.5 text-right font-bold text-rose-600 dark:text-rose-400">{docSummary.creditNotes.net}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3.5 font-medium text-slate-900 dark:text-white">Debit Notes (GSTR-1 Table 9B)</td>
+                    <td className="p-3.5 font-mono text-indigo-500">{docSummary.debitNotes.from}</td>
+                    <td className="p-3.5 font-mono text-indigo-500">{docSummary.debitNotes.to}</td>
+                    <td className="p-3.5 text-right font-medium">{docSummary.debitNotes.total}</td>
+                    <td className="p-3.5 text-right text-slate-400">{docSummary.debitNotes.cancelled}</td>
+                    <td className="p-3.5 text-right font-bold text-indigo-600 dark:text-indigo-400">{docSummary.debitNotes.net}</td>
                   </tr>
                 </tbody>
               </table>
@@ -804,7 +990,7 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
           <div className="p-6 space-y-6">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">Form GSTR-3B: Monthly / Quarterly Summary Return</h3>
-              <p className="text-xs text-slate-500">Summary of outward supplies, eligible Input Tax Credit (ITC), and net cash liability.</p>
+              <p className="text-xs text-slate-500">Summary of outward supplies, eligible Input Tax Credit (ITC), and net cash liability (Net of Table 9B Credit/Debit Notes).</p>
             </div>
 
             {/* Table 3.1: Details of Outward Supplies */}
@@ -826,7 +1012,14 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   <tr>
                     <td className="p-3 font-medium text-slate-800 dark:text-slate-200">
-                      (a) Outward taxable supplies (other than zero rated, nil rated and exempted)
+                      <div>(a) Outward taxable supplies (other than zero rated, nil rated and exempted)</div>
+                      {(totals.cnTaxable > 0 || totals.dnTaxable > 0) && (
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          Net: Invoices ₹{totals.grossInvoiceTaxable.toFixed(2)}
+                          {totals.cnTaxable > 0 && <span className="text-rose-500"> - Credit Notes ₹{totals.cnTaxable.toFixed(2)}</span>}
+                          {totals.dnTaxable > 0 && <span className="text-indigo-500"> + Debit Notes ₹{totals.dnTaxable.toFixed(2)}</span>}
+                        </div>
+                      )}
                     </td>
                     <td className="p-3 text-right font-bold">₹{totals.taxable.toFixed(2)}</td>
                     <td className="p-3 text-right">₹{totals.igst.toFixed(2)}</td>

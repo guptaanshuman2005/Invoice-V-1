@@ -23,7 +23,7 @@ interface NewInvoiceProps {
   onUpdateCompany: (updatedCompany: Company) => void;
   draftInvoice: DraftInvoice;
   setDraftInvoice: React.Dispatch<React.SetStateAction<DraftInvoice>>;
-  mode?: 'invoice' | 'quote'; // Added mode
+  mode?: 'invoice' | 'quote' | 'credit_note' | 'debit_note'; // Added credit_note & debit_note
 }
 
 const ITEM_UNITS = ['pcs', 'kgs', 'ltr', 'nos', 'box', 'pkt', 'gram', 'set', 'pair', 'm', 'cm', 'ft', 'sqft'];
@@ -68,6 +68,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
             // Handle differences between Invoice and Quotation types safely
             const invNum = 'invoiceNumber' in invoiceToEdit ? invoiceToEdit.invoiceNumber : (invoiceToEdit as Quotation).quotationNumber;
             const validUntil = 'validUntil' in invoiceToEdit ? (invoiceToEdit as Quotation).validUntil : '';
+            const invDoc = invoiceToEdit as Invoice;
             
             setDraftInvoice({
                 invoiceNumber: invNum,
@@ -92,7 +93,10 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                 transporterId: (invoiceToEdit as any).transporterId || 'self', 
                 vehicleNumber: invoiceToEdit.vehicleNumber || '',
                 ewayBillNumber: invoiceToEdit.ewayBillNumber || '',
-                type: mode
+                type: mode,
+                originalInvoiceNumber: invDoc.originalInvoiceNumber || '',
+                originalInvoiceDate: invDoc.originalInvoiceDate || '',
+                reason: invDoc.reason || (mode === 'credit_note' ? 'Sales Return' : 'Correction in Invoice')
             });
         } else {
             // Load from localStorage if available
@@ -103,13 +107,35 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                     // Only load if it matches the current mode
                     if (parsed.type === mode) {
                         setDraftInvoice(parsed);
+                        return;
                     }
                 } catch (e) {
                     console.error("Failed to parse draft", e);
                 }
             }
+
+            // Auto-generate numbering for Credit / Debit notes if empty
+            if (mode === 'credit_note') {
+                const count = (company.invoices || []).filter(i => i.documentType === 'credit_note').length;
+                const nextNum = `CN-${(count + 1).toString().padStart(3, '0')}`;
+                setDraftInvoice(prev => ({
+                    ...prev,
+                    invoiceNumber: prev.invoiceNumber && prev.invoiceNumber.startsWith('CN-') ? prev.invoiceNumber : nextNum,
+                    type: 'credit_note',
+                    reason: prev.reason || 'Sales Return'
+                }));
+            } else if (mode === 'debit_note') {
+                const count = (company.invoices || []).filter(i => i.documentType === 'debit_note').length;
+                const nextNum = `DN-${(count + 1).toString().padStart(3, '0')}`;
+                setDraftInvoice(prev => ({
+                    ...prev,
+                    invoiceNumber: prev.invoiceNumber && prev.invoiceNumber.startsWith('DN-') ? prev.invoiceNumber : nextNum,
+                    type: 'debit_note',
+                    reason: prev.reason || 'Correction in Invoice'
+                }));
+            }
         }
-    }, [invoiceToEdit, setDraftInvoice, mode, company.id]);
+    }, [invoiceToEdit, setDraftInvoice, mode, company.id, company.invoices]);
 
     // Auto-Save Draft to LocalStorage
     useEffect(() => {
@@ -385,9 +411,14 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
             saveInvoice(quotation);
             setSavedInvoice(quotation as Quotation);
         } else {
+            const documentType = mode === 'credit_note' ? 'credit_note' : mode === 'debit_note' ? 'debit_note' : 'invoice';
             const finalInvoice: Omit<Invoice, 'id' | 'status'> | Invoice = {
                 ...commonData,
                 invoiceNumber: draftInvoice.invoiceNumber,
+                documentType,
+                originalInvoiceNumber: draftInvoice.originalInvoiceNumber,
+                originalInvoiceDate: draftInvoice.originalInvoiceDate,
+                reason: draftInvoice.reason,
                 ...(isEditing && invoiceToEdit && 'invoiceNumber' in invoiceToEdit ? { id: invoiceToEdit.id, status: (invoiceToEdit as Invoice).status } : {})
             };
             saveInvoice(finalInvoice);
@@ -402,7 +433,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
     const handleShareWhatsApp = async () => {
         if (!savedInvoice) return;
         const num = (savedInvoice as any).invoiceNumber || (savedInvoice as any).quotationNumber;
-        const type = mode === 'quote' ? 'Quotation' : 'Invoice';
+        const type = mode === 'quote' ? 'Quotation' : mode === 'credit_note' ? 'Credit Note' : mode === 'debit_note' ? 'Debit Note' : 'Invoice';
         const text = `*${type} from ${company.details?.name || 'Company'}*\n\nHello ${savedInvoice.client?.name || 'Client'},\n\nHere are the details for *${type} ${num}*:\n\n*Total Amount:* Rs. ${savedInvoice.grandTotal.toFixed(2)}\n*Date:* ${savedInvoice.issueDate}\n\nPlease review attached details.\n\nThank you.`; 
         
         // If Web Share API is supported, try to share the PDF file
@@ -442,6 +473,9 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
         clearEditingInvoice();
     };
 
+    const isCreditOrDebitNote = mode === 'credit_note' || mode === 'debit_note';
+    const docTypeLabel = mode === 'quote' ? 'Quotation' : mode === 'credit_note' ? 'Credit Note' : mode === 'debit_note' ? 'Debit Note' : 'Invoice';
+
     return (
         <div className="max-w-6xl mx-auto pb-20 animate-fade-in">
              <div className="flex justify-between items-center mb-6">
@@ -449,18 +483,108 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                      <button onClick={() => { setActiveView(mode === 'quote' ? 'Quotations' : 'Invoices'); clearEditingInvoice(); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors">
                         <ArrowLeft className="w-6 h-6" strokeWidth={2} />
                      </button>
-                     <h1 className="text-2xl font-bold text-slate-900 dark:text-light-text">
-                         {isEditing ? `Edit ${mode === 'quote' ? 'Quotation' : 'Invoice'}` : `New ${mode === 'quote' ? 'Quotation' : 'Invoice'}`}
-                     </h1>
+                     <div>
+                         <div className="flex items-center gap-2">
+                             <h1 className="text-2xl font-bold text-slate-900 dark:text-light-text">
+                                 {isEditing ? `Edit ${docTypeLabel}` : `New ${docTypeLabel}`}
+                             </h1>
+                             {isCreditOrDebitNote && (
+                                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${mode === 'credit_note' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300'}`}>
+                                     GST Table 9B
+                                 </span>
+                             )}
+                         </div>
+                         {isCreditOrDebitNote && (
+                             <p className="text-xs text-slate-500 mt-0.5">
+                                 {mode === 'credit_note' ? 'Issued for sales returns, post-sale discounts, or tax rate reductions.' : 'Issued for upward rate corrections, additional billing, or supplementary charges.'}
+                             </p>
+                         )}
+                     </div>
                 </div>
                 <div className="flex gap-3">
                     <Button variant="secondary" onClick={() => { setActiveView(mode === 'quote' ? 'Quotations' : 'Invoices'); clearEditingInvoice(); }}>Cancel</Button>
                     <Button variant="secondary" onClick={() => setShowLivePreview(true)} className="flex items-center gap-2">
                         <Eye className="w-4 h-4" /> Live Preview
                     </Button>
-                    <Button onClick={handleSave} className="shadow-lg shadow-accent/20">Save {mode === 'quote' ? 'Quotation' : 'Invoice'}</Button>
+                    <Button onClick={handleSave} className="shadow-lg shadow-accent/20">Save {docTypeLabel}</Button>
                 </div>
              </div>
+
+             {/* Credit / Debit Note Reference Card */}
+             {isCreditOrDebitNote && (
+                 <div className="glass-panel p-5 rounded-2xl mb-6 border border-amber-500/20 bg-amber-50/40 dark:bg-amber-950/10">
+                     <div className="flex items-center justify-between gap-2 mb-3">
+                         <div className="flex items-center gap-2">
+                             <span className="text-xs font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                                 Original Invoice & GST Reference
+                             </span>
+                             <span className="text-[11px] text-slate-500 dark:text-slate-400">(Required for GSTR-1 CDNR/CDNUR reporting)</span>
+                         </div>
+                     </div>
+                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                         <div>
+                             <label className="block text-xs font-bold text-slate-500 mb-1">Original Invoice #</label>
+                             <div className="space-y-1.5">
+                                 <Input 
+                                     placeholder="e.g. INV-001" 
+                                     value={draftInvoice.originalInvoiceNumber || ''} 
+                                     onChange={e => setDraftInvoice(prev => ({ ...prev, originalInvoiceNumber: e.target.value }))}
+                                     className="!py-2 !text-xs font-mono"
+                                 />
+                                 {draftInvoice.clientId && (
+                                     <select
+                                         className="w-full text-[11px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-600 dark:text-slate-300 font-medium"
+                                         onChange={e => {
+                                             const selected = company.invoices.find(i => i.invoiceNumber === e.target.value);
+                                             if (selected) {
+                                                 setDraftInvoice(prev => ({
+                                                     ...prev,
+                                                     originalInvoiceNumber: selected.invoiceNumber,
+                                                     originalInvoiceDate: selected.issueDate
+                                                 }));
+                                             }
+                                         }}
+                                         value={draftInvoice.originalInvoiceNumber || ''}
+                                     >
+                                         <option value="">-- Or link past invoice of this client --</option>
+                                         {company.invoices
+                                             .filter(i => i.client.id === draftInvoice.clientId && i.documentType !== 'credit_note')
+                                             .map(i => (
+                                                 <option key={i.id} value={i.invoiceNumber}>
+                                                     {i.invoiceNumber} ({i.issueDate}) - ₹{i.grandTotal.toFixed(0)}
+                                                 </option>
+                                             ))}
+                                     </select>
+                                 )}
+                             </div>
+                         </div>
+                         <div>
+                             <label className="block text-xs font-bold text-slate-500 mb-1">Original Invoice Date</label>
+                             <Input 
+                                 type="date" 
+                                 value={draftInvoice.originalInvoiceDate || ''} 
+                                 onChange={e => setDraftInvoice(prev => ({ ...prev, originalInvoiceDate: e.target.value }))}
+                                 className="!py-2 !text-xs"
+                             />
+                         </div>
+                         <div>
+                             <label className="block text-xs font-bold text-slate-500 mb-1">Reason for Issuance</label>
+                             <select
+                                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-accent"
+                                 value={draftInvoice.reason || (mode === 'credit_note' ? 'Sales Return' : 'Correction in Invoice')}
+                                 onChange={e => setDraftInvoice(prev => ({ ...prev, reason: e.target.value as any }))}
+                             >
+                                 <option value="Sales Return">01 - Sales Return</option>
+                                 <option value="Post Sale Discount">02 - Post Sale Discount</option>
+                                 <option value="Deficiency in Services">03 - Deficiency in Services</option>
+                                 <option value="Correction in Invoice">04 - Correction in Invoice</option>
+                                 <option value="Change in POS">05 - Change in POS</option>
+                                 <option value="Other">06 - Other</option>
+                             </select>
+                         </div>
+                     </div>
+                 </div>
+             )}
 
              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                  <div className="lg:col-span-2 space-y-6">
@@ -495,7 +619,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                  </select>
                                  
                                  <div className="grid grid-cols-2 gap-4">
-                                     <Input label={mode === 'quote' ? "Quotation #" : "Invoice #"} value={draftInvoice.invoiceNumber} onChange={e => setDraftInvoice({...draftInvoice, invoiceNumber: e.target.value})} />
+                                     <Input label={`${docTypeLabel} #`} value={draftInvoice.invoiceNumber} onChange={e => setDraftInvoice({...draftInvoice, invoiceNumber: e.target.value})} />
                                      <Input label="Issue Date" type="date" value={draftInvoice.issueDate} onChange={e => setDraftInvoice({...draftInvoice, issueDate: e.target.value})} />
                                  </div>
                              </div>

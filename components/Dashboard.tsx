@@ -1,8 +1,9 @@
 
 import React, { useMemo, useEffect, useState } from 'react';
 import type { Company, Invoice, Item } from '../types';
-import { TrendingUp, TrendingDown, IndianRupee, FileText, Users, AlertTriangle, Scale, X, PlusCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, IndianRupee, FileText, Users, AlertTriangle, Scale, X, PlusCircle, Clock, ChevronRight, Download, Search, MessageSquare, ExternalLink, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import Modal from './common/Modal';
+import { sendPaymentReminderViaWhatsApp } from '../utils/whatsapp';
 
 interface DashboardProps {
     invoices: Invoice[];
@@ -190,6 +191,9 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
     }, [company.id]);
 
     const [timeRange, setTimeRange] = useState<'6M' | '1Y' | 'ALL'>('6M');
+    const [isAgingModalOpen, setIsAgingModalOpen] = useState(false);
+    const [selectedAgingBucket, setSelectedAgingBucket] = useState<'all' | '0-30' | '31-60' | '61-90' | '90+'>('all');
+    const [agingSearchQuery, setAgingSearchQuery] = useState('');
 
     const metrics = useMemo(() => {
         const totalRevenue = invoices.filter(inv => inv.status === 'Paid').reduce((acc, inv) => acc + inv.grandTotal, 0);
@@ -315,26 +319,70 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
             });
         }
 
-        // Calculate Receivables Aging
-        let aging0to30 = 0;
-        let aging31to60 = 0;
-        let aging60plus = 0;
+        // Calculate Receivables Aging (0-30, 31-60, 61-90, 90+ Days)
+        interface OverdueInvoiceItem {
+            invoice: Invoice;
+            daysOverdue: number;
+            daysSinceIssue: number;
+            effectiveDays: number;
+            bucket: '0-30' | '31-60' | '61-90' | '90+';
+        }
+
+        const agingBuckets = {
+            '0-30': { label: '0-30 Days', tag: 'Current / Low Risk', color: 'emerald', total: 0, items: [] as OverdueInvoiceItem[] },
+            '31-60': { label: '31-60 Days', tag: 'Overdue (Follow Up)', color: 'amber', total: 0, items: [] as OverdueInvoiceItem[] },
+            '61-90': { label: '61-90 Days', tag: 'Urgent Action', color: 'orange', total: 0, items: [] as OverdueInvoiceItem[] },
+            '90+': { label: '90+ Days', tag: 'Critical / High Risk', color: 'rose', total: 0, items: [] as OverdueInvoiceItem[] },
+        };
+
+        const allAgingInvoices: OverdueInvoiceItem[] = [];
 
         invoices.forEach(inv => {
-            if (inv.status === 'Unpaid' || inv.status === 'Overdue') {
-                const issueDate = new Date(inv.issueDate);
-                const diffTime = Math.abs(today.getTime() - issueDate.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays <= 30) {
-                    aging0to30 += inv.grandTotal;
-                } else if (diffDays <= 60) {
-                    aging31to60 += inv.grandTotal;
-                } else {
-                    aging60plus += inv.grandTotal;
-                }
+            const docType = inv.documentType || 'invoice';
+            if (docType === 'quotation' || docType === 'credit_note') return;
+            if (inv.status === 'Paid') return;
+
+            const issueDate = new Date(inv.issueDate);
+            const dueDate = inv.dueDate ? new Date(inv.dueDate) : issueDate;
+            const daysSinceIssue = Math.max(0, Math.floor((today.getTime() - issueDate.getTime()) / (1000 * 60 * 60 * 24)));
+            const daysOverdue = Math.max(0, Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)));
+            const effectiveDays = daysOverdue > 0 ? daysOverdue : daysSinceIssue;
+
+            let bucketKey: '0-30' | '31-60' | '61-90' | '90+';
+            if (effectiveDays <= 30) {
+                bucketKey = '0-30';
+            } else if (effectiveDays <= 60) {
+                bucketKey = '31-60';
+            } else if (effectiveDays <= 90) {
+                bucketKey = '61-90';
+            } else {
+                bucketKey = '90+';
             }
+
+            const item: OverdueInvoiceItem = {
+                invoice: inv,
+                daysOverdue,
+                daysSinceIssue,
+                effectiveDays,
+                bucket: bucketKey
+            };
+
+            agingBuckets[bucketKey].total += inv.grandTotal;
+            agingBuckets[bucketKey].items.push(item);
+            allAgingInvoices.push(item);
         });
-        const totalAging = aging0to30 + aging31to60 + aging60plus || 1;
+
+        allAgingInvoices.sort((a, b) => b.effectiveDays - a.effectiveDays);
+        Object.values(agingBuckets).forEach(b => {
+            b.items.sort((a, b) => b.effectiveDays - a.effectiveDays);
+        });
+
+        const aging0to30 = agingBuckets['0-30'].total;
+        const aging31to60 = agingBuckets['31-60'].total;
+        const aging61to90 = agingBuckets['61-90'].total;
+        const aging90plus = agingBuckets['90+'].total;
+        const aging60plus = aging61to90 + aging90plus;
+        const totalAging = aging0to30 + aging31to60 + aging61to90 + aging90plus || 1;
 
         // Calculate GST collected
         let cgstCollected = 0;
@@ -381,7 +429,16 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
             topSellingItems,
             insights,
             trends: { revenue: revenueTrend, outstanding: outstandingTrend, clients: clientTrend },
-            aging: { aging0to30, aging31to60, aging60plus, totalAging },
+            aging: {
+                aging0to30,
+                aging31to60,
+                aging61to90,
+                aging90plus,
+                aging60plus,
+                totalAging,
+                buckets: agingBuckets,
+                allInvoices: allAgingInvoices
+            },
             gst: { cgstCollected, sgstCollected, igstCollected, totalGstCollected },
             lowStockList
         };
@@ -397,6 +454,44 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
     }, [invoices]);
     const dashArray = (count: number) => { const total = invoiceStatusCounts.total; const percentage = (count / total) * 100; return `${percentage}, 100`; };
     const dashOffset = (prevCounts: number[]) => { const total = invoiceStatusCounts.total; const prevSum = prevCounts.reduce((a, b) => a + b, 0); return -((prevSum / total) * 100); };
+
+    const filteredAgingItems = useMemo(() => {
+        const list = selectedAgingBucket === 'all'
+            ? metrics.aging.allInvoices
+            : metrics.aging.buckets[selectedAgingBucket]?.items || [];
+
+        if (!agingSearchQuery.trim()) return list;
+        const q = agingSearchQuery.toLowerCase();
+        return list.filter(item => 
+            (item.invoice.client?.name || '').toLowerCase().includes(q) ||
+            (item.invoice.invoiceNumber || '').toLowerCase().includes(q) ||
+            (item.invoice.client?.phone || '').includes(q)
+        );
+    }, [metrics.aging, selectedAgingBucket, agingSearchQuery]);
+
+    const exportAgingCsv = () => {
+        const headers = ['Client Name', 'Phone', 'GSTIN', 'Invoice #', 'Issue Date', 'Due Date', 'Days Overdue', 'Aging Bucket', 'Amount (INR)', 'Status'];
+        const rows = filteredAgingItems.map(item => [
+            `"${(item.invoice.client?.name || 'Unknown Client').replace(/"/g, '""')}"`,
+            `"${item.invoice.client?.phone || ''}"`,
+            `"${item.invoice.client?.gstin || ''}"`,
+            `"${item.invoice.invoiceNumber}"`,
+            item.invoice.issueDate,
+            item.invoice.dueDate || item.invoice.issueDate,
+            item.effectiveDays,
+            `"${item.bucket} Days"`,
+            item.invoice.grandTotal.toFixed(2),
+            item.invoice.status
+        ]);
+        const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `Receivables_Aging_Report_${selectedAgingBucket}_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     const navigateToInvoices = (filter?: string) => {
         if (setActiveView) {
@@ -477,37 +572,117 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                         </div>
                     </div>
 
-                    {/* Receivables Aging */}
+                    {/* Receivables Aging Report (0-30, 31-60, 61-90, 90+ Days) */}
                     <div className="glass-panel p-6 rounded-3xl">
-                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 font-display">Receivables Aging</h2>
-                        <div className="space-y-4">
+                        <div className="flex items-center justify-between mb-4">
                             <div>
-                                <div className="flex justify-between text-xs font-bold mb-1.5">
-                                    <span className="text-slate-500">0-30 Days (Current)</span>
-                                    <span className="text-slate-900 dark:text-white font-extrabold">{currency}{metrics.aging.aging0to30.toLocaleString()}</span>
+                                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest font-display">Receivables Aging</h2>
+                                <p className="text-[11px] text-slate-500 font-medium">Overdue breakdown & cash flow risk</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setSelectedAgingBucket('all');
+                                    setIsAgingModalOpen(true);
+                                }}
+                                className="text-xs font-bold text-accent hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                                Drill-down <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-3">
+                            {/* 0-30 Days */}
+                            <div 
+                                onClick={() => { setSelectedAgingBucket('0-30'); setIsAgingModalOpen(true); }}
+                                className="group p-2.5 rounded-xl hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition-all border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/60"
+                                title="Click to view invoices 0-30 days"
+                            >
+                                <div className="flex justify-between items-center text-xs font-bold mb-1.5">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                        <span className="text-slate-700 dark:text-slate-300">0-30 Days</span>
+                                        <span className="text-[10px] text-emerald-600 bg-emerald-100/60 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded font-semibold">Current</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-slate-900 dark:text-white font-extrabold">{currency}{metrics.aging.aging0to30.toLocaleString()}</span>
+                                        <span className="text-[10px] text-slate-400 ml-1.5">({metrics.aging.buckets['0-30'].items.length})</span>
+                                    </div>
                                 </div>
                                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                                     <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${(metrics.aging.aging0to30 / metrics.aging.totalAging) * 100}%` }}></div>
                                 </div>
                             </div>
-                            <div>
-                                <div className="flex justify-between text-xs font-bold mb-1.5">
-                                    <span className="text-slate-500">31-60 Days Overdue</span>
-                                    <span className="text-slate-900 dark:text-white font-extrabold">{currency}{metrics.aging.aging31to60.toLocaleString()}</span>
+
+                            {/* 31-60 Days */}
+                            <div 
+                                onClick={() => { setSelectedAgingBucket('31-60'); setIsAgingModalOpen(true); }}
+                                className="group p-2.5 rounded-xl hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition-all border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/60"
+                                title="Click to view invoices 31-60 days overdue"
+                            >
+                                <div className="flex justify-between items-center text-xs font-bold mb-1.5">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                        <span className="text-slate-700 dark:text-slate-300">31-60 Days</span>
+                                        <span className="text-[10px] text-amber-600 bg-amber-100/60 dark:bg-amber-950/40 px-1.5 py-0.5 rounded font-semibold">Follow-Up</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-slate-900 dark:text-white font-extrabold">{currency}{metrics.aging.aging31to60.toLocaleString()}</span>
+                                        <span className="text-[10px] text-slate-400 ml-1.5">({metrics.aging.buckets['31-60'].items.length})</span>
+                                    </div>
                                 </div>
                                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                                     <div className="bg-amber-500 h-full rounded-full transition-all duration-500" style={{ width: `${(metrics.aging.aging31to60 / metrics.aging.totalAging) * 100}%` }}></div>
                                 </div>
                             </div>
-                            <div>
-                                <div className="flex justify-between text-xs font-bold mb-1.5">
-                                    <span className="text-slate-500">60+ Days Overdue</span>
-                                    <span className="text-slate-900 dark:text-white font-extrabold">{currency}{metrics.aging.aging60plus.toLocaleString()}</span>
+
+                            {/* 61-90 Days */}
+                            <div 
+                                onClick={() => { setSelectedAgingBucket('61-90'); setIsAgingModalOpen(true); }}
+                                className="group p-2.5 rounded-xl hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition-all border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/60"
+                                title="Click to view invoices 61-90 days overdue"
+                            >
+                                <div className="flex justify-between items-center text-xs font-bold mb-1.5">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                                        <span className="text-slate-700 dark:text-slate-300">61-90 Days</span>
+                                        <span className="text-[10px] text-orange-600 bg-orange-100/60 dark:bg-orange-950/40 px-1.5 py-0.5 rounded font-semibold">Urgent</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-slate-900 dark:text-white font-extrabold">{currency}{metrics.aging.aging61to90.toLocaleString()}</span>
+                                        <span className="text-[10px] text-slate-400 ml-1.5">({metrics.aging.buckets['61-90'].items.length})</span>
+                                    </div>
                                 </div>
                                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                                    <div className="bg-rose-500 h-full rounded-full transition-all duration-500" style={{ width: `${(metrics.aging.aging60plus / metrics.aging.totalAging) * 100}%` }}></div>
+                                    <div className="bg-orange-500 h-full rounded-full transition-all duration-500" style={{ width: `${(metrics.aging.aging61to90 / metrics.aging.totalAging) * 100}%` }}></div>
                                 </div>
                             </div>
+
+                            {/* 90+ Days */}
+                            <div 
+                                onClick={() => { setSelectedAgingBucket('90+'); setIsAgingModalOpen(true); }}
+                                className="group p-2.5 rounded-xl hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition-all border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/60"
+                                title="Click to view invoices 90+ days overdue (Critical)"
+                            >
+                                <div className="flex justify-between items-center text-xs font-bold mb-1.5">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                                        <span className="text-slate-700 dark:text-slate-300">90+ Days</span>
+                                        <span className="text-[10px] text-rose-600 bg-rose-100/60 dark:bg-rose-950/40 px-1.5 py-0.5 rounded font-bold">Critical</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-slate-900 dark:text-white font-extrabold">{currency}{metrics.aging.aging90plus.toLocaleString()}</span>
+                                        <span className="text-[10px] text-slate-400 ml-1.5">({metrics.aging.buckets['90+'].items.length})</span>
+                                    </div>
+                                </div>
+                                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                    <div className="bg-rose-500 h-full rounded-full transition-all duration-500" style={{ width: `${(metrics.aging.aging90plus / metrics.aging.totalAging) * 100}%` }}></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <span className="text-xs text-slate-500 font-medium">Total Receivables</span>
+                            <span className="text-sm font-black text-slate-900 dark:text-white font-mono">{currency}{(metrics.aging.aging0to30 + metrics.aging.aging31to60 + metrics.aging.aging61to90 + metrics.aging.aging90plus).toLocaleString()}</span>
                         </div>
                     </div>
 
@@ -851,6 +1026,209 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                     </button>
                 </div>
             )}
+
+            {/* Accounts Receivable Aging Drill-down Modal */}
+            <Modal
+                isOpen={isAgingModalOpen}
+                onClose={() => setIsAgingModalOpen(false)}
+                title="Accounts Receivable Aging Report"
+            >
+                <div className="space-y-6 max-w-4xl mx-auto">
+                    {/* Header info & Export button */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+                        <div>
+                            <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-accent" />
+                                Receivables Aging Schedule
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                                Identifies clients delaying payments with direct 1-click WhatsApp reminders.
+                            </p>
+                        </div>
+                        <button
+                            onClick={exportAgingCsv}
+                            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95"
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                            Download Schedule (CSV)
+                        </button>
+                    </div>
+
+                    {/* Filter Tabs */}
+                    <div className="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <button
+                            onClick={() => setSelectedAgingBucket('all')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                selectedAgingBucket === 'all'
+                                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                            }`}
+                        >
+                            All Overdue ({metrics.aging.allInvoices.length})
+                        </button>
+                        <button
+                            onClick={() => setSelectedAgingBucket('0-30')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                selectedAgingBucket === '0-30'
+                                    ? 'bg-emerald-600 text-white shadow-sm'
+                                    : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100'
+                            }`}
+                        >
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            0-30 Days ({metrics.aging.buckets['0-30'].items.length})
+                        </button>
+                        <button
+                            onClick={() => setSelectedAgingBucket('31-60')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                selectedAgingBucket === '31-60'
+                                    ? 'bg-amber-600 text-white shadow-sm'
+                                    : 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100'
+                            }`}
+                        >
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                            31-60 Days ({metrics.aging.buckets['31-60'].items.length})
+                        </button>
+                        <button
+                            onClick={() => setSelectedAgingBucket('61-90')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                selectedAgingBucket === '61-90'
+                                    ? 'bg-orange-600 text-white shadow-sm'
+                                    : 'bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 hover:bg-orange-100'
+                            }`}
+                        >
+                            <span className="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+                            61-90 Days ({metrics.aging.buckets['61-90'].items.length})
+                        </button>
+                        <button
+                            onClick={() => setSelectedAgingBucket('90+')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                selectedAgingBucket === '90+'
+                                    ? 'bg-rose-600 text-white shadow-sm'
+                                    : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 hover:bg-rose-100'
+                            }`}
+                        >
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
+                            90+ Days ({metrics.aging.buckets['90+'].items.length})
+                        </button>
+                    </div>
+
+                    {/* Search & KPIs Strip */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                        <div className="relative flex-1">
+                            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                placeholder="Search by client name, invoice #, phone..."
+                                value={agingSearchQuery}
+                                onChange={(e) => setAgingSearchQuery(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 text-xs bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/40 px-3 py-1.5 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                            <span className="text-xs text-slate-500 font-medium">Selected Total:</span>
+                            <span className="text-sm font-black text-slate-900 dark:text-white font-mono">
+                                {currency}
+                                {filteredAgingItems.reduce((acc, curr) => acc + curr.invoice.grandTotal, 0).toLocaleString()}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Invoices List / Table */}
+                    {filteredAgingItems.length === 0 ? (
+                        <div className="text-center py-12 bg-slate-50/50 dark:bg-slate-800/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                            <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-500 mb-2" />
+                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">No Overdue Invoices Found</h4>
+                            <p className="text-xs text-slate-500 mt-1">
+                                {agingSearchQuery ? 'No results matched your search term.' : 'All receivables in this bucket are settled!'}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2.5 max-h-[440px] overflow-y-auto pr-1 custom-scrollbar">
+                            {filteredAgingItems.map((item, idx) => {
+                                const inv = item.invoice;
+                                const isCritical = item.bucket === '90+';
+                                const isAction = item.bucket === '61-90';
+                                const isFollowUp = item.bucket === '31-60';
+
+                                const badgeColor = isCritical
+                                    ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800'
+                                    : isAction
+                                    ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800'
+                                    : isFollowUp
+                                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                                    : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
+
+                                return (
+                                    <div
+                                        key={inv.id || idx}
+                                        className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-800/60 hover:shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-3"
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                                    {inv.client?.name || 'Unknown Client'}
+                                                </span>
+                                                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${badgeColor}`}>
+                                                    {item.effectiveDays > 0 ? `${item.effectiveDays} Days Delayed` : 'Due Soon'}
+                                                </span>
+                                                <span className="text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-1.5 py-0.5 rounded">
+                                                    {item.bucket} Days
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
+                                                <span>Invoice: <strong className="text-slate-700 dark:text-slate-300 font-mono">#{inv.invoiceNumber}</strong></span>
+                                                <span>•</span>
+                                                <span>Issued: {inv.issueDate}</span>
+                                                <span>•</span>
+                                                <span>Due: {inv.dueDate || inv.issueDate}</span>
+                                                {inv.client?.phone && (
+                                                    <>
+                                                        <span>•</span>
+                                                        <span>Phone: {inv.client.phone}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-700/60">
+                                            <div className="text-right">
+                                                <div className="text-sm font-black text-slate-900 dark:text-white font-mono">
+                                                    {currency}{inv.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
+                                                <div className="text-[10px] uppercase font-bold text-rose-500">
+                                                    {inv.status}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5">
+                                                <button
+                                                    onClick={() => sendPaymentReminderViaWhatsApp(inv, inv.client, company)}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+                                                    title="Send WhatsApp payment reminder"
+                                                >
+                                                    <MessageSquare className="w-3.5 h-3.5" />
+                                                    Remind
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setIsAgingModalOpen(false);
+                                                        navigateToInvoices(inv.invoiceNumber);
+                                                    }}
+                                                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                                    title="View invoice in Invoices tab"
+                                                >
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </Modal>
         </div>
     );
 };

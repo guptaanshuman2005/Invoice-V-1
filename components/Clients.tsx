@@ -8,8 +8,9 @@ import { INDIAN_STATES } from '../constants';
 import { InvoiceView } from './Invoices';
 import { validateEmail, validateRequired, validateGstin, fetchLocationByPincode } from '../utils/validation';
 import { arrayToCSV, downloadCSV } from '../utils/csvExport';
-import { Clock, IndianRupee, CheckCircle, FileText, Eye, Edit, Mail, Trash2, AlertCircle, Search, Plus, Download, Upload, X, Maximize2, Minimize2, ArrowLeft } from 'lucide-react';
+import { Clock, IndianRupee, CheckCircle, FileText, Eye, Edit, Mail, Trash2, AlertCircle, Search, Plus, Download, Upload, X, Maximize2, Minimize2, ArrowLeft, Printer, Share2, Calendar, MessageCircle, FileSpreadsheet } from 'lucide-react';
 import { trackEvent } from '../utils/analytics';
+import { toast } from 'sonner';
 
 interface ClientsProps {
   clients: Client[];
@@ -254,6 +255,7 @@ interface ClientHistoryPanelProps {
     client: Client;
     invoices: Invoice[];
     currency: string;
+    company: Company;
     onEditInvoice: (id: string) => void;
     onViewInvoice: (inv: Invoice) => void;
     onDeleteInvoice: (id: string) => void;
@@ -265,10 +267,25 @@ interface ClientHistoryPanelProps {
 }
 
 const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({ 
-    client, invoices, currency, onEditInvoice, onViewInvoice, onDeleteInvoice, onEmailInvoice,
+    client, invoices, currency, company, onEditInvoice, onViewInvoice, onDeleteInvoice, onEmailInvoice,
     onClose, isMaximized, onToggleMaximize, panelWidth = 490
 }) => {
-    const [activeTab, setActiveTab] = useState<'invoices' | 'timeline'>('invoices');
+    const [activeTab, setActiveTab] = useState<'invoices' | 'ledger' | 'timeline'>('invoices');
+
+    // Financial year default dates for Indian SME Khata (April 1 to today)
+    const defaultDates = useMemo(() => {
+        const today = new Date();
+        const curYear = today.getFullYear();
+        const curMonth = today.getMonth(); // 0-11
+        const startYear = curMonth >= 3 ? curYear : curYear - 1;
+        return {
+            start: `${startYear}-04-01`,
+            end: today.toISOString().split('T')[0]
+        };
+    }, []);
+
+    const [ledgerStartDate, setLedgerStartDate] = useState(defaultDates.start);
+    const [ledgerEndDate, setLedgerEndDate] = useState(defaultDates.end);
 
     const clientInvoices = useMemo(() => 
         invoices.filter(inv => inv.client?.id === client.id).sort((a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime())
@@ -280,6 +297,346 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
         const totalOutstanding = clientInvoices.filter(inv => inv.status !== 'Paid').reduce((acc, inv) => acc + inv.grandTotal, 0);
         return { totalInvoiced, totalPaid, totalOutstanding, count: clientInvoices.length };
     }, [clientInvoices]);
+
+    // Chronological Account Ledger (Khata) calculation
+    const ledgerData = useMemo(() => {
+        const start = new Date(ledgerStartDate + 'T00:00:00');
+        const end = new Date(ledgerEndDate + 'T23:59:59');
+
+        let openingBalance = 0;
+        interface LedgerRow {
+            id: string;
+            date: string;
+            type: 'Invoice' | 'Credit Note' | 'Debit Note' | 'Payment';
+            particulars: string;
+            ref: string;
+            debit: number;
+            credit: number;
+            runningBalance: number;
+        }
+
+        const periodEntries: Omit<LedgerRow, 'runningBalance'>[] = [];
+        const sortedInvoices = [...clientInvoices].sort((a, b) => new Date(a.issueDate).getTime() - new Date(b.issueDate).getTime());
+
+        sortedInvoices.forEach(inv => {
+            const invDate = new Date(inv.issueDate);
+            const isCN = inv.documentType === 'credit_note';
+            const isDN = inv.documentType === 'debit_note';
+            const isPrior = invDate < start;
+            const isInRange = invDate >= start && invDate <= end;
+
+            if (isCN) {
+                if (isPrior) {
+                    openingBalance -= inv.grandTotal;
+                } else if (isInRange) {
+                    periodEntries.push({
+                        id: `cn_${inv.id}`,
+                        date: inv.issueDate,
+                        type: 'Credit Note',
+                        particulars: `Credit Note #${inv.invoiceNumber}${inv.originalInvoiceNumber ? ` (Inv #${inv.originalInvoiceNumber})` : ''}`,
+                        ref: inv.invoiceNumber,
+                        debit: 0,
+                        credit: inv.grandTotal
+                    });
+                }
+            } else if (isDN) {
+                if (isPrior) {
+                    openingBalance += inv.grandTotal;
+                } else if (isInRange) {
+                    periodEntries.push({
+                        id: `dn_${inv.id}`,
+                        date: inv.issueDate,
+                        type: 'Debit Note',
+                        particulars: `Debit Note #${inv.invoiceNumber}`,
+                        ref: inv.invoiceNumber,
+                        debit: inv.grandTotal,
+                        credit: 0
+                    });
+                }
+            } else {
+                // Regular Tax Invoice
+                if (isPrior) {
+                    openingBalance += inv.grandTotal;
+                } else if (isInRange) {
+                    periodEntries.push({
+                        id: `inv_${inv.id}`,
+                        date: inv.issueDate,
+                        type: 'Invoice',
+                        particulars: `Tax Invoice #${inv.invoiceNumber}`,
+                        ref: inv.invoiceNumber,
+                        debit: inv.grandTotal,
+                        credit: 0
+                    });
+                }
+
+                // If invoice is marked Paid, record payment credit
+                if (inv.status === 'Paid') {
+                    const payDateStr = inv.dueDate || inv.issueDate;
+                    const payDate = new Date(payDateStr);
+                    const isPayPrior = payDate < start;
+                    const isPayInRange = payDate >= start && payDate <= end;
+
+                    if (isPayPrior) {
+                        openingBalance -= inv.grandTotal;
+                    } else if (isPayInRange) {
+                        periodEntries.push({
+                            id: `pay_${inv.id}`,
+                            date: payDateStr,
+                            type: 'Payment',
+                            particulars: `Payment Received (Inv #${inv.invoiceNumber})`,
+                            ref: `REC-${inv.invoiceNumber}`,
+                            debit: 0,
+                            credit: inv.grandTotal
+                        });
+                    }
+                }
+            }
+        });
+
+        periodEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        let running = openingBalance;
+        let totalDebit = 0;
+        let totalCredit = 0;
+
+        const rows: LedgerRow[] = periodEntries.map(e => {
+            totalDebit += e.debit;
+            totalCredit += e.credit;
+            running += (e.debit - e.credit);
+            return {
+                ...e,
+                runningBalance: running
+            };
+        });
+
+        return {
+            openingBalance,
+            rows,
+            totalDebit,
+            totalCredit,
+            closingBalance: running
+        };
+    }, [clientInvoices, ledgerStartDate, ledgerEndDate]);
+
+    const handlePresetRange = (preset: 'month' | 'fy' | '90days' | 'all') => {
+        const today = new Date();
+        const curYear = today.getFullYear();
+        const curMonth = today.getMonth();
+        const todayStr = today.toISOString().split('T')[0];
+
+        if (preset === 'month') {
+            const firstDay = new Date(curYear, curMonth, 1).toISOString().split('T')[0];
+            setLedgerStartDate(firstDay);
+            setLedgerEndDate(todayStr);
+        } else if (preset === 'fy') {
+            const startYear = curMonth >= 3 ? curYear : curYear - 1;
+            setLedgerStartDate(`${startYear}-04-01`);
+            setLedgerEndDate(todayStr);
+        } else if (preset === '90days') {
+            const past90 = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            setLedgerStartDate(past90);
+            setLedgerEndDate(todayStr);
+        } else {
+            setLedgerStartDate('2020-01-01');
+            setLedgerEndDate(todayStr);
+        }
+    };
+
+    const handleDownloadLedgerCSV = () => {
+        const lines: string[][] = [
+            ['CLIENT STATEMENT / ACCOUNT LEDGER (KHATA)'],
+            ['Company Name', company.details.name || ''],
+            ['GSTIN', company.details.gstin || 'N/A'],
+            ['Client Name', client.name],
+            ['Client GSTIN', client.gstin || 'N/A'],
+            ['Statement Period', `${ledgerStartDate} to ${ledgerEndDate}`],
+            [],
+            ['Date', 'Particulars', 'Voucher #', 'Debit (Dr) (₹)', 'Credit (Cr) (₹)', 'Running Balance (₹)'],
+            [ledgerStartDate, 'Opening Balance B/F', '-', '-', '-', ledgerData.openingBalance.toFixed(2)]
+        ];
+
+        ledgerData.rows.forEach(r => {
+            lines.push([
+                r.date,
+                r.particulars,
+                r.ref,
+                r.debit > 0 ? r.debit.toFixed(2) : '-',
+                r.credit > 0 ? r.credit.toFixed(2) : '-',
+                r.runningBalance.toFixed(2)
+            ]);
+        });
+
+        lines.push([]);
+        lines.push(['Total Transactions', '', '', ledgerData.totalDebit.toFixed(2), ledgerData.totalCredit.toFixed(2), '']);
+        lines.push(['Closing Balance', `As on ${ledgerEndDate}`, '', '', '', ledgerData.closingBalance.toFixed(2)]);
+
+        const csvString = lines.map(l => l.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const filename = `Statement_${client.name.replace(/\s+/g, '_')}_${ledgerStartDate}_to_${ledgerEndDate}.csv`;
+        downloadCSV(csvString, filename);
+        toast.success(`Ledger statement exported (${filename})`);
+    };
+
+    const handlePrintStatement = () => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            window.print();
+            return;
+        }
+
+        const rowsHtml = ledgerData.rows.map(r => `
+            <tr>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-family: monospace;">${r.date}</td>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${r.particulars}</td>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-family: monospace;">${r.ref}</td>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${r.debit > 0 ? `₹${r.debit.toFixed(2)}` : '-'}</td>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${r.credit > 0 ? `₹${r.credit.toFixed(2)}` : '-'}</td>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">₹${r.runningBalance.toFixed(2)} ${r.runningBalance >= 0 ? 'Dr' : 'Cr'}</td>
+            </tr>
+        `).join('');
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Account Statement - ${client.name}</title>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1e293b; padding: 40px; margin: 0; }
+                    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 24px; }
+                    .title { font-size: 24px; font-weight: 900; color: #0f172a; margin-bottom: 4px; }
+                    .subtitle { font-size: 13px; color: #64748b; }
+                    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; font-size: 13px; }
+                    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; }
+                    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+                    .kpi { background: #f1f5f9; padding: 12px; border-radius: 8px; text-align: center; }
+                    .kpi-label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px; }
+                    .kpi-value { font-size: 18px; font-weight: 900; color: #0f172a; }
+                    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 30px; }
+                    th { background: #f8fafc; text-align: left; padding: 10px 12px; border-bottom: 2px solid #cbd5e1; font-size: 11px; text-transform: uppercase; color: #475569; }
+                    .footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }
+                    @media print { body { padding: 0; } button { display: none; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div>
+                        <div class="title">${company.details.name || 'Company Name'}</div>
+                        <div class="subtitle">${company.details.address || ''} ${company.details.city || ''} ${company.details.state || ''}</div>
+                        <div class="subtitle">GSTIN: <strong>${company.details.gstin || 'N/A'}</strong> • Phone: ${company.details.phone || 'N/A'}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 20px; font-weight: 800; color: #4f46e5;">ACCOUNT STATEMENT</div>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Khata / Ledger</div>
+                        <div style="font-size: 12px; font-weight: 600; margin-top: 4px;">Period: ${ledgerStartDate} to ${ledgerEndDate}</div>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="box">
+                        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 6px;">Client Details:</div>
+                        <div style="font-size: 15px; font-weight: 800; color: #0f172a;">${client.name}</div>
+                        ${client.address ? `<div>${client.address}, ${client.city || ''} ${client.state || ''}</div>` : ''}
+                        <div>GSTIN: <strong>${client.gstin || 'Unregistered'}</strong></div>
+                        ${client.phone ? `<div>Phone: ${client.phone}</div>` : ''}
+                    </div>
+                    <div class="box">
+                        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 6px;">Statement Summary:</div>
+                        <div>Opening Balance: <strong>₹${ledgerData.openingBalance.toFixed(2)}</strong></div>
+                        <div>Total Debits (Bills): <strong>₹${ledgerData.totalDebit.toFixed(2)}</strong></div>
+                        <div>Total Credits (Receipts): <strong>₹${ledgerData.totalCredit.toFixed(2)}</strong></div>
+                        <div style="font-size: 14px; font-weight: 800; margin-top: 4px; color: ${ledgerData.closingBalance > 0 ? '#b91c1c' : '#047857'};">
+                            Closing Balance: ₹${ledgerData.closingBalance.toFixed(2)} ${ledgerData.closingBalance >= 0 ? '(Receivable)' : '(Advance)'}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi">
+                        <div class="kpi-label">Opening Balance</div>
+                        <div class="kpi-value">₹${ledgerData.openingBalance.toFixed(2)}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="kpi-label">Total Invoiced (Dr)</div>
+                        <div class="kpi-value" style="color: #2563eb;">₹${ledgerData.totalDebit.toFixed(2)}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="kpi-label">Total Paid (Cr)</div>
+                        <div class="kpi-value" style="color: #16a34a;">₹${ledgerData.totalCredit.toFixed(2)}</div>
+                    </div>
+                    <div class="kpi" style="background: ${ledgerData.closingBalance > 0 ? '#fef2f2' : '#f0fdf4'}; border: 1px solid ${ledgerData.closingBalance > 0 ? '#fecaca' : '#bbf7d0'};">
+                        <div class="kpi-label" style="color: ${ledgerData.closingBalance > 0 ? '#b91c1c' : '#15803d'};">Closing Balance Due</div>
+                        <div class="kpi-value" style="color: ${ledgerData.closingBalance > 0 ? '#b91c1c' : '#15803d'};">₹${ledgerData.closingBalance.toFixed(2)}</div>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">Date</th>
+                            <th>Particulars / Description</th>
+                            <th style="width: 120px;">Voucher #</th>
+                            <th style="width: 110px; text-align: right;">Debit (Dr)</th>
+                            <th style="width: 110px; text-align: right;">Credit (Cr)</th>
+                            <th style="width: 130px; text-align: right;">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #f8fafc; font-weight: 600;">
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-family: monospace;">${ledgerStartDate}</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Opening Balance B/F</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-family: monospace;">-</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">-</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">-</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">₹${ledgerData.openingBalance.toFixed(2)}</td>
+                        </tr>
+                        ${rowsHtml}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f1f5f9; font-weight: 800; border-top: 2px solid #cbd5e1;">
+                            <td colspan="3" style="padding: 10px 12px;">Total Activity & Closing Balance</td>
+                            <td style="padding: 10px 12px; text-align: right;">₹${ledgerData.totalDebit.toFixed(2)}</td>
+                            <td style="padding: 10px 12px; text-align: right;">₹${ledgerData.totalCredit.toFixed(2)}</td>
+                            <td style="padding: 10px 12px; text-align: right; color: ${ledgerData.closingBalance > 0 ? '#b91c1c' : '#047857'}; font-size: 13px;">₹${ledgerData.closingBalance.toFixed(2)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <div class="footer">
+                    <div>
+                        <p>This is a computer-generated account statement and ledger.</p>
+                        <p>Please notify us within 7 days in case of any discrepancy.</p>
+                    </div>
+                    <div style="text-align: center; width: 220px; border-top: 1px solid #0f172a; padding-top: 8px;">
+                        <strong>For ${company.details.name || 'Company'}</strong><br/>
+                        <span style="font-size: 11px;">Authorized Signatory</span>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+        }, 300);
+    };
+
+    const handleShareLedgerWhatsApp = () => {
+        const cleanPhone = (client.phone || '').replace(/[^0-9]/g, '');
+        const phoneParam = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+        const msg = `*ACCOUNT STATEMENT / KHATA LEDGER*\n\n` +
+            `Dear *${client.name}*,\n` +
+            `Here is your account statement from *${company.details.name || 'our company'}* for the period *${ledgerStartDate}* to *${ledgerEndDate}*:\n\n` +
+            `• *Opening Balance:* ₹${ledgerData.openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n` +
+            `• *Total Bills (Debit):* ₹${ledgerData.totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n` +
+            `• *Total Payments/Credits:* ₹${ledgerData.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n` +
+            `• *Net Balance Due:* ₹${ledgerData.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ${ledgerData.closingBalance > 0 ? '(Receivable)' : ledgerData.closingBalance < 0 ? '(Advance)' : '(Nil)'}\n\n` +
+            `Please verify and clear any pending balance at your earliest convenience. Thank you!`;
+
+        const url = `https://wa.me/${phoneParam}?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+    };
 
     const timelineEvents = useMemo(() => {
         const events: { date: string, title: string, description: string, type: 'created' | 'due' | 'paid', status?: string }[] = [];
@@ -397,13 +754,21 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-4 border-b border-slate-200 dark:border-slate-700 mb-5">
+            <div className="flex flex-wrap gap-4 border-b border-slate-200 dark:border-slate-700 mb-5">
                 <button 
                     onClick={() => setActiveTab('invoices')} 
                     className={`pb-2.5 text-xs sm:text-sm font-bold transition-all relative ${activeTab === 'invoices' ? 'text-accent' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
                 >
                     Invoice History ({clientInvoices.length})
                     {activeTab === 'invoices' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full"></span>}
+                </button>
+                <button 
+                    onClick={() => setActiveTab('ledger')} 
+                    className={`pb-2.5 text-xs sm:text-sm font-bold transition-all relative flex items-center gap-1.5 ${activeTab === 'ledger' ? 'text-accent' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    Account Ledger (Khata)
+                    {activeTab === 'ledger' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full"></span>}
                 </button>
                 <button 
                     onClick={() => setActiveTab('timeline')} 
@@ -413,6 +778,203 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                     {activeTab === 'timeline' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full"></span>}
                 </button>
             </div>
+
+            {/* Ledger (Khata) Tab */}
+            {activeTab === 'ledger' && (
+                <div className="space-y-4">
+                    {/* Date Filter & Export Header */}
+                    <div className="bg-white dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700/60 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                                    <Calendar className="w-3.5 h-3.5 text-accent" />
+                                    Range:
+                                </span>
+                                <input
+                                    type="date"
+                                    value={ledgerStartDate}
+                                    onChange={e => setLedgerStartDate(e.target.value)}
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                                />
+                                <span className="text-xs text-slate-400">to</span>
+                                <input
+                                    type="date"
+                                    value={ledgerEndDate}
+                                    onChange={e => setLedgerEndDate(e.target.value)}
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                                />
+                            </div>
+
+                            {/* Export Buttons */}
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="secondary"
+                                    onClick={handleDownloadLedgerCSV}
+                                    className="!py-1.5 !px-3 text-xs gap-1.5 font-bold"
+                                    title="Export to Excel CSV"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Export CSV</span>
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={handlePrintStatement}
+                                    className="!py-1.5 !px-3 text-xs gap-1.5 font-bold"
+                                    title="Download Statement as PDF / Print"
+                                >
+                                    <Printer className="w-3.5 h-3.5" />
+                                    <span>Print Statement (PDF)</span>
+                                </Button>
+                                <Button
+                                    onClick={handleShareLedgerWhatsApp}
+                                    className="!py-1.5 !px-3 text-xs gap-1.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    title="Share statement summary on WhatsApp"
+                                >
+                                    <MessageCircle className="w-3.5 h-3.5" />
+                                    <span>WhatsApp</span>
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Presets Chips */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mr-1">Quick Select:</span>
+                            <button
+                                onClick={() => handlePresetRange('month')}
+                                className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 transition-colors"
+                            >
+                                This Month
+                            </button>
+                            <button
+                                onClick={() => handlePresetRange('fy')}
+                                className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-accent font-bold hover:bg-indigo-100 transition-colors"
+                            >
+                                Current FY (Apr 1 - Today)
+                            </button>
+                            <button
+                                onClick={() => handlePresetRange('90days')}
+                                className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 transition-colors"
+                            >
+                                Last 90 Days
+                            </button>
+                            <button
+                                onClick={() => handlePresetRange('all')}
+                                className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 transition-colors"
+                            >
+                                All Time
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Summary Balances Card */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Opening Balance</div>
+                            <div className="text-base font-black text-slate-800 dark:text-slate-200 mt-0.5 font-mono">
+                                ₹{ledgerData.openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-semibold">{ledgerData.openingBalance >= 0 ? 'Dr (Receivable)' : 'Cr (Advance)'}</div>
+                        </div>
+
+                        <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                            <div className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Total Debits (Bills)</div>
+                            <div className="text-base font-black text-blue-600 dark:text-blue-400 mt-0.5 font-mono">
+                                ₹{ledgerData.totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-semibold">{ledgerData.rows.filter(r => r.debit > 0).length} transactions</div>
+                        </div>
+
+                        <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                            <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Total Credits (Paid)</div>
+                            <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">
+                                ₹{ledgerData.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-semibold">{ledgerData.rows.filter(r => r.credit > 0).length} receipts</div>
+                        </div>
+
+                        <div className={`p-3 rounded-xl border ${ledgerData.closingBalance > 0 ? 'bg-rose-50/80 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40' : 'bg-emerald-50/80 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40'}`}>
+                            <div className={`text-[10px] font-bold uppercase tracking-wider ${ledgerData.closingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                Closing Balance
+                            </div>
+                            <div className={`text-base font-black mt-0.5 font-mono ${ledgerData.closingBalance > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
+                                ₹{ledgerData.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className={`text-[10px] font-bold ${ledgerData.closingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                {ledgerData.closingBalance > 0 ? 'Due from Client' : ledgerData.closingBalance < 0 ? 'Advance with Us' : 'All Cleared (Nil)'}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Ledger Table */}
+                    <div className="glass-panel rounded-xl overflow-hidden shadow-sm border border-slate-200/60 dark:border-slate-800/60">
+                        <div className="overflow-x-auto custom-scrollbar">
+                            <table className="w-full text-xs text-left min-w-[540px]">
+                                <thead className="bg-slate-100/70 dark:bg-slate-800/70 text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th className="px-3.5 py-2.5">Date</th>
+                                        <th className="px-3.5 py-2.5">Particulars</th>
+                                        <th className="px-3.5 py-2.5">Voucher #</th>
+                                        <th className="px-3.5 py-2.5 text-right">Debit (Dr)</th>
+                                        <th className="px-3.5 py-2.5 text-right">Credit (Cr)</th>
+                                        <th className="px-3.5 py-2.5 text-right">Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {/* Opening Balance Row */}
+                                    <tr className="bg-slate-50/60 dark:bg-slate-900/30 font-semibold">
+                                        <td className="px-3.5 py-2 font-mono text-slate-500">{ledgerStartDate}</td>
+                                        <td className="px-3.5 py-2 text-slate-700 dark:text-slate-300 italic">Opening Balance B/F</td>
+                                        <td className="px-3.5 py-2 text-slate-400">-</td>
+                                        <td className="px-3.5 py-2 text-right text-slate-400">-</td>
+                                        <td className="px-3.5 py-2 text-right text-slate-400">-</td>
+                                        <td className="px-3.5 py-2 text-right font-mono font-bold text-slate-900 dark:text-white">
+                                            ₹{ledgerData.openingBalance.toFixed(2)} <span className="text-[10px] text-slate-400">{ledgerData.openingBalance >= 0 ? 'Dr' : 'Cr'}</span>
+                                        </td>
+                                    </tr>
+
+                                    {/* Transactions Rows */}
+                                    {ledgerData.rows.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className="px-3.5 py-6 text-center text-slate-400 italic">
+                                                No transactions recorded in this date range.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        ledgerData.rows.map(row => (
+                                            <tr key={row.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                                <td className="px-3.5 py-2.5 font-mono text-slate-500 whitespace-nowrap">{row.date}</td>
+                                                <td className="px-3.5 py-2.5">
+                                                    <span className="font-medium text-slate-800 dark:text-slate-200">{row.particulars}</span>
+                                                </td>
+                                                <td className="px-3.5 py-2.5 font-mono text-accent font-semibold">{row.ref}</td>
+                                                <td className="px-3.5 py-2.5 text-right font-mono font-medium text-blue-600 dark:text-blue-400">
+                                                    {row.debit > 0 ? `₹${row.debit.toFixed(2)}` : '-'}
+                                                </td>
+                                                <td className="px-3.5 py-2.5 text-right font-mono font-medium text-emerald-600 dark:text-emerald-400">
+                                                    {row.credit > 0 ? `₹${row.credit.toFixed(2)}` : '-'}
+                                                </td>
+                                                <td className="px-3.5 py-2.5 text-right font-mono font-bold text-slate-900 dark:text-white">
+                                                    ₹{row.runningBalance.toFixed(2)} <span className="text-[10px] text-slate-400">{row.runningBalance >= 0 ? 'Dr' : 'Cr'}</span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                                <tfoot className="bg-slate-100/70 dark:bg-slate-800/70 font-bold border-t-2 border-slate-300 dark:border-slate-700">
+                                    <tr>
+                                        <td colSpan={3} className="px-3.5 py-2.5 uppercase text-[11px] text-slate-600 dark:text-slate-300">Total Period Activity</td>
+                                        <td className="px-3.5 py-2.5 text-right font-mono text-blue-600 dark:text-blue-400">₹{ledgerData.totalDebit.toFixed(2)}</td>
+                                        <td className="px-3.5 py-2.5 text-right font-mono text-emerald-600 dark:text-emerald-400">₹{ledgerData.totalCredit.toFixed(2)}</td>
+                                        <td className={`px-3.5 py-2.5 text-right font-mono text-xs ${ledgerData.closingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                            ₹{ledgerData.closingBalance.toFixed(2)} {ledgerData.closingBalance >= 0 ? 'Dr' : 'Cr'}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Invoices Tab */}
             {activeTab === 'invoices' && (
@@ -859,6 +1421,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                               client={viewingClient} 
                               invoices={invoices} 
                               currency="₹" 
+                              company={company} 
                               onEditInvoice={onEditInvoice} 
                               onDeleteInvoice={onDeleteInvoice} 
                               onViewInvoice={(inv) => setInvoiceToView(inv)}

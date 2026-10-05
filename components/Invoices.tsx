@@ -874,39 +874,46 @@ const CustomInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docum
 
 export const InvoiceContent: React.FC<{ invoice: Invoice, company: Company, documentTitle?: string }> = ({ invoice, company, documentTitle = 'Invoice' }) => {
     const template = company.details?.invoiceTemplate || 'modern';
+    const isCN = invoice.documentType === 'credit_note';
+    const isDN = invoice.documentType === 'debit_note';
+    const resolvedTitle = isCN ? 'Credit Note' : isDN ? 'Debit Note' : documentTitle;
     
     if (template === 'traditional' || template === 'classic') {
-        return <TraditionalInvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />;
+        return <TraditionalInvoiceContent invoice={invoice} company={company} documentTitle={resolvedTitle} />;
     }
     if (template === 'premium' || template === 'minimal') {
-        return <PremiumInvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />;
+        return <PremiumInvoiceContent invoice={invoice} company={company} documentTitle={resolvedTitle} />;
     }
     if (template === 'tally') {
-        return <TallyInvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />;
+        return <TallyInvoiceContent invoice={invoice} company={company} documentTitle={resolvedTitle} />;
     }
     if (template === 'custom') {
-        return <CustomInvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />;
+        return <CustomInvoiceContent invoice={invoice} company={company} documentTitle={resolvedTitle} />;
     }
     
-    return <ModernInvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />;
+    return <ModernInvoiceContent invoice={invoice} company={company} documentTitle={resolvedTitle} />;
 };
 
 export const InvoiceView: React.FC<{ invoice: Invoice; company: Company; onClose: () => void; onStatusChange?: (id: string, status: any) => void; documentTitle?: string }> = ({ invoice, company, onClose, onStatusChange, documentTitle = 'Invoice' }) => {
+  const isCN = invoice.documentType === 'credit_note';
+  const isDN = invoice.documentType === 'debit_note';
+  const resolvedTitle = isCN ? 'Credit Note' : isDN ? 'Debit Note' : documentTitle;
+
   const handleShareWhatsApp = async () => { 
       const num = invoice.invoiceNumber || (invoice as any).quotationNumber;
-      const text = `*${documentTitle} from ${company.details?.name || 'Company'}*\n\nHello ${invoice.client?.name || 'Client'},\n\nHere are the details for *${documentTitle} ${num}*:\n\n*Total Amount:* Rs. ${invoice.grandTotal.toFixed(2)}\n*Date:* ${invoice.issueDate}\n\nPlease review attached details.\n\nThank you.`; 
+      const text = `*${resolvedTitle} from ${company.details?.name || 'Company'}*\n\nHello ${invoice.client?.name || 'Client'},\n\nHere are the details for *${resolvedTitle} ${num}*:\n\n*Total Amount:* Rs. ${invoice.grandTotal.toFixed(2)}\n*Date:* ${invoice.issueDate}\n\nPlease review attached details.\n\nThank you.`; 
       
       // If Web Share API is supported, try to share the PDF file
       if (navigator.share && navigator.canShare) {
           try {
               const { pdf } = await import('@react-pdf/renderer');
-              const blob = await pdf(<InvoicePDF invoice={invoice} company={company} documentTitle={documentTitle} numberToWords={numberToWords} />).toBlob();
-              const file = new File([blob], `${documentTitle}-${num}.pdf`, { type: 'application/pdf' });
+              const blob = await pdf(<InvoicePDF invoice={invoice} company={company} documentTitle={resolvedTitle} numberToWords={numberToWords} />).toBlob();
+              const file = new File([blob], `${resolvedTitle}-${num}.pdf`, { type: 'application/pdf' });
               
               if (navigator.canShare({ files: [file] })) {
                   await navigator.share({
                       files: [file],
-                      title: `${documentTitle} ${num}`,
+                      title: `${resolvedTitle} ${num}`,
                       text: text,
                   });
                   return; // Successfully shared via native share sheet
@@ -984,6 +991,8 @@ interface InvoicesProps {
   onAddRecurring: (profile: Omit<RecurringInvoice, 'id'>) => void;
   onUpdateRecurring: (profile: RecurringInvoice) => void;
   onDeleteRecurring: (id: string) => void;
+  onIssueCreditNote?: (invoice: Invoice) => void;
+  onIssueDebitNote?: (invoice: Invoice) => void;
   initialFilter?: string;
   initialSearchQuery?: string;
 }
@@ -991,11 +1000,13 @@ interface InvoicesProps {
 const Invoices: React.FC<InvoicesProps> = ({ 
     invoices, company, setActiveView, onEdit, onDelete, onStatusChange,
     onBulkDelete, onBulkStatusChange, onAddRecurring, onUpdateRecurring, onDeleteRecurring,
+    onIssueCreditNote, onIssueDebitNote,
     initialFilter, initialSearchQuery
 }) => {
   const [activeTab, setActiveTab] = useState<'invoices' | 'recurring'>('invoices');
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [filterStatus, setFilterStatus] = useState(initialFilter || '');
+  const [filterDocType, setFilterDocType] = useState<'all' | 'invoice' | 'credit_note' | 'debit_note'>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -1025,8 +1036,11 @@ const Invoices: React.FC<InvoicesProps> = ({
         );
     }
     if (filterStatus) result = result.filter(invoice => invoice.status === filterStatus);
+    if (filterDocType !== 'all') {
+        result = result.filter(invoice => (invoice.documentType || 'invoice') === filterDocType);
+    }
     return result;
-  }, [invoices, searchQuery, filterStatus]);
+  }, [invoices, searchQuery, filterStatus, filterDocType]);
 
   const handleSelectOne = (id: string) => {
       if (selectedIds.includes(id)) setSelectedIds(selectedIds.filter(sid => sid !== id));
@@ -1090,9 +1104,25 @@ const Invoices: React.FC<InvoicesProps> = ({
             <h1 className="text-3xl font-bold text-slate-900 dark:text-light-text tracking-tight">Invoices</h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage billing and collections</p>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
-             <Button variant="secondary" onClick={handleExportCSV} className="flex-1 sm:flex-none gap-2"><Download className="w-4 h-4" /> Export</Button>
-             <Button onClick={() => setActiveView('NewInvoice')} className="flex-1 sm:flex-none shadow-lg shadow-accent/20 gap-2"><Plus className="w-4 h-4" /> Create Invoice</Button>
+        <div className="flex gap-2.5 w-full sm:w-auto">
+             <Button variant="secondary" onClick={handleExportCSV} className="gap-2"><Download className="w-4 h-4" /> Export</Button>
+             <div className="relative group">
+                 <Button className="shadow-lg shadow-accent/20 gap-2"><Plus className="w-4 h-4" /> Create Document <ChevronDown className="w-3.5 h-3.5 opacity-70" /></Button>
+                 <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-30 p-1.5 overflow-hidden">
+                     <button onClick={() => setActiveView('NewInvoice')} className="w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 flex items-center justify-between transition-colors">
+                         <span>Tax Invoice</span>
+                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">INV</span>
+                     </button>
+                     <button onClick={() => setActiveView('NewCreditNote')} className="w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 flex items-center justify-between transition-colors">
+                         <span>Credit Note (CN)</span>
+                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">GST 9B</span>
+                     </button>
+                     <button onClick={() => setActiveView('NewDebitNote')} className="w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 flex items-center justify-between transition-colors">
+                         <span>Debit Note (DN)</span>
+                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">GST 9B</span>
+                     </button>
+                 </div>
+             </div>
         </div>
       </div>
 
@@ -1102,7 +1132,7 @@ const Invoices: React.FC<InvoicesProps> = ({
             onClick={() => setActiveTab('invoices')}
             className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${activeTab === 'invoices' ? 'border-accent text-accent' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
           >
-              All Invoices
+              All Invoices & Notes
           </button>
           <button 
             onClick={() => setActiveTab('recurring')}
@@ -1116,12 +1146,22 @@ const Invoices: React.FC<InvoicesProps> = ({
         <>
             <div className="mb-6 flex flex-col lg:flex-row gap-4">
                 <div className="flex-grow relative">
-                    <Input label="" placeholder="Search by number or client..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="!py-2.5 !pl-10 !rounded-xl"/>
+                    <Input label="" placeholder="Search by number, ref, or client..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="!py-2.5 !pl-10 !rounded-xl"/>
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                         <Filter className="w-4 h-4" />
                     </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
+                    <select 
+                        value={filterDocType} 
+                        onChange={e => setFilterDocType(e.target.value as any)}
+                        className="bg-white dark:bg-primary-dark border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-accent outline-none cursor-pointer"
+                    >
+                        <option value="all">All Types</option>
+                        <option value="invoice">Tax Invoices Only</option>
+                        <option value="credit_note">Credit Notes (CN)</option>
+                        <option value="debit_note">Debit Notes (DN)</option>
+                    </select>
                     <select 
                         value={filterStatus} 
                         onChange={e => setFilterStatus(e.target.value)}
@@ -1187,7 +1227,25 @@ const Invoices: React.FC<InvoicesProps> = ({
                                 {filteredInvoices.map((invoice, idx) => (
                                     <tr key={invoice.id} className="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer" onClick={() => setSelectedInvoice(invoice)}>
                                         <td className="px-6 py-4" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(invoice.id)} onChange={() => handleSelectOne(invoice.id)} className="rounded border-slate-300 text-accent focus:ring-accent" /></td>
-                                        <td className="px-6 py-4 font-mono font-medium text-slate-900 dark:text-white">{invoice.invoiceNumber}</td>
+                                        <td className="px-6 py-4 font-mono font-medium text-slate-900 dark:text-white">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                {invoice.documentType === 'credit_note' ? (
+                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                                        CN
+                                                    </span>
+                                                ) : invoice.documentType === 'debit_note' ? (
+                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                                        DN
+                                                    </span>
+                                                ) : null}
+                                                <span>{invoice.invoiceNumber}</span>
+                                            </div>
+                                            {invoice.originalInvoiceNumber && (
+                                                <div className="text-[10px] text-slate-400 font-sans mt-0.5">
+                                                    Ref: {invoice.originalInvoiceNumber}
+                                                </div>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">{invoice.client?.name || 'Unknown Client'}</td>
                                         <td className="px-6 py-4">{invoice.issueDate}</td>
                                         <td className="px-6 py-4 text-right font-bold text-slate-900 dark:text-white">{currency}{invoice.grandTotal.toLocaleString()}</td>
@@ -1203,13 +1261,33 @@ const Invoices: React.FC<InvoicesProps> = ({
                                                 onOpen={() => setOpenDropdownId(invoice.id)}
                                                 onClose={() => setOpenDropdownId(null)}
                                             >
-                                                <div className="py-1 w-36 flex flex-col">
-                                                    <button onClick={() => { onStatusChange(invoice.id, 'Paid'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2.5 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 font-bold transition-colors">Mark Paid</button>
-                                                    <button onClick={() => { onStatusChange(invoice.id, 'Unpaid'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2.5 text-xs hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 font-bold transition-colors">Mark Unpaid</button>
-                                                    <button onClick={() => { onStatusChange(invoice.id, 'Overdue'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2.5 text-xs hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600 font-bold transition-colors">Mark Overdue</button>
+                                                <div className="py-1 w-44 flex flex-col">
+                                                    <button onClick={() => { onStatusChange(invoice.id, 'Paid'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 font-bold transition-colors">Mark Paid</button>
+                                                    <button onClick={() => { onStatusChange(invoice.id, 'Unpaid'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 font-bold transition-colors">Mark Unpaid</button>
+                                                    <button onClick={() => { onStatusChange(invoice.id, 'Overdue'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600 font-bold transition-colors">Mark Overdue</button>
                                                     {invoice.status === 'Overdue' && (
-                                                       <button onClick={() => { sendPaymentReminderViaWhatsApp(invoice, invoice.client, company); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2.5 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 font-bold transition-colors border-t border-slate-100 dark:border-slate-800">WhatsApp Reminder</button>
+                                                       <button onClick={() => { sendPaymentReminderViaWhatsApp(invoice, invoice.client, company); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 font-bold transition-colors border-t border-slate-100 dark:border-slate-800">WhatsApp Reminder</button>
                                                      )}
+                                                    <button 
+                                                        onClick={() => {
+                                                            if (onIssueCreditNote) onIssueCreditNote(invoice);
+                                                            else setActiveView('NewCreditNote');
+                                                            setOpenDropdownId(null);
+                                                        }} 
+                                                        className="w-full text-left px-4 py-2 text-xs hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 font-bold transition-colors border-t border-slate-100 dark:border-slate-800"
+                                                    >
+                                                        Issue Credit Note (CN)
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => {
+                                                            if (onIssueDebitNote) onIssueDebitNote(invoice);
+                                                            else setActiveView('NewDebitNote');
+                                                            setOpenDropdownId(null);
+                                                        }} 
+                                                        className="w-full text-left px-4 py-2 text-xs hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 font-bold transition-colors"
+                                                    >
+                                                        Issue Debit Note (DN)
+                                                    </button>
                                                 </div>
                                             </Dropdown>
                                         </td>

@@ -52,6 +52,9 @@ export const generateGSTR1CSV = (invoices: Invoice[], company: Company) => {
         const rows: string[][] = [];
         const companyState = (company.details.state || '').trim().toLowerCase();
 
+        const regularInvoices = invoices.filter(inv => inv.documentType !== 'credit_note' && inv.documentType !== 'debit_note');
+        const creditDebitNotes = invoices.filter(inv => inv.documentType === 'credit_note' || inv.documentType === 'debit_note');
+
         // 1. Header for B2B/B2C
         rows.push(['GSTR-1 Outward Supplies Report']);
         rows.push(['Generated On', new Date().toLocaleDateString()]);
@@ -65,7 +68,7 @@ export const generateGSTR1CSV = (invoices: Invoice[], company: Company) => {
 
         const hsnGroups: { [hsn: string]: any } = {};
 
-        invoices.forEach(inv => {
+        regularInvoices.forEach(inv => {
             const pos = (inv.shippingState || inv.client.state || '').trim();
             const isInterState = pos.toLowerCase() !== companyState && pos !== '';
             const isB2B = !!(inv.client.gstin && inv.client.gstin.trim().length > 0);
@@ -128,7 +131,64 @@ export const generateGSTR1CSV = (invoices: Invoice[], company: Company) => {
             });
         });
 
-        // 2. HSN Summary
+        // 2. Table 9B: Credit & Debit Notes
+        if (creditDebitNotes.length > 0) {
+            rows.push([]);
+            rows.push([]);
+            rows.push(['TABLE 9B: CREDIT / DEBIT NOTES (CDNR / CDNUR)']);
+            rows.push([
+                'GSTIN/UIN of Recipient', 'Receiver Name', 'Document Type', 'Note Number', 'Note Date',
+                'Original Invoice Number', 'Original Invoice Date', 'Reason For Issuing', 'Note Value',
+                'Place Of Supply', 'Rate (%)', 'Taxable Value', 'Integrated Tax (IGST)', 'Central Tax (CGST)', 'State/UT Tax (SGST)'
+            ]);
+
+            creditDebitNotes.forEach(note => {
+                const pos = (note.shippingState || note.client.state || '').trim();
+                const isInterState = pos.toLowerCase() !== companyState && pos !== '';
+                const docLabel = note.documentType === 'credit_note' ? 'Credit Note (C)' : 'Debit Note (D)';
+
+                const rateGroups: { [rate: number]: number } = {};
+                note.items.forEach(item => {
+                    const rate = item.gstRate || 0;
+                    if (!rateGroups[rate]) rateGroups[rate] = 0;
+                    rateGroups[rate] += (item.price * item.quantity);
+                });
+
+                Object.keys(rateGroups).forEach(rateStr => {
+                    const rate = Number(rateStr);
+                    const taxableValue = rateGroups[rate];
+                    const taxAmount = (taxableValue * rate) / 100;
+
+                    let igst = 0, cgst = 0, sgst = 0;
+                    if (isInterState) {
+                        igst = taxAmount;
+                    } else {
+                        cgst = taxAmount / 2;
+                        sgst = taxAmount / 2;
+                    }
+
+                    rows.push([
+                        note.client.gstin || '',
+                        note.client.name,
+                        docLabel,
+                        note.invoiceNumber,
+                        note.issueDate,
+                        note.originalInvoiceNumber || '',
+                        note.originalInvoiceDate || '',
+                        note.reason || 'Sales Return',
+                        note.grandTotal.toFixed(2),
+                        pos,
+                        rate.toString(),
+                        taxableValue.toFixed(2),
+                        igst.toFixed(2),
+                        cgst.toFixed(2),
+                        sgst.toFixed(2)
+                    ]);
+                });
+            });
+        }
+
+        // 3. HSN Summary
         rows.push([]);
         rows.push([]);
         rows.push(['HSN SUMMARY']);
@@ -163,10 +223,13 @@ export const generateGSTR3BCSV = (invoices: Invoice[], company: Company) => {
         const unregisteredInterState: { [state: string]: { taxable: number, igst: number } } = {};
 
         invoices.forEach(inv => {
-            taxableVal += inv.subTotal || 0;
-            igstVal += inv.igst || 0;
-            cgstVal += inv.cgst || 0;
-            sgstVal += inv.sgst || 0;
+            const isCreditNote = inv.documentType === 'credit_note';
+            const multiplier = isCreditNote ? -1 : 1;
+
+            taxableVal += (inv.subTotal || 0) * multiplier;
+            igstVal += (inv.igst || 0) * multiplier;
+            cgstVal += (inv.cgst || 0) * multiplier;
+            sgstVal += (inv.sgst || 0) * multiplier;
 
             const pos = (inv.shippingState || inv.client.state || '').trim();
             const isInterState = pos.toLowerCase() !== companyState && pos !== '';
@@ -176,16 +239,21 @@ export const generateGSTR3BCSV = (invoices: Invoice[], company: Company) => {
                 if (!unregisteredInterState[pos]) {
                     unregisteredInterState[pos] = { taxable: 0, igst: 0 };
                 }
-                unregisteredInterState[pos].taxable += inv.subTotal || 0;
-                unregisteredInterState[pos].igst += inv.igst || 0;
+                unregisteredInterState[pos].taxable += (inv.subTotal || 0) * multiplier;
+                unregisteredInterState[pos].igst += (inv.igst || 0) * multiplier;
             }
         });
+
+        taxableVal = Math.max(0, taxableVal);
+        igstVal = Math.max(0, igstVal);
+        cgstVal = Math.max(0, cgstVal);
+        sgstVal = Math.max(0, sgstVal);
 
         const rows = [
             ['GSTR-3B Summary Report'],
             ['Generated On', new Date().toLocaleDateString()],
             [],
-            ['Table 3.1 Details of Outward Supplies and inward supplies liable to reverse charge'],
+            ['Table 3.1 Details of Outward Supplies and inward supplies liable to reverse charge (Net of Credit/Debit Notes)'],
             ['Nature of Supplies', 'Total Taxable Value', 'Integrated Tax', 'Central Tax', 'State/UT Tax', 'Cess'],
             ['(a) Outward taxable supplies (other than zero rated, nil rated and exempted)', taxableVal.toFixed(2), igstVal.toFixed(2), cgstVal.toFixed(2), sgstVal.toFixed(2), '0.00'],
             ['(b) Outward taxable supplies (zero rated)', '0.00', '0.00', '0.00', '0.00', '0.00'],
@@ -201,7 +269,7 @@ export const generateGSTR3BCSV = (invoices: Invoice[], company: Company) => {
             rows.push(['No inter-state supplies to unregistered persons', '-', '-']);
         } else {
             Object.entries(unregisteredInterState).forEach(([state, amounts]) => {
-                rows.push([state, amounts.taxable.toFixed(2), amounts.igst.toFixed(2)]);
+                rows.push([state, Math.max(0, amounts.taxable).toFixed(2), Math.max(0, amounts.igst).toFixed(2)]);
             });
         }
 
@@ -247,16 +315,20 @@ export const generateGSTR1JSON = (invoices: Invoice[], company: Company, fp: str
     const b2bMap: Record<string, { ctin: string, inv: any[] }> = {};
     const b2csMap: Record<string, { sply_ty: string, pos: string, typ: string, rt: number, txval: number, iamt: number, camt: number, samt: number, csamt: number }> = {};
     const hsnMap: Record<string, { hsn_sc: string, desc: string, uqc: string, qty: number, val: number, txval: number, iamt: number, camt: number, samt: number, csamt: number }> = {};
+    const cdnrMap: Record<string, { ctin: string, nt: any[] }> = {};
+    const cdnur: any[] = [];
     
     const invoiceNumbers: string[] = [];
+    const creditNoteNumbers: string[] = [];
+    const debitNoteNumbers: string[] = [];
 
     invoices.forEach(inv => {
         const rawPos = (inv.shippingState || inv.client.state || '').trim();
         const posCode = getStateCode(rawPos);
         const isInterState = rawPos.toLowerCase() !== companyState && rawPos !== '';
         const isB2B = !!(inv.client.gstin && inv.client.gstin.trim().length > 0);
-        
-        invoiceNumbers.push(inv.invoiceNumber);
+        const isCreditNote = inv.documentType === 'credit_note';
+        const isDebitNote = inv.documentType === 'debit_note';
 
         // Parse date to DD-MM-YYYY
         let formattedDate = inv.issueDate;
@@ -270,41 +342,83 @@ export const generateGSTR1JSON = (invoices: Invoice[], company: Company, fp: str
             }
         } catch (_) {}
 
+        // Group items by rate
+        const rateItems: Record<number, { txval: number, iamt: number, camt: number, samt: number }> = {};
+        inv.items.forEach(item => {
+            const rt = Number(item.gstRate) || 0;
+            const txval = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+            const tax = (txval * rt) / 100;
+            if (!rateItems[rt]) {
+                rateItems[rt] = { txval: 0, iamt: 0, camt: 0, samt: 0 };
+            }
+            rateItems[rt].txval += txval;
+            if (isInterState) {
+                rateItems[rt].iamt += tax;
+            } else {
+                rateItems[rt].camt += tax / 2;
+                rateItems[rt].samt += tax / 2;
+            }
+        });
+
+        const itms = Object.entries(rateItems).map(([rtStr, vals], idx) => ({
+            num: idx + 1,
+            itm_det: {
+                rt: Number(rtStr),
+                txval: parseFloat(vals.txval.toFixed(2)),
+                iamt: parseFloat(vals.iamt.toFixed(2)),
+                camt: parseFloat(vals.camt.toFixed(2)),
+                samt: parseFloat(vals.samt.toFixed(2)),
+                csamt: 0
+            }
+        }));
+
+        if (isCreditNote || isDebitNote) {
+            const ntty = isCreditNote ? "C" : "D";
+            if (isCreditNote) creditNoteNumbers.push(inv.invoiceNumber);
+            if (isDebitNote) debitNoteNumbers.push(inv.invoiceNumber);
+
+            let origDate = inv.originalInvoiceDate || inv.issueDate;
+            try {
+                const od = new Date(origDate);
+                if (!isNaN(od.getTime())) {
+                    origDate = `${String(od.getDate()).padStart(2, '0')}-${String(od.getMonth() + 1).padStart(2, '0')}-${od.getFullYear()}`;
+                }
+            } catch (_) {}
+
+            const notePayload = {
+                ntty,
+                nt_num: inv.invoiceNumber,
+                nt_dt: formattedDate,
+                inum: inv.originalInvoiceNumber || inv.invoiceNumber,
+                idt: origDate,
+                val: parseFloat(inv.grandTotal.toFixed(2)),
+                pos: posCode,
+                rchrg: "N",
+                itms
+            };
+
+            if (isB2B) {
+                const ctin = inv.client.gstin!.trim().toUpperCase();
+                if (!cdnrMap[ctin]) {
+                    cdnrMap[ctin] = { ctin, nt: [] };
+                }
+                cdnrMap[ctin].nt.push(notePayload);
+            } else {
+                cdnur.push({
+                    typ: isInterState ? "B2CL" : "B2CS",
+                    ...notePayload
+                });
+            }
+            return; // Don't add CN/DN directly to b2b or b2cs outward
+        }
+
+        invoiceNumbers.push(inv.invoiceNumber);
+
         if (isB2B) {
-            const ctin = inv.client.gstin.trim().toUpperCase();
+            const ctin = inv.client.gstin!.trim().toUpperCase();
             if (!b2bMap[ctin]) {
                 b2bMap[ctin] = { ctin, inv: [] };
             }
-
-            // Group items by rate
-            const rateItems: Record<number, { txval: number, iamt: number, camt: number, samt: number }> = {};
-            inv.items.forEach(item => {
-                const rt = Number(item.gstRate) || 0;
-                const txval = (Number(item.price) || 0) * (Number(item.quantity) || 0);
-                const tax = (txval * rt) / 100;
-                if (!rateItems[rt]) {
-                    rateItems[rt] = { txval: 0, iamt: 0, camt: 0, samt: 0 };
-                }
-                rateItems[rt].txval += txval;
-                if (isInterState) {
-                    rateItems[rt].iamt += tax;
-                } else {
-                    rateItems[rt].camt += tax / 2;
-                    rateItems[rt].samt += tax / 2;
-                }
-            });
-
-            const itms = Object.entries(rateItems).map(([rtStr, vals], idx) => ({
-                num: idx + 1,
-                itm_det: {
-                    rt: Number(rtStr),
-                    txval: parseFloat(vals.txval.toFixed(2)),
-                    iamt: parseFloat(vals.iamt.toFixed(2)),
-                    camt: parseFloat(vals.camt.toFixed(2)),
-                    samt: parseFloat(vals.samt.toFixed(2)),
-                    csamt: 0
-                }
-            }));
 
             b2bMap[ctin].inv.push({
                 inum: inv.invoiceNumber,
@@ -409,36 +523,75 @@ export const generateGSTR1JSON = (invoices: Invoice[], company: Company, fp: str
 
     // Document Issue
     const sortedInvoices = [...invoiceNumbers].sort();
-    const doc_issue = {
-        doc_det: [
-            {
-                doc_num: 1,
-                doc_typ: "Invoices for outward supply",
-                docs: [
-                    {
-                        num: 1,
-                        from: sortedInvoices[0] || 'INV-001',
-                        to: sortedInvoices[sortedInvoices.length - 1] || 'INV-001',
-                        totnum: sortedInvoices.length,
-                        canc: 0,
-                        net_issue: sortedInvoices.length
-                    }
-                ]
-            }
-        ]
-    };
+    const doc_det: any[] = [
+        {
+            doc_num: 1,
+            doc_typ: "Invoices for outward supply",
+            docs: [
+                {
+                    num: 1,
+                    from: sortedInvoices[0] || 'INV-001',
+                    to: sortedInvoices[sortedInvoices.length - 1] || 'INV-001',
+                    totnum: sortedInvoices.length,
+                    canc: 0,
+                    net_issue: sortedInvoices.length
+                }
+            ]
+        }
+    ];
 
-    const cur_gt = invoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0);
+    if (creditNoteNumbers.length > 0) {
+        const sortedCN = [...creditNoteNumbers].sort();
+        doc_det.push({
+            doc_num: 2,
+            doc_typ: "Credit Note",
+            docs: [
+                {
+                    num: 1,
+                    from: sortedCN[0],
+                    to: sortedCN[sortedCN.length - 1],
+                    totnum: sortedCN.length,
+                    canc: 0,
+                    net_issue: sortedCN.length
+                }
+            ]
+        });
+    }
+
+    if (debitNoteNumbers.length > 0) {
+        const sortedDN = [...debitNoteNumbers].sort();
+        doc_det.push({
+            doc_num: 3,
+            doc_typ: "Debit Note",
+            docs: [
+                {
+                    num: 1,
+                    from: sortedDN[0],
+                    to: sortedDN[sortedDN.length - 1],
+                    totnum: sortedDN.length,
+                    canc: 0,
+                    net_issue: sortedDN.length
+                }
+            ]
+        });
+    }
+
+    const cur_gt = invoices.reduce((sum, inv) => {
+        const mult = inv.documentType === 'credit_note' ? -1 : 1;
+        return sum + (inv.grandTotal || 0) * mult;
+    }, 0);
 
     return {
         gstin: (company.details.gstin || '27AAAAA0000A1Z5').toUpperCase(),
         fp: fp || `${String(new Date().getMonth() + 1).padStart(2, '0')}${new Date().getFullYear()}`,
-        cur_gt: parseFloat(cur_gt.toFixed(2)),
-        gt: parseFloat(cur_gt.toFixed(2)),
+        cur_gt: parseFloat(Math.max(0, cur_gt).toFixed(2)),
+        gt: parseFloat(Math.max(0, cur_gt).toFixed(2)),
         b2b,
         b2cs,
+        cdnr: Object.values(cdnrMap),
+        cdnur,
         hsn: { data: hsnData },
-        doc_issue
+        doc_issue: { doc_det }
     };
 };
 

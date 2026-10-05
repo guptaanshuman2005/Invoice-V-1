@@ -635,24 +635,27 @@ const CustomInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documen
 
 export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documentTitle = 'Invoice', numberToWords }) => {
   const template = company.details?.invoiceTemplate || 'modern';
+  const isCN = invoice.documentType === 'credit_note';
+  const isDN = invoice.documentType === 'debit_note';
+  const resolvedTitle = isCN ? 'Credit Note' : isDN ? 'Debit Note' : documentTitle;
   
   if (template === 'traditional' || template === 'classic') {
-    return <TraditionalInvoicePDF invoice={invoice} company={company} documentTitle={documentTitle} numberToWords={numberToWords} />;
+    return <TraditionalInvoicePDF invoice={invoice} company={company} documentTitle={resolvedTitle} numberToWords={numberToWords} />;
   }
   
   if (template === 'premium' || template === 'minimal') {
-    return <PremiumInvoicePDF invoice={invoice} company={company} documentTitle={documentTitle} numberToWords={numberToWords} />;
+    return <PremiumInvoicePDF invoice={invoice} company={company} documentTitle={resolvedTitle} numberToWords={numberToWords} />;
   }
 
   if (template === 'custom') {
-    return <CustomInvoicePDF invoice={invoice} company={company} documentTitle={documentTitle} numberToWords={numberToWords} />;
+    return <CustomInvoicePDF invoice={invoice} company={company} documentTitle={resolvedTitle} numberToWords={numberToWords} />;
   }
 
   if (template === 'tally') {
-    return <TallyInvoicePDF invoice={invoice} company={company} documentTitle={documentTitle} numberToWords={numberToWords} />;
+    return <TallyInvoicePDF invoice={invoice} company={company} documentTitle={resolvedTitle} numberToWords={numberToWords} />;
   }
   
-  return <ModernInvoicePDF invoice={invoice} company={company} documentTitle={documentTitle} numberToWords={numberToWords} />;
+  return <ModernInvoicePDF invoice={invoice} company={company} documentTitle={resolvedTitle} numberToWords={numberToWords} />;
 };
 
 const TallyInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documentTitle = 'Invoice', numberToWords }) => {
