@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import type { Invoice, Item, InvoiceItem, Company, DraftInvoice, Quotation, Client } from '../types';
+import type { Invoice, Item, InvoiceItem, Company, DraftInvoice, Quotation, Client, InvoicePayment, PaymentMode } from '../types';
 import Input from './common/Input';
 import Button from './common/Button';
 import Modal from './common/Modal';
 import { INDIAN_STATES } from '../constants';
 import { InvoiceView } from './Invoices';
-import { MessageCircle, ArrowLeft, Trash2, Check, Info, Eye, UserPlus, Plus } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Trash2, Check, Info, Eye, UserPlus, Plus, CreditCard, CheckCircle2 } from 'lucide-react';
 import { Dropdown } from './common/Dropdown';
 import { InvoicePDF } from './InvoicePDF';
 import { PDFViewer } from '@react-pdf/renderer';
@@ -60,6 +60,13 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
     const [savedInvoice, setSavedInvoice] = useState<Invoice | Quotation | null>(null);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showLivePreview, setShowLivePreview] = useState(false);
+
+    // Initial / Advance Payment State
+    const [hasInitialPayment, setHasInitialPayment] = useState(false);
+    const [advanceAmount, setAdvanceAmount] = useState<string>('');
+    const [advancePaymentMode, setAdvancePaymentMode] = useState<PaymentMode>('UPI');
+    const [advancePaymentDate, setAdvancePaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [advancePaymentRef, setAdvancePaymentRef] = useState<string>('');
 
     // Initialize editing state or load draft
     useEffect(() => {
@@ -412,6 +419,25 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
             setSavedInvoice(quotation as Quotation);
         } else {
             const documentType = mode === 'credit_note' ? 'credit_note' : mode === 'debit_note' ? 'debit_note' : 'invoice';
+            
+            let initialPayments: InvoicePayment[] | undefined = undefined;
+            if (mode === 'invoice') {
+                if (hasInitialPayment && Number(advanceAmount) > 0) {
+                    const numAmt = Math.min(Number(advanceAmount), totals.grandTotal);
+                    initialPayments = [{
+                        id: `pay_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+                        date: advancePaymentDate || draftInvoice.issueDate,
+                        amount: numAmt,
+                        mode: advancePaymentMode,
+                        referenceNo: advancePaymentRef.trim() || undefined,
+                        notes: 'Advance / Initial payment at invoice creation',
+                        createdAt: new Date().toISOString()
+                    }];
+                } else if (isEditing && invoiceToEdit && 'payments' in invoiceToEdit) {
+                    initialPayments = (invoiceToEdit as Invoice).payments;
+                }
+            }
+
             const finalInvoice: Omit<Invoice, 'id' | 'status'> | Invoice = {
                 ...commonData,
                 invoiceNumber: draftInvoice.invoiceNumber,
@@ -419,6 +445,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                 originalInvoiceNumber: draftInvoice.originalInvoiceNumber,
                 originalInvoiceDate: draftInvoice.originalInvoiceDate,
                 reason: draftInvoice.reason,
+                payments: initialPayments,
                 ...(isEditing && invoiceToEdit && 'invoiceNumber' in invoiceToEdit ? { id: invoiceToEdit.id, status: (invoiceToEdit as Invoice).status } : {})
             };
             saveInvoice(finalInvoice);
@@ -922,6 +949,118 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                              <span className="text-lg font-bold text-slate-900 dark:text-white">Grand Total</span>
                              <span className="text-2xl font-black text-accent">₹{totals.grandTotal.toFixed(2)}</span>
                          </div>
+
+                         {mode === 'invoice' && totals.grandTotal > 0 && (
+                             <div className="mt-4 pt-4 border-t border-slate-200/80 dark:border-slate-700/80">
+                                 <div className="flex items-center justify-between mb-2">
+                                     <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300">
+                                         <input 
+                                             type="checkbox"
+                                             checked={hasInitialPayment}
+                                             onChange={(e) => {
+                                                 setHasInitialPayment(e.target.checked);
+                                                 if (e.target.checked && !advanceAmount) {
+                                                     setAdvanceAmount((totals.grandTotal * 0.5).toFixed(2));
+                                                 }
+                                             }}
+                                             className="w-4 h-4 rounded text-accent focus:ring-accent"
+                                         />
+                                         <span className="flex items-center gap-1.5">
+                                             <CreditCard className="w-3.5 h-3.5 text-accent" />
+                                             Record Advance / Token Payment
+                                         </span>
+                                     </label>
+                                     {hasInitialPayment && (
+                                         <div className="flex gap-1.5">
+                                             <button
+                                                 type="button"
+                                                 onClick={() => setAdvanceAmount((totals.grandTotal * 0.25).toFixed(2))}
+                                                 className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                                             >
+                                                 25%
+                                             </button>
+                                             <button
+                                                 type="button"
+                                                 onClick={() => setAdvanceAmount((totals.grandTotal * 0.5).toFixed(2))}
+                                                 className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                                             >
+                                                 50%
+                                             </button>
+                                             <button
+                                                 type="button"
+                                                 onClick={() => setAdvanceAmount(totals.grandTotal.toFixed(2))}
+                                                 className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                                             >
+                                                 100%
+                                             </button>
+                                         </div>
+                                     )}
+                                 </div>
+
+                                 {hasInitialPayment && (
+                                     <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70 space-y-3 animate-fade-in text-xs">
+                                         <div className="grid grid-cols-2 gap-2">
+                                             <div>
+                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Amount Paid (₹) *</label>
+                                                 <input
+                                                     type="number"
+                                                     min="0"
+                                                     max={totals.grandTotal}
+                                                     step="0.01"
+                                                     value={advanceAmount}
+                                                     onChange={(e) => setAdvanceAmount(e.target.value)}
+                                                     placeholder="e.g. 5000"
+                                                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:ring-1 focus:ring-accent"
+                                                 />
+                                             </div>
+                                             <div>
+                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Payment Mode</label>
+                                                 <select
+                                                     value={advancePaymentMode}
+                                                     onChange={(e) => setAdvancePaymentMode(e.target.value as any)}
+                                                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-accent"
+                                                 >
+                                                     <option value="UPI">UPI</option>
+                                                     <option value="NEFT">Bank Transfer (NEFT/RTGS)</option>
+                                                     <option value="Cash">Cash</option>
+                                                     <option value="Cheque">Cheque</option>
+                                                     <option value="Card">Card</option>
+                                                 </select>
+                                             </div>
+                                         </div>
+
+                                         <div className="grid grid-cols-2 gap-2">
+                                             <div>
+                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Payment Date</label>
+                                                 <input
+                                                     type="date"
+                                                     value={advancePaymentDate}
+                                                     onChange={(e) => setAdvancePaymentDate(e.target.value)}
+                                                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+                                                 />
+                                             </div>
+                                             <div>
+                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Txn / Ref # (Optional)</label>
+                                                 <input
+                                                     type="text"
+                                                     value={advancePaymentRef}
+                                                     onChange={(e) => setAdvancePaymentRef(e.target.value)}
+                                                     placeholder="e.g. UPI Ref / Cheque No"
+                                                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-accent"
+                                                 />
+                                             </div>
+                                         </div>
+
+                                         <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs font-bold">
+                                             <span className="text-slate-500">Remaining Balance:</span>
+                                             <span className={`font-mono ${Math.max(0, totals.grandTotal - (Number(advanceAmount) || 0)) === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                 ₹{Math.max(0, totals.grandTotal - (Number(advanceAmount) || 0)).toFixed(2)}
+                                             </span>
+                                         </div>
+                                     </div>
+                                 )}
+                             </div>
+                         )}
                      </div>
                  </div>
              </div>

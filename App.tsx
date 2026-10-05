@@ -733,7 +733,18 @@ const App: React.FC = () => {
                     ));
                 }
             });
-            const newInvoice: Invoice = { ...newInvoiceData, id: `inv_${Date.now()}`, status: 'Unpaid' };
+            const totalPaid = (newInvoiceData.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+            let initialStatus: Invoice['status'] = 'Unpaid';
+            if (totalPaid >= newInvoiceData.grandTotal && newInvoiceData.grandTotal > 0) {
+                initialStatus = 'Paid';
+            } else if (totalPaid > 0) {
+                initialStatus = 'Partially Paid';
+            }
+            const newInvoice: Invoice = { 
+                ...newInvoiceData, 
+                id: `inv_${Date.now()}`, 
+                status: (newInvoiceData as any).status || initialStatus 
+            };
             updatedInvoices.push(newInvoice);
             if (newInvoiceData.invoiceNumber === expectedInvoiceNumber) updatedDetails.nextInvoiceNumber = nextNumber + 1;
             trackEvent('create_invoice', { invoiceId: newInvoice.id, docType: newInvoice.documentType || 'invoice' });

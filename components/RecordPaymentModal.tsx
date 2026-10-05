@@ -11,7 +11,8 @@ interface RecordPaymentModalProps {
   onClose: () => void;
   invoice: Invoice | null;
   company: Company;
-  onSavePayment: (invoiceId: string, payment: InvoicePayment) => void;
+  onSavePayment?: (invoiceId: string, payment: InvoicePayment) => void;
+  onRecordPayment?: (invoiceId: string, payment: InvoicePayment) => void;
   onDeletePayment?: (invoiceId: string, paymentId: string) => void;
 }
 
@@ -29,10 +30,12 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   invoice,
   company,
   onSavePayment,
+  onRecordPayment,
   onDeletePayment
 }) => {
   if (!invoice) return null;
 
+  const handleSave = onRecordPayment || onSavePayment;
   const summary = getInvoicePaymentSummary(invoice);
   const [amount, setAmount] = useState<string>('');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -85,19 +88,21 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       createdAt: new Date().toISOString()
     };
 
-    onSavePayment(invoice.id, newPayment);
-    toast.success(`Payment of ₹${numAmount.toLocaleString('en-IN')} recorded successfully!`);
-
-    // Optionally auto-offer receipt voucher
-    const shouldPrint = window.confirm('Payment recorded! Would you like to print or download the official Payment Receipt Voucher now?');
-    if (shouldPrint) {
-      // Simulate receipt with this newly recorded payment
-      const updatedInvoice: Invoice = {
-        ...invoice,
-        payments: [...(invoice.payments || []), newPayment]
-      };
-      printPaymentReceipt(company, updatedInvoice, newPayment, invoice.client);
+    if (handleSave) {
+      handleSave(invoice.id, newPayment);
     }
+    
+    const updatedInvoice: Invoice = {
+      ...invoice,
+      payments: [...(invoice.payments || []), newPayment]
+    };
+
+    toast.success(`Payment of ₹${numAmount.toLocaleString('en-IN')} recorded!`, {
+      action: {
+        label: 'Print Voucher',
+        onClick: () => printPaymentReceipt(company, updatedInvoice, newPayment, invoice.client)
+      }
+    });
 
     onClose();
   };

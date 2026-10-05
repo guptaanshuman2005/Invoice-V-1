@@ -204,6 +204,37 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
     const [selectedAgingBucket, setSelectedAgingBucket] = useState<'all' | '0-30' | '31-60' | '61-90' | '90+'>('all');
     const [agingSearchQuery, setAgingSearchQuery] = useState('');
 
+    const [isQuickPaySelectorOpen, setIsQuickPaySelectorOpen] = useState(false);
+    const [quickPaySearch, setQuickPaySearch] = useState('');
+    const [quickPayFilter, setQuickPayFilter] = useState<'all' | 'overdue' | 'partial'>('all');
+
+    const unsettledInvoices = useMemo(() => {
+        return invoices
+            .filter(inv => {
+                const docType = inv.documentType || 'invoice';
+                if (docType === 'quotation') return false;
+                const summary = getInvoicePaymentSummary(inv);
+                return summary.balanceDue > 0;
+            })
+            .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    }, [invoices]);
+
+    const filteredUnsettledInvoices = useMemo(() => {
+        return unsettledInvoices.filter(inv => {
+            const summary = getInvoicePaymentSummary(inv);
+            if (quickPayFilter === 'overdue' && summary.status !== 'Overdue') return false;
+            if (quickPayFilter === 'partial' && summary.status !== 'Partially Paid') return false;
+            if (!quickPaySearch.trim()) return true;
+            const q = quickPaySearch.toLowerCase();
+            return (
+                inv.invoiceNumber.toLowerCase().includes(q) ||
+                (inv.client?.name || '').toLowerCase().includes(q) ||
+                (inv.client?.phone || '').includes(q) ||
+                inv.grandTotal.toString().includes(q)
+            );
+        });
+    }, [unsettledInvoices, quickPayFilter, quickPaySearch]);
+
     const metrics = useMemo(() => {
         let totalRevenue = 0;
         let totalReceivables = 0;
@@ -646,6 +677,48 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                 </div>
             </div>
 
+            {/* Overdue Receivables Alert Banner */}
+            {metrics.totalOverdue > 0 && (
+                <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-600 dark:text-rose-400 shrink-0">
+                            <ShieldAlert className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                                    {currency}{metrics.totalOverdue.toLocaleString()} in Overdue Receivables
+                                </h4>
+                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
+                                    {invoiceStatusCounts.overdue} Overdue
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                                Pending payments past their due date. Send reminders or review aging schedule to accelerate cash flow.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <button
+                            onClick={() => {
+                                setSelectedAgingBucket('all');
+                                setIsAgingModalOpen(true);
+                            }}
+                            className="text-xs font-bold px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition-all shadow-sm shadow-rose-600/20 active:scale-95 flex items-center gap-1.5"
+                        >
+                            <Clock className="w-3.5 h-3.5" />
+                            Aging Schedule
+                        </button>
+                        <button
+                            onClick={() => navigateToInvoices('Overdue')}
+                            className="text-xs font-bold px-3.5 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl transition-all"
+                        >
+                            View All
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Stat Cards Row - Staggered Animation */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <StatCard title="Total Revenue" value={`${currency}${metrics.totalRevenue.toLocaleString()}`} icon={<IndianRupee className="w-6 h-6" />} color="green" trend={{ value: metrics.trends.revenue, label: 'vs last month' }} sparklineData={metrics.revenueData} onClick={() => navigateToInvoices('Paid')} delay={0} />
@@ -660,23 +733,48 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                 <div className="lg:col-span-1 space-y-8">
                     {/* Quick Actions */}
                     <div className="glass-panel p-6 rounded-3xl">
-                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Quick Actions</h2>
-                        <div className="grid grid-cols-2 gap-4">
-                            {[
-                                { label: 'New Invoice', icon: <PlusCircle className="w-5 h-5" />, view: 'NewInvoice', color: 'bg-accent text-white' },
-                                { label: 'New Quote', icon: <FileText className="w-5 h-5" />, view: 'NewQuotation', color: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300' },
-                                { label: 'Add Client', icon: <Users className="w-5 h-5" />, view: 'Clients', color: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300' },
-                                { label: 'Add Item', icon: <PlusCircle className="w-5 h-5" />, view: 'Items', color: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300' },
-                            ].map((action, i) => (
+                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Quick Actions</h2>
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
                                 <button
-                                    key={i}
-                                    onClick={() => setActiveView && setActiveView(action.view)}
-                                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all hover:scale-105 active:scale-95 ${action.color}`}
+                                    onClick={() => setActiveView && setActiveView('NewInvoice')}
+                                    className="flex flex-col items-center justify-center gap-2 p-3.5 rounded-2xl bg-accent text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-accent/20 cursor-pointer"
                                 >
-                                    {action.icon}
-                                    <span className="text-[10px] font-bold uppercase text-center">{action.label}</span>
+                                    <PlusCircle className="w-5 h-5" />
+                                    <span className="text-[10px] font-bold uppercase text-center">New Invoice</span>
                                 </button>
-                            ))}
+                                <button
+                                    onClick={() => setIsQuickPaySelectorOpen(true)}
+                                    className="flex flex-col items-center justify-center gap-2 p-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-emerald-600/20 cursor-pointer"
+                                    title="Record payment received from client"
+                                >
+                                    <CreditCard className="w-5 h-5" />
+                                    <span className="text-[10px] font-bold uppercase text-center">Record Payment</span>
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    onClick={() => setActiveView && setActiveView('NewQuotation')}
+                                    className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    <span className="text-[9px] font-bold uppercase text-center">New Quote</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveView && setActiveView('Clients')}
+                                    className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                                >
+                                    <Users className="w-4 h-4" />
+                                    <span className="text-[9px] font-bold uppercase text-center">Add Client</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveView && setActiveView('Items')}
+                                    className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                                >
+                                    <PlusCircle className="w-4 h-4" />
+                                    <span className="text-[9px] font-bold uppercase text-center">Add Item</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -1093,23 +1191,72 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                                         <p className="text-sm text-slate-400 font-medium">No recent activity found.</p>
                                     </div>
                                 ) : (
-                                    invoices.slice(0, 5).map((inv, idx) => (
-                                        <div onClick={() => navigateToInvoices()} key={inv.id} className="flex items-center justify-between gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-slate-100 dark:hover:border-slate-700 opacity-0 animate-fade-in-up group" style={{ animationDelay: `${idx * 100}ms` }}>
-                                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                <div className={`w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center font-black text-sm shadow-sm transition-transform group-hover:scale-105 ${inv.status === 'Paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : inv.status === 'Overdue' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
-                                                    {(inv.client?.name || 'U').charAt(0).toUpperCase()}
+                                    invoices.slice(0, 5).map((inv, idx) => {
+                                        const summary = getInvoicePaymentSummary(inv);
+                                        return (
+                                            <div onClick={() => navigateToInvoices()} key={inv.id} className="flex items-center justify-between gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-slate-100 dark:hover:border-slate-700 opacity-0 animate-fade-in-up group" style={{ animationDelay: `${idx * 100}ms` }}>
+                                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                    <div className={`w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center font-black text-sm shadow-sm transition-transform group-hover:scale-105 ${summary.status === 'Paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : summary.status === 'Partially Paid' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : summary.status === 'Overdue' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+                                                        {(inv.client?.name || 'U').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <p className="text-sm font-black text-slate-900 dark:text-white truncate group-hover:text-accent transition-colors" title={inv.client?.name}>{inv.client?.name || 'Unknown Client'}</p>
+                                                            {summary.status === 'Partially Paid' && (
+                                                                <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                                                                    Partial
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-0.5 truncate">{inv.invoiceNumber} • {inv.issueDate}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-black text-slate-900 dark:text-white truncate group-hover:text-accent transition-colors" title={inv.client?.name}>{inv.client?.name || 'Unknown Client'}</p>
-                                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-0.5 truncate">{inv.invoiceNumber} • {inv.issueDate}</p>
+                                                <div className="flex items-center gap-2 shrink-0 ml-2">
+                                                    <div className="text-right">
+                                                        <p className="text-sm font-black text-slate-900 dark:text-white whitespace-nowrap">{currency}{inv.grandTotal.toLocaleString()}</p>
+                                                        {summary.balanceDue > 0 ? (
+                                                            <p className={`text-[10px] font-black uppercase tracking-wider mt-0.5 whitespace-nowrap ${summary.status === 'Overdue' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                                                Due: {currency}{summary.balanceDue.toLocaleString()}
+                                                            </p>
+                                                        ) : (
+                                                            <p className="text-[10px] font-black uppercase tracking-wider mt-0.5 text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                                                                Paid
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1">
+                                                        {summary.balanceDue > 0 ? (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setPaymentModalInvoice(inv);
+                                                                }}
+                                                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center gap-1"
+                                                                title="Record Payment"
+                                                            >
+                                                                <CreditCard className="w-3 h-3" />
+                                                                <span>Pay</span>
+                                                            </button>
+                                                        ) : (
+                                                            inv.payments && inv.payments.length > 0 && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        printPaymentReceipt(company, inv, inv.payments![inv.payments!.length - 1], inv.client);
+                                                                    }}
+                                                                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 hover:text-emerald-600 transition-colors"
+                                                                    title="Print Payment Voucher"
+                                                                >
+                                                                    <Printer className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            )
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="text-right shrink-0 ml-2">
-                                                <p className="text-sm font-black text-slate-900 dark:text-white whitespace-nowrap">{currency}{inv.grandTotal.toLocaleString()}</p>
-                                                <p className={`text-[10px] font-black uppercase tracking-wider mt-0.5 whitespace-nowrap ${inv.status === 'Paid' ? 'text-emerald-500' : inv.status === 'Overdue' ? 'text-rose-500' : 'text-amber-500'}`}>{inv.status}</p>
-                                            </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>
@@ -1428,6 +1575,118 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                             })}
                         </div>
                     )}
+                </div>
+            </Modal>
+
+            {/* Quick Payment Selector Modal */}
+            <Modal
+                isOpen={isQuickPaySelectorOpen}
+                onClose={() => {
+                    setIsQuickPaySelectorOpen(false);
+                    setQuickPaySearch('');
+                }}
+                title="Select Invoice to Record Payment"
+                size="lg"
+            >
+                <div className="p-6 space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                        <div className="relative flex-1">
+                            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Search by client, invoice number, or amount..."
+                                value={quickPaySearch}
+                                onChange={(e) => setQuickPaySearch(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-1 focus:ring-accent outline-none"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl shrink-0">
+                            <button
+                                onClick={() => setQuickPayFilter('all')}
+                                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all ${quickPayFilter === 'all' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                            >
+                                All ({unsettledInvoices.length})
+                            </button>
+                            <button
+                                onClick={() => setQuickPayFilter('overdue')}
+                                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all ${quickPayFilter === 'overdue' ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-500 hover:text-rose-600'}`}
+                            >
+                                Overdue ({unsettledInvoices.filter(i => getInvoicePaymentSummary(i).status === 'Overdue').length})
+                            </button>
+                            <button
+                                onClick={() => setQuickPayFilter('partial')}
+                                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all ${quickPayFilter === 'partial' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-blue-600'}`}
+                            >
+                                Partial ({unsettledInvoices.filter(i => getInvoicePaymentSummary(i).status === 'Partially Paid').length})
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="max-h-[420px] overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
+                        {filteredUnsettledInvoices.length === 0 ? (
+                            <div className="text-center py-12">
+                                <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-500/30 mb-2" />
+                                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                    {unsettledInvoices.length === 0 ? 'All invoices are fully settled!' : 'No matching unsettled invoices found.'}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    {unsettledInvoices.length === 0 ? 'There are no outstanding balances pending collection.' : 'Try adjusting your search or filter.'}
+                                </p>
+                            </div>
+                        ) : (
+                            filteredUnsettledInvoices.map((inv) => {
+                                const summary = getInvoicePaymentSummary(inv);
+                                return (
+                                    <div
+                                        key={inv.id}
+                                        className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all flex items-center justify-between gap-4"
+                                    >
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-xs font-black text-slate-900 dark:text-white truncate">
+                                                    {inv.client?.name || 'Unknown Client'}
+                                                </p>
+                                                <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded ${summary.status === 'Overdue' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' : summary.status === 'Partially Paid' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'}`}>
+                                                    {summary.status}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-1">
+                                                <span>#{inv.invoiceNumber}</span>
+                                                <span>•</span>
+                                                <span>Due: {inv.dueDate}</span>
+                                                {summary.totalPaid > 0 && (
+                                                    <>
+                                                        <span>•</span>
+                                                        <span className="text-emerald-600 dark:text-emerald-400">Paid: {currency}{summary.totalPaid.toLocaleString()}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="text-right shrink-0">
+                                            <p className="text-[10px] text-slate-400 uppercase font-bold">Balance Due</p>
+                                            <p className="text-sm font-black text-rose-600 dark:text-rose-400 font-mono">
+                                                {currency}{summary.balanceDue.toLocaleString()}
+                                            </p>
+                                            <p className="text-[9px] text-slate-400">Total: {currency}{inv.grandTotal.toLocaleString()}</p>
+                                        </div>
+
+                                        <button
+                                            onClick={() => {
+                                                setIsQuickPaySelectorOpen(false);
+                                                setPaymentModalInvoice(inv);
+                                            }}
+                                            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center gap-1.5 shrink-0"
+                                        >
+                                            <CreditCard className="w-3.5 h-3.5" />
+                                            <span>Record Payment</span>
+                                        </button>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
                 </div>
             </Modal>
 

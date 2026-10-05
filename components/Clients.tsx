@@ -275,6 +275,13 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
     onClose, isMaximized, onToggleMaximize, panelWidth = 490
 }) => {
     const [activeTab, setActiveTab] = useState<'invoices' | 'ledger' | 'timeline'>('invoices');
+    const [ledgerViewMode, setLedgerViewMode] = useState<'cards' | 'table'>('cards');
+
+    useEffect(() => {
+        if (isMaximized) {
+            setLedgerViewMode('table');
+        }
+    }, [isMaximized]);
 
     // Financial year default dates for Indian SME Khata (April 1 to today)
     const defaultDates = useMemo(() => {
@@ -833,28 +840,35 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                     {/* Date Filter & Export Header */}
                     <div className="bg-white dark:bg-slate-900/60 p-3 sm:p-4 rounded-xl border border-slate-200/60 dark:border-slate-700/60 space-y-3">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
-                                    <Calendar className="w-3.5 h-3.5 text-accent" />
-                                    Range:
-                                </span>
+                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                <Calendar className="w-3.5 h-3.5 text-accent shrink-0" />
                                 <input
                                     type="date"
                                     value={ledgerStartDate}
                                     onChange={e => setLedgerStartDate(e.target.value)}
-                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent"
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent min-w-0 flex-1"
                                 />
-                                <span className="text-xs text-slate-400">to</span>
+                                <span className="text-xs text-slate-400 shrink-0">to</span>
                                 <input
                                     type="date"
                                     value={ledgerEndDate}
                                     onChange={e => setLedgerEndDate(e.target.value)}
-                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent"
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent min-w-0 flex-1"
                                 />
                             </div>
 
-                            {/* Export Buttons */}
-                            <div className="flex items-center gap-1.5 flex-wrap">
+                            {/* Export & View Mode Buttons */}
+                            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                                {!isMaximized && (
+                                    <button
+                                        onClick={() => setLedgerViewMode(prev => prev === 'cards' ? 'table' : 'cards')}
+                                        className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+                                        title={ledgerViewMode === 'cards' ? "Switch to Accountant Table View" : "Switch to Compact Card Feed"}
+                                    >
+                                        <FileSpreadsheet className="w-3.5 h-3.5" />
+                                        <span>{ledgerViewMode === 'cards' ? 'Table' : 'Feed'}</span>
+                                    </button>
+                                )}
                                 <button
                                     onClick={handleDownloadLedgerCSV}
                                     className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
@@ -869,7 +883,7 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                                     title="Download Statement as PDF / Print"
                                 >
                                     <Printer className="w-3.5 h-3.5" />
-                                    <span>Print PDF</span>
+                                    <span>PDF</span>
                                 </button>
                                 <button
                                     onClick={handleShareLedgerWhatsApp}
@@ -951,74 +965,154 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                         </div>
                     </div>
 
-                    {/* Ledger Table */}
-                    <div className="glass-panel rounded-xl overflow-hidden shadow-sm border border-slate-200/60 dark:border-slate-800/60">
-                        <div className="overflow-x-auto custom-scrollbar">
-                            <table className="w-full text-xs text-left min-w-[540px]">
-                                <thead className="bg-slate-100/70 dark:bg-slate-800/70 text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider border-b border-slate-200 dark:border-slate-800">
-                                    <tr>
-                                        <th className="px-3.5 py-2.5">Date</th>
-                                        <th className="px-3.5 py-2.5">Particulars</th>
-                                        <th className="px-3.5 py-2.5">Voucher #</th>
-                                        <th className="px-3.5 py-2.5 text-right">Debit (Dr)</th>
-                                        <th className="px-3.5 py-2.5 text-right">Credit (Cr)</th>
-                                        <th className="px-3.5 py-2.5 text-right">Balance</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {/* Opening Balance Row */}
-                                    <tr className="bg-slate-50/60 dark:bg-slate-900/30 font-semibold">
-                                        <td className="px-3.5 py-2 font-mono text-slate-500">{ledgerStartDate}</td>
-                                        <td className="px-3.5 py-2 text-slate-700 dark:text-slate-300 italic">Opening Balance B/F</td>
-                                        <td className="px-3.5 py-2 text-slate-400">-</td>
-                                        <td className="px-3.5 py-2 text-right text-slate-400">-</td>
-                                        <td className="px-3.5 py-2 text-right text-slate-400">-</td>
-                                        <td className="px-3.5 py-2 text-right font-mono font-bold text-slate-900 dark:text-white">
-                                            ₹{ledgerData.openingBalance.toFixed(2)} <span className="text-[10px] text-slate-400">{ledgerData.openingBalance >= 0 ? 'Dr' : 'Cr'}</span>
-                                        </td>
-                                    </tr>
+                    {/* Ledger Content: Adaptive Feed for Normal/Split View, 6-Column Accountant Table for Full Screen */}
+                    {ledgerViewMode === 'cards' && !isMaximized ? (
+                        <div className="space-y-2.5">
+                            {/* Opening Balance Card */}
+                            <div className="p-3 bg-slate-100/70 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-mono text-slate-500 text-[11px]">{ledgerStartDate}</span>
+                                    <span className="font-bold text-slate-700 dark:text-slate-300 italic">Opening Balance B/F</span>
+                                </div>
+                                <div className="font-mono font-bold text-slate-900 dark:text-white">
+                                    ₹{ledgerData.openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} {ledgerData.openingBalance >= 0 ? 'Dr' : 'Cr'}
+                                </div>
+                            </div>
 
-                                    {/* Transactions Rows */}
-                                    {ledgerData.rows.length === 0 ? (
+                            {/* Transactions Cards */}
+                            {ledgerData.rows.length === 0 ? (
+                                <div className="p-8 text-center bg-white dark:bg-slate-900/40 rounded-xl border border-slate-200/60 dark:border-slate-800 text-slate-400 italic text-xs">
+                                    No transactions recorded in this date range.
+                                </div>
+                            ) : (
+                                <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1 custom-scrollbar">
+                                    {ledgerData.rows.map(row => (
+                                        <div 
+                                            key={row.id} 
+                                            className="p-3 bg-white dark:bg-slate-800/70 rounded-xl border border-slate-200/80 dark:border-slate-700/80 hover:border-accent/40 dark:hover:border-accent/40 transition-all shadow-sm"
+                                        >
+                                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <span className="text-[10px] font-mono text-slate-500 font-semibold">{row.date}</span>
+                                                    <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
+                                                        row.type === 'Invoice' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' :
+                                                        row.type === 'Payment' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
+                                                        'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                                                    }`}>
+                                                        {row.type}
+                                                    </span>
+                                                    <span className="text-[10px] font-mono text-accent font-bold truncate max-w-[130px]">{row.ref}</span>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    {row.debit > 0 ? (
+                                                        <span className="text-xs font-black text-blue-600 dark:text-blue-400 font-mono">
+                                                            +₹{row.debit.toLocaleString('en-IN', { minimumFractionDigits: 2 })} <span className="text-[9px] font-bold">Dr</span>
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                                            -₹{row.credit.toLocaleString('en-IN', { minimumFractionDigits: 2 })} <span className="text-[9px] font-bold">Cr</span>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 dark:border-slate-700/60">
+                                                <span className="truncate pr-2 text-slate-700 dark:text-slate-300 font-medium">{row.particulars}</span>
+                                                <span className="font-mono font-bold text-slate-900 dark:text-white shrink-0 text-xs">
+                                                    Bal: ₹{row.runningBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} <span className="text-[10px] text-slate-400">{row.runningBalance >= 0 ? 'Dr' : 'Cr'}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Summary Card Footer */}
+                            <div className="p-3.5 bg-slate-900 text-white dark:bg-slate-800 rounded-xl flex items-center justify-between text-xs font-bold shadow-sm">
+                                <div>
+                                    <div className="text-[10px] uppercase text-slate-400">Total Activity</div>
+                                    <div className="mt-0.5">
+                                        <span className="text-blue-400 font-mono">Dr: ₹{ledgerData.totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 0 })}</span>
+                                        <span className="mx-1.5 text-slate-600">•</span>
+                                        <span className="text-emerald-400 font-mono">Cr: ₹{ledgerData.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 0 })}</span>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-[10px] uppercase text-slate-400">Closing Balance</div>
+                                    <div className={`text-sm font-black font-mono mt-0.5 ${ledgerData.closingBalance > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                        ₹{ledgerData.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} {ledgerData.closingBalance >= 0 ? 'Dr' : 'Cr'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="glass-panel rounded-xl overflow-hidden shadow-sm border border-slate-200/60 dark:border-slate-800/60">
+                            <div className="overflow-x-auto custom-scrollbar">
+                                <table className="w-full text-xs text-left min-w-[540px]">
+                                    <thead className="bg-slate-100/70 dark:bg-slate-800/70 text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider border-b border-slate-200 dark:border-slate-800">
                                         <tr>
-                                            <td colSpan={6} className="px-3.5 py-6 text-center text-slate-400 italic">
-                                                No transactions recorded in this date range.
+                                            <th className="px-3.5 py-2.5">Date</th>
+                                            <th className="px-3.5 py-2.5">Particulars</th>
+                                            <th className="px-3.5 py-2.5">Voucher #</th>
+                                            <th className="px-3.5 py-2.5 text-right">Debit (Dr)</th>
+                                            <th className="px-3.5 py-2.5 text-right">Credit (Cr)</th>
+                                            <th className="px-3.5 py-2.5 text-right">Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {/* Opening Balance Row */}
+                                        <tr className="bg-slate-50/60 dark:bg-slate-900/30 font-semibold">
+                                            <td className="px-3.5 py-2 font-mono text-slate-500">{ledgerStartDate}</td>
+                                            <td className="px-3.5 py-2 text-slate-700 dark:text-slate-300 italic">Opening Balance B/F</td>
+                                            <td className="px-3.5 py-2 text-slate-400">-</td>
+                                            <td className="px-3.5 py-2 text-right text-slate-400">-</td>
+                                            <td className="px-3.5 py-2 text-right text-slate-400">-</td>
+                                            <td className="px-3.5 py-2 text-right font-mono font-bold text-slate-900 dark:text-white">
+                                                ₹{ledgerData.openingBalance.toFixed(2)} <span className="text-[10px] text-slate-400">{ledgerData.openingBalance >= 0 ? 'Dr' : 'Cr'}</span>
                                             </td>
                                         </tr>
-                                    ) : (
-                                        ledgerData.rows.map(row => (
-                                            <tr key={row.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                                                <td className="px-3.5 py-2.5 font-mono text-slate-500 whitespace-nowrap">{row.date}</td>
-                                                <td className="px-3.5 py-2.5">
-                                                    <span className="font-medium text-slate-800 dark:text-slate-200">{row.particulars}</span>
-                                                </td>
-                                                <td className="px-3.5 py-2.5 font-mono text-accent font-semibold">{row.ref}</td>
-                                                <td className="px-3.5 py-2.5 text-right font-mono font-medium text-blue-600 dark:text-blue-400">
-                                                    {row.debit > 0 ? `₹${row.debit.toFixed(2)}` : '-'}
-                                                </td>
-                                                <td className="px-3.5 py-2.5 text-right font-mono font-medium text-emerald-600 dark:text-emerald-400">
-                                                    {row.credit > 0 ? `₹${row.credit.toFixed(2)}` : '-'}
-                                                </td>
-                                                <td className="px-3.5 py-2.5 text-right font-mono font-bold text-slate-900 dark:text-white">
-                                                    ₹{row.runningBalance.toFixed(2)} <span className="text-[10px] text-slate-400">{row.runningBalance >= 0 ? 'Dr' : 'Cr'}</span>
+
+                                        {/* Transactions Rows */}
+                                        {ledgerData.rows.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={6} className="px-3.5 py-6 text-center text-slate-400 italic">
+                                                    No transactions recorded in this date range.
                                                 </td>
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                                <tfoot className="bg-slate-100/70 dark:bg-slate-800/70 font-bold border-t-2 border-slate-300 dark:border-slate-700">
-                                    <tr>
-                                        <td colSpan={3} className="px-3.5 py-2.5 uppercase text-[11px] text-slate-600 dark:text-slate-300">Total Period Activity</td>
-                                        <td className="px-3.5 py-2.5 text-right font-mono text-blue-600 dark:text-blue-400">₹{ledgerData.totalDebit.toFixed(2)}</td>
-                                        <td className="px-3.5 py-2.5 text-right font-mono text-emerald-600 dark:text-emerald-400">₹{ledgerData.totalCredit.toFixed(2)}</td>
-                                        <td className={`px-3.5 py-2.5 text-right font-mono text-xs ${ledgerData.closingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                                            ₹{ledgerData.closingBalance.toFixed(2)} {ledgerData.closingBalance >= 0 ? 'Dr' : 'Cr'}
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                                        ) : (
+                                            ledgerData.rows.map(row => (
+                                                <tr key={row.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                                    <td className="px-3.5 py-2.5 font-mono text-slate-500 whitespace-nowrap">{row.date}</td>
+                                                    <td className="px-3.5 py-2.5">
+                                                        <span className="font-medium text-slate-800 dark:text-slate-200">{row.particulars}</span>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 font-mono text-accent font-semibold">{row.ref}</td>
+                                                    <td className="px-3.5 py-2.5 text-right font-mono font-medium text-blue-600 dark:text-blue-400">
+                                                        {row.debit > 0 ? `₹${row.debit.toFixed(2)}` : '-'}
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-right font-mono font-medium text-emerald-600 dark:text-emerald-400">
+                                                        {row.credit > 0 ? `₹${row.credit.toFixed(2)}` : '-'}
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-right font-mono font-bold text-slate-900 dark:text-white">
+                                                        ₹{row.runningBalance.toFixed(2)} <span className="text-[10px] text-slate-400">{row.runningBalance >= 0 ? 'Dr' : 'Cr'}</span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                    <tfoot className="bg-slate-100/70 dark:bg-slate-800/70 font-bold border-t-2 border-slate-300 dark:border-slate-700">
+                                        <tr>
+                                            <td colSpan={3} className="px-3.5 py-2.5 uppercase text-[11px] text-slate-600 dark:text-slate-300">Total Period Activity</td>
+                                            <td className="px-3.5 py-2.5 text-right font-mono text-blue-600 dark:text-blue-400">₹{ledgerData.totalDebit.toFixed(2)}</td>
+                                            <td className="px-3.5 py-2.5 text-right font-mono text-emerald-600 dark:text-emerald-400">₹{ledgerData.totalCredit.toFixed(2)}</td>
+                                            <td className={`px-3.5 py-2.5 text-right font-mono text-xs ${ledgerData.closingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                                ₹{ledgerData.closingBalance.toFixed(2)} {ledgerData.closingBalance >= 0 ? 'Dr' : 'Cr'}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             )}
 
