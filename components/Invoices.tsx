@@ -1,15 +1,17 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
-import type { Invoice, Company, BankAccount, RecurringInvoice, RecurringFrequency, InvoiceItem } from '../types';
+import type { Invoice, Company, BankAccount, RecurringInvoice, RecurringFrequency, InvoiceItem, InvoicePayment } from '../types';
 import Button from './common/Button';
 import Input from './common/Input';
 import Modal from './common/Modal';
 import { arrayToCSV, downloadCSV, generateGSTR1CSV, generateGSTR3BCSV } from '../utils/csvExport';
-import { MessageCircle, FileText, Download, Trash2, CheckCircle, Clock, AlertCircle, Filter, ChevronDown, Share2, Printer, MoreVertical, Repeat, Calendar, Play, Pause, Edit, Plus } from 'lucide-react';
+import { MessageCircle, FileText, Download, Trash2, CheckCircle, Clock, AlertCircle, Filter, ChevronDown, Share2, Printer, MoreVertical, Repeat, Calendar, Play, Pause, Edit, Plus, CreditCard } from 'lucide-react';
 import { InvoicePDF } from './InvoicePDF';
 import { Dropdown } from './common/Dropdown';
 import { sendInvoiceViaWhatsApp, sendPaymentReminderViaWhatsApp } from '../utils/whatsapp';
+import { RecordPaymentModal } from './RecordPaymentModal';
+import { getInvoicePaymentSummary } from '../utils/invoiceUtils';
 
 // --- Icons ---
 const WhatsAppIcon = () => <MessageCircle className="w-4 h-4" />;
@@ -847,6 +849,18 @@ const CustomInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docum
                         <span>Grand Total:</span>
                         <span>₹{invoice.grandTotal.toFixed(2)}</span>
                     </div>
+                    {invoice.payments && invoice.payments.length > 0 && (
+                        <>
+                            <div className="flex justify-between text-xs font-semibold pt-2 border-t border-slate-100">
+                                <span className="text-emerald-600">Total Paid:</span>
+                                <span className="text-emerald-600 font-mono">- ₹{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm font-black pt-1">
+                                <span className="text-rose-600">Balance Due:</span>
+                                <span className="text-rose-600 font-mono">₹{Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</span>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -894,7 +908,14 @@ export const InvoiceContent: React.FC<{ invoice: Invoice, company: Company, docu
     return <ModernInvoiceContent invoice={invoice} company={company} documentTitle={resolvedTitle} />;
 };
 
-export const InvoiceView: React.FC<{ invoice: Invoice; company: Company; onClose: () => void; onStatusChange?: (id: string, status: any) => void; documentTitle?: string }> = ({ invoice, company, onClose, onStatusChange, documentTitle = 'Invoice' }) => {
+export const InvoiceView: React.FC<{ 
+  invoice: Invoice; 
+  company: Company; 
+  onClose: () => void; 
+  onStatusChange?: (id: string, status: any) => void; 
+  onRecordPaymentClick?: () => void;
+  documentTitle?: string;
+}> = ({ invoice, company, onClose, onStatusChange, onRecordPaymentClick, documentTitle = 'Invoice' }) => {
   const isCN = invoice.documentType === 'credit_note';
   const isDN = invoice.documentType === 'debit_note';
   const resolvedTitle = isCN ? 'Credit Note' : isDN ? 'Debit Note' : documentTitle;
@@ -939,7 +960,12 @@ export const InvoiceView: React.FC<{ invoice: Invoice; company: Company; onClose
         </div>
       </div>
       <div className="p-6 bg-white dark:bg-primary-dark flex flex-wrap justify-between items-center gap-3 rounded-b-lg border-t border-slate-100 dark:border-slate-800 sticky bottom-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
+            {onRecordPaymentClick && documentTitle === 'Invoice' && (
+                <Button onClick={onRecordPaymentClick} className="gap-1.5 shadow-md shadow-accent/20 bg-indigo-600 hover:bg-indigo-700 text-white">
+                    <CreditCard className="w-4 h-4" /> Record Payment / Receipts
+                </Button>
+            )}
             {onStatusChange && (
                 <>
                     {documentTitle === 'Invoice' ? (
@@ -993,6 +1019,8 @@ interface InvoicesProps {
   onDeleteRecurring: (id: string) => void;
   onIssueCreditNote?: (invoice: Invoice) => void;
   onIssueDebitNote?: (invoice: Invoice) => void;
+  onRecordPayment?: (invoiceId: string, payment: InvoicePayment) => void;
+  onDeletePayment?: (invoiceId: string, paymentId: string) => void;
   initialFilter?: string;
   initialSearchQuery?: string;
 }
@@ -1001,6 +1029,7 @@ const Invoices: React.FC<InvoicesProps> = ({
     invoices, company, setActiveView, onEdit, onDelete, onStatusChange,
     onBulkDelete, onBulkStatusChange, onAddRecurring, onUpdateRecurring, onDeleteRecurring,
     onIssueCreditNote, onIssueDebitNote,
+    onRecordPayment, onDeletePayment,
     initialFilter, initialSearchQuery
 }) => {
   const [activeTab, setActiveTab] = useState<'invoices' | 'recurring'>('invoices');
@@ -1008,6 +1037,7 @@ const Invoices: React.FC<InvoicesProps> = ({
   const [filterStatus, setFilterStatus] = useState(initialFilter || '');
   const [filterDocType, setFilterDocType] = useState<'all' | 'invoice' | 'credit_note' | 'debit_note'>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [paymentModalInvoice, setPaymentModalInvoice] = useState<Invoice | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
@@ -1055,6 +1085,7 @@ const Invoices: React.FC<InvoicesProps> = ({
   const getStatusBadge = (status: Invoice['status']) => {
     switch (status) {
         case 'Paid': return 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-400';
+        case 'Partially Paid': return 'bg-blue-100 text-blue-700 ring-1 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-400';
         case 'Unpaid': return 'bg-amber-100 text-amber-700 ring-1 ring-amber-600/20 dark:bg-amber-900/30 dark:text-amber-400';
         case 'Overdue': return 'bg-rose-100 text-rose-700 ring-1 ring-rose-600/20 dark:bg-rose-900/30 dark:text-rose-400';
         default: return 'bg-slate-100 text-slate-600';
@@ -1169,6 +1200,7 @@ const Invoices: React.FC<InvoicesProps> = ({
                     >
                         <option value="">All Status</option>
                         <option value="Paid">Paid</option>
+                        <option value="Partially Paid">Partially Paid</option>
                         <option value="Unpaid">Unpaid</option>
                         <option value="Overdue">Overdue</option>
                     </select>
@@ -1224,86 +1256,117 @@ const Invoices: React.FC<InvoicesProps> = ({
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {filteredInvoices.map((invoice, idx) => (
-                                    <tr key={invoice.id} className="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer" onClick={() => setSelectedInvoice(invoice)}>
-                                        <td className="px-6 py-4" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(invoice.id)} onChange={() => handleSelectOne(invoice.id)} className="rounded border-slate-300 text-accent focus:ring-accent" /></td>
-                                        <td className="px-6 py-4 font-mono font-medium text-slate-900 dark:text-white">
-                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                {invoice.documentType === 'credit_note' ? (
-                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                                                        CN
-                                                    </span>
-                                                ) : invoice.documentType === 'debit_note' ? (
-                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
-                                                        DN
-                                                    </span>
-                                                ) : null}
-                                                <span>{invoice.invoiceNumber}</span>
-                                            </div>
-                                            {invoice.originalInvoiceNumber && (
-                                                <div className="text-[10px] text-slate-400 font-sans mt-0.5">
-                                                    Ref: {invoice.originalInvoiceNumber}
+                                {filteredInvoices.map((invoice, idx) => {
+                                    const paymentSummary = getInvoicePaymentSummary(invoice);
+                                    return (
+                                        <tr key={invoice.id} className="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer" onClick={() => setSelectedInvoice(invoice)}>
+                                            <td className="px-6 py-4" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(invoice.id)} onChange={() => handleSelectOne(invoice.id)} className="rounded border-slate-300 text-accent focus:ring-accent" /></td>
+                                            <td className="px-6 py-4 font-mono font-medium text-slate-900 dark:text-white">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    {invoice.documentType === 'credit_note' ? (
+                                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                                            CN
+                                                        </span>
+                                                    ) : invoice.documentType === 'debit_note' ? (
+                                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                                            DN
+                                                        </span>
+                                                    ) : null}
+                                                    <span>{invoice.invoiceNumber}</span>
                                                 </div>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">{invoice.client?.name || 'Unknown Client'}</td>
-                                        <td className="px-6 py-4">{invoice.issueDate}</td>
-                                        <td className="px-6 py-4 text-right font-bold text-slate-900 dark:text-white">{currency}{invoice.grandTotal.toLocaleString()}</td>
-                                        <td className="px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
-                                            <Dropdown
-                                                trigger={
-                                                    <button className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 transition-all hover:ring-2 hover:ring-offset-1 ${getStatusBadge(invoice.status)}`}>
-                                                        {invoice.status}
-                                                        <ChevronDown className="w-3 h-3 opacity-50" />
-                                                    </button>
-                                                }
-                                                isOpen={openDropdownId === invoice.id}
-                                                onOpen={() => setOpenDropdownId(invoice.id)}
-                                                onClose={() => setOpenDropdownId(null)}
-                                            >
-                                                <div className="py-1 w-44 flex flex-col">
-                                                    <button onClick={() => { onStatusChange(invoice.id, 'Paid'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 font-bold transition-colors">Mark Paid</button>
-                                                    <button onClick={() => { onStatusChange(invoice.id, 'Unpaid'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 font-bold transition-colors">Mark Unpaid</button>
-                                                    <button onClick={() => { onStatusChange(invoice.id, 'Overdue'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600 font-bold transition-colors">Mark Overdue</button>
-                                                    {invoice.status === 'Overdue' && (
-                                                       <button onClick={() => { sendPaymentReminderViaWhatsApp(invoice, invoice.client, company); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 font-bold transition-colors border-t border-slate-100 dark:border-slate-800">WhatsApp Reminder</button>
-                                                     )}
-                                                    <button 
-                                                        onClick={() => {
-                                                            if (onIssueCreditNote) onIssueCreditNote(invoice);
-                                                            else setActiveView('NewCreditNote');
-                                                            setOpenDropdownId(null);
-                                                        }} 
-                                                        className="w-full text-left px-4 py-2 text-xs hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 font-bold transition-colors border-t border-slate-100 dark:border-slate-800"
-                                                    >
-                                                        Issue Credit Note (CN)
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => {
-                                                            if (onIssueDebitNote) onIssueDebitNote(invoice);
-                                                            else setActiveView('NewDebitNote');
-                                                            setOpenDropdownId(null);
-                                                        }} 
-                                                        className="w-full text-left px-4 py-2 text-xs hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 font-bold transition-colors"
-                                                    >
-                                                        Issue Debit Note (DN)
-                                                    </button>
+                                                {invoice.originalInvoiceNumber && (
+                                                    <div className="text-[10px] text-slate-400 font-sans mt-0.5">
+                                                        Ref: {invoice.originalInvoiceNumber}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">{invoice.client?.name || 'Unknown Client'}</td>
+                                            <td className="px-6 py-4">{invoice.issueDate}</td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="font-bold text-slate-900 dark:text-white">
+                                                    {currency}{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
-                                            </Dropdown>
-                                        </td>
-                                        <td className="px-6 py-4 text-right space-x-1" onClick={e => e.stopPropagation()}>
-                                            <button 
-                                               onClick={() => sendInvoiceViaWhatsApp(invoice, invoice.client, company)} 
-                                               className="text-emerald-500 hover:text-emerald-600 p-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all"
-                                               title="Share via WhatsApp"
-                                             >
-                                               <MessageCircle className="w-4 h-4" />
-                                             </button>
-                                            <button onClick={() => onEdit(invoice.id)} className="text-slate-400 hover:text-accent p-2 hover:bg-accent/10 rounded-lg transition-all"><Edit className="w-4 h-4" /></button>
-                                            <button onClick={() => { setInvoiceToDelete(invoice.id); }} className="text-slate-400 hover:text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                {paymentSummary.totalPaid > 0 && paymentSummary.balanceDue > 0 && (
+                                                    <div className="text-[11px] font-semibold text-rose-500 dark:text-rose-400 mt-0.5">
+                                                        Due: {currency}{paymentSummary.balanceDue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </div>
+                                                )}
+                                                {paymentSummary.status === 'Paid' && (invoice.payments?.length || 0) > 0 && (
+                                                    <div className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                                                        {invoice.payments?.length} receipt{invoice.payments?.length === 1 ? '' : 's'}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
+                                                <Dropdown
+                                                    trigger={
+                                                        <button className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 transition-all hover:ring-2 hover:ring-offset-1 ${getStatusBadge(invoice.status)}`}>
+                                                            {invoice.status}
+                                                            <ChevronDown className="w-3 h-3 opacity-50" />
+                                                        </button>
+                                                    }
+                                                    isOpen={openDropdownId === invoice.id}
+                                                    onOpen={() => setOpenDropdownId(invoice.id)}
+                                                    onClose={() => setOpenDropdownId(null)}
+                                                >
+                                                    <div className="py-1 w-48 flex flex-col">
+                                                        <button 
+                                                            onClick={() => { setPaymentModalInvoice(invoice); setOpenDropdownId(null); }} 
+                                                            className="w-full text-left px-4 py-2 text-xs hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold transition-colors flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800"
+                                                        >
+                                                            <CreditCard className="w-3.5 h-3.5" />
+                                                            Record Payment (Receipt)
+                                                        </button>
+                                                        <button onClick={() => { onStatusChange(invoice.id, 'Paid'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 font-bold transition-colors">Mark Paid</button>
+                                                        <button onClick={() => { onStatusChange(invoice.id, 'Unpaid'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 font-bold transition-colors">Mark Unpaid</button>
+                                                        <button onClick={() => { onStatusChange(invoice.id, 'Overdue'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600 font-bold transition-colors">Mark Overdue</button>
+                                                        {invoice.status === 'Overdue' && (
+                                                           <button onClick={() => { sendPaymentReminderViaWhatsApp(invoice, invoice.client, company); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 font-bold transition-colors border-t border-slate-100 dark:border-slate-800">WhatsApp Reminder</button>
+                                                         )}
+                                                        <button 
+                                                            onClick={() => {
+                                                                if (onIssueCreditNote) onIssueCreditNote(invoice);
+                                                                else setActiveView('NewCreditNote');
+                                                                setOpenDropdownId(null);
+                                                            }} 
+                                                            className="w-full text-left px-4 py-2 text-xs hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 font-bold transition-colors border-t border-slate-100 dark:border-slate-800"
+                                                        >
+                                                            Issue Credit Note (CN)
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => {
+                                                                if (onIssueDebitNote) onIssueDebitNote(invoice);
+                                                                else setActiveView('NewDebitNote');
+                                                                setOpenDropdownId(null);
+                                                            }} 
+                                                            className="w-full text-left px-4 py-2 text-xs hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 font-bold transition-colors"
+                                                        >
+                                                            Issue Debit Note (DN)
+                                                        </button>
+                                                    </div>
+                                                </Dropdown>
+                                            </td>
+                                            <td className="px-6 py-4 text-right space-x-1" onClick={e => e.stopPropagation()}>
+                                                <button
+                                                    onClick={() => setPaymentModalInvoice(invoice)}
+                                                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
+                                                    title="Record Payment / View Receipts"
+                                                >
+                                                    <CreditCard className="w-4 h-4" />
+                                                </button>
+                                                <button 
+                                                   onClick={() => sendInvoiceViaWhatsApp(invoice, invoice.client, company)} 
+                                                   className="text-emerald-500 hover:text-emerald-600 p-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all"
+                                                   title="Share via WhatsApp"
+                                                 >
+                                                   <MessageCircle className="w-4 h-4" />
+                                                 </button>
+                                                <button onClick={() => onEdit(invoice.id)} className="text-slate-400 hover:text-accent p-2 hover:bg-accent/10 rounded-lg transition-all" title="Edit"><Edit className="w-4 h-4" /></button>
+                                                <button onClick={() => { setInvoiceToDelete(invoice.id); }} className="text-slate-400 hover:text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -1354,8 +1417,33 @@ const Invoices: React.FC<InvoicesProps> = ({
       )}
       
       <Modal isOpen={!!selectedInvoice} onClose={() => setSelectedInvoice(null)} title={`Invoice #${selectedInvoice?.invoiceNumber}`}>
-          {selectedInvoice && <InvoiceView invoice={selectedInvoice} company={company} onClose={() => setSelectedInvoice(null)} onStatusChange={onStatusChange} />}
+          {selectedInvoice && (
+              <InvoiceView 
+                  invoice={invoices.find(i => i.id === selectedInvoice.id) || selectedInvoice} 
+                  company={company} 
+                  onClose={() => setSelectedInvoice(null)} 
+                  onStatusChange={onStatusChange}
+                  onRecordPaymentClick={() => {
+                      const inv = invoices.find(i => i.id === selectedInvoice.id) || selectedInvoice;
+                      setSelectedInvoice(null);
+                      setPaymentModalInvoice(inv);
+                  }}
+              />
+          )}
       </Modal>
+
+      <RecordPaymentModal 
+          isOpen={!!paymentModalInvoice} 
+          onClose={() => setPaymentModalInvoice(null)} 
+          invoice={invoices.find(i => i.id === paymentModalInvoice?.id) || paymentModalInvoice} 
+          company={company} 
+          onSavePayment={(invId, payment) => {
+              if (onRecordPayment) onRecordPayment(invId, payment);
+          }}
+          onDeletePayment={(invId, payId) => {
+              if (onDeletePayment) onDeletePayment(invId, payId);
+          }}
+      />
 
       <Modal isOpen={!!invoiceToDelete} onClose={() => setInvoiceToDelete(null)} title="Delete Invoice">
           <div className="p-6">

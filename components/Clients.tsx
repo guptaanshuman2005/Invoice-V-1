@@ -1,14 +1,15 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import type { Client, Invoice, Company } from '../types';
+import type { Client, Invoice, Company, InvoicePayment } from '../types';
 import Button from './common/Button';
 import Input from './common/Input';
 import Modal from './common/Modal';
 import { INDIAN_STATES } from '../constants';
 import { InvoiceView } from './Invoices';
+import { RecordPaymentModal } from './RecordPaymentModal';
 import { validateEmail, validateRequired, validateGstin, fetchLocationByPincode } from '../utils/validation';
 import { arrayToCSV, downloadCSV } from '../utils/csvExport';
-import { Clock, IndianRupee, CheckCircle, FileText, Eye, Edit, Mail, Trash2, AlertCircle, Search, Plus, Download, Upload, X, Maximize2, Minimize2, ArrowLeft, Printer, Share2, Calendar, MessageCircle, FileSpreadsheet } from 'lucide-react';
+import { Clock, IndianRupee, CheckCircle, FileText, Eye, Edit, Mail, Trash2, AlertCircle, Search, Plus, Download, Upload, X, Maximize2, Minimize2, ArrowLeft, Printer, Share2, Calendar, MessageCircle, FileSpreadsheet, CreditCard } from 'lucide-react';
 import { trackEvent } from '../utils/analytics';
 import { toast } from 'sonner';
 
@@ -21,6 +22,7 @@ interface ClientsProps {
   onDeleteInvoice: (invoiceId: string) => void;
   onStatusChange: (invoiceId: string, status: Invoice['status']) => void;
   onBulkDelete: (clientIds: string[]) => void;
+  onRecordPayment?: (invoiceId: string, payment: InvoicePayment) => void;
   initialSearchQuery?: string;
 }
 
@@ -260,6 +262,7 @@ interface ClientHistoryPanelProps {
     onViewInvoice: (inv: Invoice) => void;
     onDeleteInvoice: (id: string) => void;
     onEmailInvoice: (inv: Invoice) => void;
+    onRecordPaymentClick?: (inv: Invoice) => void;
     onClose: () => void;
     isMaximized: boolean;
     onToggleMaximize: () => void;
@@ -268,6 +271,7 @@ interface ClientHistoryPanelProps {
 
 const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({ 
     client, invoices, currency, company, onEditInvoice, onViewInvoice, onDeleteInvoice, onEmailInvoice,
+    onRecordPaymentClick,
     onClose, isMaximized, onToggleMaximize, panelWidth = 490
 }) => {
     const [activeTab, setActiveTab] = useState<'invoices' | 'ledger' | 'timeline'>('invoices');
@@ -292,9 +296,29 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
     , [invoices, client.id]);
 
     const stats = useMemo(() => {
-        const totalInvoiced = clientInvoices.reduce((acc, inv) => acc + inv.grandTotal, 0);
-        const totalPaid = clientInvoices.filter(inv => inv.status === 'Paid').reduce((acc, inv) => acc + inv.grandTotal, 0);
-        const totalOutstanding = clientInvoices.filter(inv => inv.status !== 'Paid').reduce((acc, inv) => acc + inv.grandTotal, 0);
+        let totalInvoiced = 0;
+        let totalPaid = 0;
+        let totalOutstanding = 0;
+
+        clientInvoices.forEach(inv => {
+            const isCN = inv.documentType === 'credit_note';
+            if (isCN) {
+                totalInvoiced -= inv.grandTotal;
+                return;
+            }
+            totalInvoiced += inv.grandTotal;
+            const payments = inv.payments || [];
+            if (payments.length > 0) {
+                const paid = payments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+                totalPaid += paid;
+                totalOutstanding += Math.max(0, inv.grandTotal - paid);
+            } else if (inv.status === 'Paid') {
+                totalPaid += inv.grandTotal;
+            } else {
+                totalOutstanding += inv.grandTotal;
+            }
+        });
+
         return { totalInvoiced, totalPaid, totalOutstanding, count: clientInvoices.length };
     }, [clientInvoices]);
 
@@ -369,8 +393,31 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                     });
                 }
 
-                // If invoice is marked Paid, record payment credit
-                if (inv.status === 'Paid') {
+                // If invoice has payments recorded, credit each payment installment
+                if (inv.payments && inv.payments.length > 0) {
+                    inv.payments.forEach(p => {
+                        const payDateStr = p.date || inv.issueDate;
+                        const payDate = new Date(payDateStr);
+                        const isPayPrior = payDate < start;
+                        const isPayInRange = payDate >= start && payDate <= end;
+                        const payAmt = Number(p.amount) || 0;
+
+                        if (isPayPrior) {
+                            openingBalance -= payAmt;
+                        } else if (isPayInRange) {
+                            periodEntries.push({
+                                id: `pay_${p.id || Math.random()}`,
+                                date: payDateStr,
+                                type: 'Payment',
+                                particulars: `Payment Received (${p.mode}${p.referenceNo ? ` • Ref: ${p.referenceNo}` : ''}) • Inv #${inv.invoiceNumber}`,
+                                ref: p.referenceNo || `REC-${inv.invoiceNumber}`,
+                                debit: 0,
+                                credit: payAmt
+                            });
+                        }
+                    });
+                } else if (inv.status === 'Paid') {
+                    // Legacy paid invoice fallback
                     const payDateStr = inv.dueDate || inv.issueDate;
                     const payDate = new Date(payDateStr);
                     const isPayPrior = payDate < start;
@@ -383,7 +430,7 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                             id: `pay_${inv.id}`,
                             date: payDateStr,
                             type: 'Payment',
-                            particulars: `Payment Received (Inv #${inv.invoiceNumber})`,
+                            particulars: `Payment Received (Full) • Inv #${inv.invoiceNumber}`,
                             ref: `REC-${inv.invoiceNumber}`,
                             debit: 0,
                             credit: inv.grandTotal
@@ -666,6 +713,7 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'Paid': return 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-400';
+            case 'Partially Paid': return 'bg-blue-100 text-blue-700 ring-1 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-400';
             case 'Unpaid': return 'bg-amber-100 text-amber-700 ring-1 ring-amber-600/20 dark:bg-amber-900/30 dark:text-amber-400';
             case 'Overdue': return 'bg-rose-100 text-rose-700 ring-1 ring-rose-600/20 dark:bg-rose-900/30 dark:text-rose-400';
             default: return 'bg-slate-100 text-slate-800 ring-1 ring-slate-600/20';
@@ -1000,6 +1048,15 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                                             </td>
                                             <td className="px-3.5 py-3 text-right whitespace-nowrap">
                                                 <div className="flex items-center justify-end gap-1">
+                                                    {onRecordPaymentClick && inv.documentType !== 'quotation' && (
+                                                        <button 
+                                                            onClick={() => onRecordPaymentClick(inv)} 
+                                                            className="p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg text-slate-500 hover:text-emerald-600 transition-colors" 
+                                                            title="Record Payment / View Receipts"
+                                                        >
+                                                            <CreditCard className="h-4 w-4" strokeWidth={2} />
+                                                        </button>
+                                                    )}
                                                     <button onClick={() => onViewInvoice(inv)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 hover:text-accent transition-colors" title="View Invoice"><Eye className="h-4 w-4" strokeWidth={2} /></button>
                                                     <button onClick={() => onEditInvoice(inv.id)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors" title="Edit Invoice"><Edit className="h-4 w-4" strokeWidth={2} /></button>
                                                     <button onClick={() => onEmailInvoice(inv)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 hover:text-blue-500 transition-colors" title="Send Email / WhatsApp"><Mail className="h-4 w-4" strokeWidth={2} /></button>
@@ -1076,7 +1133,7 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
     );
 };
 
-const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, company, onEditInvoice, onDeleteInvoice, onStatusChange, onBulkDelete, initialSearchQuery }) => {
+const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, company, onEditInvoice, onDeleteInvoice, onStatusChange, onBulkDelete, onRecordPayment, initialSearchQuery }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client>(emptyClient);
   const [errors, setErrors] = useState<ClientFormErrors>({});
@@ -1086,6 +1143,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
   // For History Panel
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [invoiceToView, setInvoiceToView] = useState<Invoice | null>(null);
+  const [paymentModalInvoice, setPaymentModalInvoice] = useState<Invoice | null>(null);
 
   // Resizable History Panel State
   const [panelWidth, setPanelWidth] = useState<number>(() => {
@@ -1424,6 +1482,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                               onDeleteInvoice={onDeleteInvoice} 
                               onViewInvoice={(inv) => setInvoiceToView(inv)}
                               onEmailInvoice={(inv) => alert(`This functionality is mainly in Invoices tab. In a real app, this would open email modal for ${inv.invoiceNumber}.`)}
+                              onRecordPaymentClick={(inv) => setPaymentModalInvoice(inv)}
                               onClose={() => setViewingClient(null)}
                               isMaximized={isMaximized}
                               onToggleMaximize={() => setIsMaximized(!isMaximized)}
@@ -1457,6 +1516,24 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
           <Modal isOpen={!!invoiceToView} onClose={() => setInvoiceToView(null)} title={invoiceToView ? `Invoice #${invoiceToView.invoiceNumber}` : ''}>
               {invoiceToView && <InvoiceView invoice={invoiceToView} company={company} onClose={() => setInvoiceToView(null)} onStatusChange={onStatusChange} />}
           </Modal>
+
+          {/* Record Payment Modal */}
+          {paymentModalInvoice && (
+              <RecordPaymentModal
+                  isOpen={!!paymentModalInvoice}
+                  onClose={() => setPaymentModalInvoice(null)}
+                  invoice={paymentModalInvoice}
+                  company={company}
+                  onRecordPayment={(invId, payment) => {
+                      onRecordPayment?.(invId, payment);
+                      // Update invoice in modal view
+                      setPaymentModalInvoice(prev => prev ? {
+                          ...prev,
+                          payments: [...(prev.payments || []), payment]
+                      } : null);
+                  }}
+              />
+          )}
       </div>
   );
 };

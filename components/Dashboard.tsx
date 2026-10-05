@@ -1,18 +1,26 @@
 
 import React, { useMemo, useEffect, useState } from 'react';
-import type { Company, Invoice, Item } from '../types';
-import { TrendingUp, TrendingDown, IndianRupee, FileText, Users, AlertTriangle, Scale, X, PlusCircle, Clock, ChevronRight, Download, Search, MessageSquare, ExternalLink, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import type { Company, Invoice, Item, InvoicePayment, PaymentMode } from '../types';
+import { 
+    TrendingUp, TrendingDown, IndianRupee, FileText, Users, AlertTriangle, Scale, X, 
+    PlusCircle, Clock, ChevronRight, Download, Search, MessageSquare, ExternalLink, 
+    ShieldAlert, CheckCircle2, CreditCard, Receipt, Printer, Share2 
+} from 'lucide-react';
 import Modal from './common/Modal';
 import { sendPaymentReminderViaWhatsApp } from '../utils/whatsapp';
+import { getInvoicePaymentSummary, printPaymentReceipt, sharePaymentReceiptWhatsApp } from '../utils/invoiceUtils';
+import { RecordPaymentModal } from './RecordPaymentModal';
 
 interface DashboardProps {
     invoices: Invoice[];
     items: Item[];
     company: Company;
     setActiveView?: (view: string) => void;
-    onContinueDraft?: () => void; // New prop
+    onContinueDraft?: () => void;
     setInvoiceFilter?: (filter: string) => void;
     setInventoryFilter?: (filter: 'all' | 'in' | 'low' | 'out') => void;
+    onRecordPayment?: (invoiceId: string, payment: InvoicePayment) => void;
+    onDeletePayment?: (invoiceId: string, paymentId: string) => void;
 }
 
 // ... (Keep existing icons and chart components: TrendingUpIcon, AreaChart, etc. No logic changes, just wrapper styling) ...
@@ -170,9 +178,10 @@ const AreaChart: React.FC<{ data: { label: string; value: number }[], onPointCli
     );
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActiveView, onContinueDraft, setInvoiceFilter, setInventoryFilter }) => {
+const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActiveView, onContinueDraft, setInvoiceFilter, setInventoryFilter, onRecordPayment, onDeletePayment }) => {
     const currency = '₹';
     const [hasDraft, setHasDraft] = useState(false);
+    const [paymentModalInvoice, setPaymentModalInvoice] = useState<Invoice | null>(null);
 
     useEffect(() => {
         const draft = localStorage.getItem(`invoice_draft_${company.id}`);
@@ -196,14 +205,30 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
     const [agingSearchQuery, setAgingSearchQuery] = useState('');
 
     const metrics = useMemo(() => {
-        const totalRevenue = invoices.filter(inv => inv.status === 'Paid').reduce((acc, inv) => acc + inv.grandTotal, 0);
+        let totalRevenue = 0;
+        let totalReceivables = 0;
+        let totalOverdue = 0;
+
+        invoices.forEach(inv => {
+            const docType = inv.documentType || 'invoice';
+            if (docType === 'quotation') return;
+            const summary = getInvoicePaymentSummary(inv);
+
+            // Total cash realized
+            totalRevenue += summary.totalPaid;
+
+            // Outstanding and Overdue
+            if (docType === 'invoice' || docType === 'debit_note') {
+                totalReceivables += summary.balanceDue;
+                if (summary.status === 'Overdue') {
+                    totalOverdue += summary.balanceDue;
+                }
+            }
+        });
+
         const totalExpenses = (company.expenses || []).reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0);
         const netProfit = totalRevenue - totalExpenses;
         const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
-
-        const totalOutstanding = invoices.filter(inv => inv.status === 'Unpaid').reduce((acc, inv) => acc + inv.grandTotal, 0);
-        const totalOverdue = invoices.filter(inv => inv.status === 'Overdue').reduce((acc, inv) => acc + inv.grandTotal, 0);
-        const totalReceivables = totalOutstanding + totalOverdue;
         const totalClients = new Set(invoices.map(i => i.client?.id).filter(Boolean)).size;
         const lowStockItems = items.filter(i => i.quantityInStock <= 5).length;
         const today = new Date();
@@ -216,14 +241,43 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
         });
 
         invoices.forEach(inv => {
-            const [y, m] = inv.issueDate.split('-').map(Number);
-            const invYear = y;
-            const invMonth = m - 1;
-            const monthIndex = chartMonths.findIndex(b => b.month === invMonth && b.year === invYear);
-            if (monthIndex !== -1) {
-                if (inv.status === 'Paid') chartMonths[monthIndex].revenue += inv.grandTotal;
-                else if (inv.status === 'Unpaid' || inv.status === 'Overdue') chartMonths[monthIndex].outstanding += inv.grandTotal;
-                if (inv.client?.id) chartMonths[monthIndex].activeClients.add(inv.client.id);
+            const docType = inv.documentType || 'invoice';
+            if (docType === 'quotation') return;
+            const summary = getInvoicePaymentSummary(inv);
+
+            // Monthly collected revenue
+            if (inv.payments && inv.payments.length > 0) {
+                inv.payments.forEach(p => {
+                    const payDate = p.date || inv.issueDate;
+                    const [py, pm] = payDate.split('-').map(Number);
+                    const mIdx = chartMonths.findIndex(b => b.month === (pm - 1) && b.year === py);
+                    if (mIdx !== -1) {
+                        chartMonths[mIdx].revenue += Number(p.amount) || 0;
+                    }
+                });
+            } else if (inv.status === 'Paid') {
+                const [y, m] = inv.issueDate.split('-').map(Number);
+                const mIdx = chartMonths.findIndex(b => b.month === (m - 1) && b.year === y);
+                if (mIdx !== -1) {
+                    chartMonths[mIdx].revenue += inv.grandTotal;
+                }
+            }
+
+            // Monthly balance due
+            if (summary.balanceDue > 0) {
+                const [y, m] = inv.issueDate.split('-').map(Number);
+                const mIdx = chartMonths.findIndex(b => b.month === (m - 1) && b.year === y);
+                if (mIdx !== -1) {
+                    chartMonths[mIdx].outstanding += summary.balanceDue;
+                }
+            }
+
+            if (inv.client?.id) {
+                const [y, m] = inv.issueDate.split('-').map(Number);
+                const mIdx = chartMonths.findIndex(b => b.month === (m - 1) && b.year === y);
+                if (mIdx !== -1) {
+                    chartMonths[mIdx].activeClients.add(inv.client.id);
+                }
             }
         });
         const revenueData = chartMonths.map(m => m.revenue);
@@ -326,6 +380,8 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
             daysSinceIssue: number;
             effectiveDays: number;
             bucket: '0-30' | '31-60' | '61-90' | '90+';
+            balanceDue: number;
+            totalPaid: number;
         }
 
         const agingBuckets = {
@@ -340,7 +396,8 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
         invoices.forEach(inv => {
             const docType = inv.documentType || 'invoice';
             if (docType === 'quotation' || docType === 'credit_note') return;
-            if (inv.status === 'Paid') return;
+            const summary = getInvoicePaymentSummary(inv);
+            if (summary.balanceDue <= 0) return;
 
             const issueDate = new Date(inv.issueDate);
             const dueDate = inv.dueDate ? new Date(inv.dueDate) : issueDate;
@@ -364,10 +421,12 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                 daysOverdue,
                 daysSinceIssue,
                 effectiveDays,
-                bucket: bucketKey
+                bucket: bucketKey,
+                balanceDue: summary.balanceDue,
+                totalPaid: summary.totalPaid
             };
 
-            agingBuckets[bucketKey].total += inv.grandTotal;
+            agingBuckets[bucketKey].total += summary.balanceDue;
             agingBuckets[bucketKey].items.push(item);
             allAgingInvoices.push(item);
         });
@@ -446,14 +505,62 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
     const revenueChartData = useMemo(() => metrics.chartLabels.map((label, i) => ({ label, value: metrics.revenueData[i] })), [metrics]);
     const invoiceStatusCounts = useMemo(() => {
-        const paid = invoices.filter(i => i.status === 'Paid').length;
-        const pending = invoices.filter(i => i.status === 'Unpaid').length;
-        const overdue = invoices.filter(i => i.status === 'Overdue').length;
+        let paid = 0;
+        let partial = 0;
+        let pending = 0;
+        let overdue = 0;
+
+        invoices.forEach(i => {
+            const docType = i.documentType || 'invoice';
+            if (docType === 'quotation') return;
+            const summary = getInvoicePaymentSummary(i);
+            if (summary.status === 'Paid') paid++;
+            else if (summary.status === 'Partially Paid') partial++;
+            else if (summary.status === 'Overdue') overdue++;
+            else pending++;
+        });
+
         const total = invoices.length || 1;
-        return { paid, pending, overdue, total };
+        return { paid, partial, pending, overdue, total };
     }, [invoices]);
     const dashArray = (count: number) => { const total = invoiceStatusCounts.total; const percentage = (count / total) * 100; return `${percentage}, 100`; };
     const dashOffset = (prevCounts: number[]) => { const total = invoiceStatusCounts.total; const prevSum = prevCounts.reduce((a, b) => a + b, 0); return -((prevSum / total) * 100); };
+
+    interface RecentCollectionItem {
+        paymentId: string;
+        invoiceId: string;
+        invoiceNumber: string;
+        clientName: string;
+        date: string;
+        amount: number;
+        mode: PaymentMode;
+        referenceNo?: string;
+        invoice: Invoice;
+        payment: InvoicePayment;
+    }
+
+    const recentCollections = useMemo<RecentCollectionItem[]>(() => {
+        const list: RecentCollectionItem[] = [];
+        invoices.forEach(inv => {
+            if (inv.payments && inv.payments.length > 0) {
+                inv.payments.forEach(p => {
+                    list.push({
+                        paymentId: p.id,
+                        invoiceId: inv.id,
+                        invoiceNumber: inv.invoiceNumber,
+                        clientName: inv.client?.name || 'Unknown Client',
+                        date: p.date,
+                        amount: Number(p.amount) || 0,
+                        mode: p.mode || 'UPI',
+                        referenceNo: p.referenceNo,
+                        invoice: inv,
+                        payment: p
+                    });
+                });
+            }
+        });
+        return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+    }, [invoices]);
 
     const filteredAgingItems = useMemo(() => {
         const list = selectedAgingBucket === 'all'
@@ -470,7 +577,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
     }, [metrics.aging, selectedAgingBucket, agingSearchQuery]);
 
     const exportAgingCsv = () => {
-        const headers = ['Client Name', 'Phone', 'GSTIN', 'Invoice #', 'Issue Date', 'Due Date', 'Days Overdue', 'Aging Bucket', 'Amount (INR)', 'Status'];
+        const headers = ['Client Name', 'Phone', 'GSTIN', 'Invoice #', 'Issue Date', 'Due Date', 'Days Overdue', 'Aging Bucket', 'Balance Due (INR)', 'Grand Total (INR)', 'Status'];
         const rows = filteredAgingItems.map(item => [
             `"${(item.invoice.client?.name || 'Unknown Client').replace(/"/g, '""')}"`,
             `"${item.invoice.client?.phone || ''}"`,
@@ -480,6 +587,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
             item.invoice.dueDate || item.invoice.issueDate,
             item.effectiveDays,
             `"${item.bucket} Days"`,
+            item.balanceDue.toFixed(2),
             item.invoice.grandTotal.toFixed(2),
             item.invoice.status
         ]);
@@ -838,6 +946,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                                         <Pie
                                             data={[
                                                 { name: 'Paid', value: invoiceStatusCounts.paid, color: '#10b981' },
+                                                { name: 'Partially Paid', value: invoiceStatusCounts.partial, color: '#3b82f6' },
                                                 { name: 'Pending', value: invoiceStatusCounts.pending, color: '#f59e0b' },
                                                 { name: 'Overdue', value: invoiceStatusCounts.overdue, color: '#f43f5e' }
                                             ].filter(d => d.value > 0)}
@@ -850,6 +959,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                                         >
                                             {[
                                                 { name: 'Paid', value: invoiceStatusCounts.paid, color: '#10b981' },
+                                                { name: 'Partially Paid', value: invoiceStatusCounts.partial, color: '#3b82f6' },
                                                 { name: 'Pending', value: invoiceStatusCounts.pending, color: '#f59e0b' },
                                                 { name: 'Overdue', value: invoiceStatusCounts.overdue, color: '#f43f5e' }
                                             ].filter(d => d.value > 0).map((entry, index) => (
@@ -867,25 +977,106 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                                     <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Invoices</span>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 mt-6 text-center relative z-10">
-                                <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100/50 dark:border-emerald-800/30">
-                                    <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-tight mb-0.5">Paid</p>
-                                    <p className="text-base font-black text-slate-900 dark:text-white">{invoiceStatusCounts.total > 0 ? Math.round((invoiceStatusCounts.paid / invoiceStatusCounts.total) * 100) : 0}%</p>
+                            <div className="grid grid-cols-4 gap-1.5 mt-6 text-center relative z-10">
+                                <div className="p-2 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100/50 dark:border-emerald-800/30">
+                                    <p className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-tight mb-0.5">Paid</p>
+                                    <p className="text-sm font-black text-slate-900 dark:text-white">{invoiceStatusCounts.paid}</p>
                                 </div>
-                                <div className="p-2 sm:p-2.5 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100/50 dark:border-amber-800/30">
-                                    <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tight mb-0.5">Pending</p>
-                                    <p className="text-base font-black text-slate-900 dark:text-white">{invoiceStatusCounts.total > 0 ? Math.round((invoiceStatusCounts.pending / invoiceStatusCounts.total) * 100) : 0}%</p>
+                                <div className="p-2 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-800/30">
+                                    <p className="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tight mb-0.5">Partial</p>
+                                    <p className="text-sm font-black text-slate-900 dark:text-white">{invoiceStatusCounts.partial}</p>
                                 </div>
-                                <div className="p-2 sm:p-2.5 rounded-xl bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100/50 dark:border-rose-800/30">
-                                    <p className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-tight mb-0.5">Overdue</p>
-                                    <p className="text-base font-black text-slate-900 dark:text-white">{invoiceStatusCounts.total > 0 ? Math.round((invoiceStatusCounts.overdue / invoiceStatusCounts.total) * 100) : 0}%</p>
+                                <div className="p-2 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100/50 dark:border-amber-800/30">
+                                    <p className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tight mb-0.5">Pending</p>
+                                    <p className="text-sm font-black text-slate-900 dark:text-white">{invoiceStatusCounts.pending}</p>
+                                </div>
+                                <div className="p-2 rounded-xl bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100/50 dark:border-rose-800/30">
+                                    <p className="text-[9px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-tight mb-0.5">Overdue</p>
+                                    <p className="text-sm font-black text-slate-900 dark:text-white">{invoiceStatusCounts.overdue}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Bottom Row: Recent Activity, Top Clients & Top Selling Items */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+                    {/* Bottom Row: Recent Collections, Recent Activity, Top Clients & Top Selling Items */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-2 gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+                        {/* Recent Collections & Money Receipts */}
+                        <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between">
+                            <div>
+                                <div className="flex justify-between items-center mb-6">
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            <h2 className="text-lg font-black text-slate-900 dark:text-white">Recent Collections</h2>
+                                        </div>
+                                        <p className="text-xs text-slate-500 font-medium mt-0.5">Realized payments & receipt vouchers</p>
+                                    </div>
+                                    <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                                        <Receipt className="w-4 h-4" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {recentCollections.length === 0 ? (
+                                        <div className="text-center py-10">
+                                            <Receipt className="w-10 h-10 mx-auto text-slate-200 dark:text-slate-700 mb-2" />
+                                            <p className="text-sm text-slate-400 font-medium">No payment receipts recorded yet.</p>
+                                            <p className="text-xs text-slate-400 mt-1">Record payments on invoices to generate Money Receipts.</p>
+                                        </div>
+                                    ) : (
+                                        recentCollections.map((col) => (
+                                            <div 
+                                                key={col.paymentId} 
+                                                className="flex items-center justify-between gap-3 p-3 bg-emerald-500/5 dark:bg-emerald-950/10 border border-emerald-500/10 dark:border-emerald-900/20 rounded-2xl hover:border-emerald-500/30 transition-all"
+                                            >
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-xs font-black text-slate-900 dark:text-white truncate" title={col.clientName}>
+                                                            {col.clientName}
+                                                        </p>
+                                                        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                                                            {col.mode}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-0.5 truncate">
+                                                        Inv #{col.invoiceNumber} • {col.date} {col.referenceNo ? `• Ref: ${col.referenceNo}` : ''}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <div className="text-right">
+                                                        <p className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                                            +₹{col.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                printPaymentReceipt(company, col.invoice, col.payment, col.invoice.client);
+                                                            }}
+                                                            className="p-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+                                                            title="Print Money Receipt Voucher"
+                                                        >
+                                                            <Printer className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                sharePaymentReceiptWhatsApp(company, col.invoice, col.payment, col.invoice.client);
+                                                            }}
+                                                            className="p-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+                                                            title="Share Receipt on WhatsApp"
+                                                        >
+                                                            <Share2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                         {/* Recent Activity */}
                         <div className="glass-panel p-6 rounded-3xl">
                             <div className="flex justify-between items-center mb-6">
@@ -1126,10 +1317,10 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                         </div>
 
                         <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/40 px-3 py-1.5 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
-                            <span className="text-xs text-slate-500 font-medium">Selected Total:</span>
+                            <span className="text-xs text-slate-500 font-medium">Selected Total Due:</span>
                             <span className="text-sm font-black text-slate-900 dark:text-white font-mono">
                                 {currency}
-                                {filteredAgingItems.reduce((acc, curr) => acc + curr.invoice.grandTotal, 0).toLocaleString()}
+                                {filteredAgingItems.reduce((acc, curr) => acc + curr.balanceDue, 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                         </div>
                     </div>
@@ -1193,15 +1384,25 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
                                         <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-700/60">
                                             <div className="text-right">
-                                                <div className="text-sm font-black text-slate-900 dark:text-white font-mono">
-                                                    {currency}{inv.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                <div className="text-sm font-black text-rose-600 dark:text-rose-400 font-mono">
+                                                    Due: {currency}{item.balanceDue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
-                                                <div className="text-[10px] uppercase font-bold text-rose-500">
-                                                    {inv.status}
+                                                <div className="text-[10px] text-slate-500 font-medium">
+                                                    Total: {currency}{inv.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
                                             </div>
 
                                             <div className="flex items-center gap-1.5">
+                                                {onRecordPayment && (
+                                                    <button
+                                                        onClick={() => setPaymentModalInvoice(inv)}
+                                                        className="flex items-center gap-1 px-2.5 py-1.5 bg-accent hover:bg-accent/90 text-white rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+                                                        title="Record payment installment"
+                                                    >
+                                                        <CreditCard className="w-3.5 h-3.5" />
+                                                        Pay
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => sendPaymentReminderViaWhatsApp(inv, inv.client, company)}
                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
@@ -1229,6 +1430,23 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                     )}
                 </div>
             </Modal>
+
+            {/* Record Payment Modal */}
+            {paymentModalInvoice && (
+                <RecordPaymentModal
+                    isOpen={!!paymentModalInvoice}
+                    onClose={() => setPaymentModalInvoice(null)}
+                    invoice={paymentModalInvoice}
+                    company={company}
+                    onRecordPayment={(invId, payment) => {
+                        onRecordPayment?.(invId, payment);
+                        setPaymentModalInvoice(prev => prev ? {
+                            ...prev,
+                            payments: [...(prev.payments || []), payment]
+                        } : null);
+                    }}
+                />
+            )}
         </div>
     );
 };

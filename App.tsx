@@ -21,7 +21,7 @@ import TermsOfService from './components/TermsOfService';
 import FeedbackModal from './components/FeedbackModal';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useSupabaseCompanies } from './hooks/useSupabaseCompanies';
-import type { Company, Client, Item, Invoice, Transporter, User, CompanyDetails, BankAccount, RecurringInvoice, RecurringFrequency, DraftInvoice, InvoiceItem, StockHistoryEntry, Quotation, Expense } from './types';
+import type { Company, Client, Item, Invoice, Transporter, User, CompanyDetails, BankAccount, RecurringInvoice, RecurringFrequency, DraftInvoice, InvoiceItem, StockHistoryEntry, Quotation, Expense, InvoicePayment } from './types';
 import Modal from './components/common/Modal';
 import Input from './components/common/Input';
 import Button from './components/common/Button';
@@ -854,6 +854,57 @@ const App: React.FC = () => {
         handleUpdateCompany({ ...activeCompany, invoices: updatedInvoices });
     };
 
+    const handleRecordPayment = (invoiceId: string, payment: InvoicePayment) => {
+        if (!activeCompany) return;
+        const invoice = activeCompany.invoices.find(inv => inv.id === invoiceId);
+        if (!invoice) return;
+
+        const existingPayments = invoice.payments || [];
+        const updatedPayments = [...existingPayments, payment];
+        
+        const totalPaid = updatedPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+        const grandTotal = invoice.grandTotal || 0;
+        const newStatus: Invoice['status'] = totalPaid >= grandTotal ? 'Paid' : (totalPaid > 0 ? 'Partially Paid' : invoice.status);
+
+        const updatedInvoices = activeCompany.invoices.map(inv => 
+            inv.id === invoiceId 
+                ? { ...inv, payments: updatedPayments, status: newStatus } 
+                : inv
+        );
+
+        handleUpdateCompany({ ...activeCompany, invoices: updatedInvoices });
+        toast.success(`Payment of ₹${Number(payment.amount).toLocaleString('en-IN')} recorded for #${invoice.invoiceNumber}`);
+    };
+
+    const handleDeletePayment = (invoiceId: string, paymentId: string) => {
+        if (!activeCompany) return;
+        const invoice = activeCompany.invoices.find(inv => inv.id === invoiceId);
+        if (!invoice) return;
+
+        const updatedPayments = (invoice.payments || []).filter(p => p.id !== paymentId);
+        const totalPaid = updatedPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+        const grandTotal = invoice.grandTotal || 0;
+        
+        let newStatus: Invoice['status'] = 'Unpaid';
+        if (totalPaid >= grandTotal) {
+            newStatus = 'Paid';
+        } else if (totalPaid > 0) {
+            newStatus = 'Partially Paid';
+        } else {
+            const todayStr = new Date().toISOString().split('T')[0];
+            newStatus = invoice.dueDate && invoice.dueDate < todayStr ? 'Overdue' : 'Unpaid';
+        }
+
+        const updatedInvoices = activeCompany.invoices.map(inv => 
+            inv.id === invoiceId 
+                ? { ...inv, payments: updatedPayments, status: newStatus } 
+                : inv
+        );
+
+        handleUpdateCompany({ ...activeCompany, invoices: updatedInvoices });
+        toast.success("Payment entry removed");
+    };
+
     const handleBulkDeleteClients = (ids: string[]) => {
         if(!activeCompany) return;
         handleUpdateCompany({ ...activeCompany, clients: activeCompany.clients.filter(c => !ids.includes(c.id)) });
@@ -1063,15 +1114,17 @@ const App: React.FC = () => {
             setInvoiceToEdit(null);
             handleSetActiveView('NewInvoice');
           }}
+          onRecordPayment={handleRecordPayment}
+          onDeletePayment={handleDeletePayment}
         />;
       case 'NewInvoice': return <NewInvoice company={activeCompany} saveInvoice={handleSaveInvoice} setActiveView={handleSetActiveView} invoiceToEdit={invoiceToEdit as Invoice} clearEditingInvoice={() => setInvoiceToEdit(null)} onUpdateCompany={handleUpdateCompany} draftInvoice={draftInvoice} setDraftInvoice={setDraftInvoice} mode="invoice" />;
       case 'NewQuotation': return <NewInvoice company={activeCompany} saveInvoice={handleSaveInvoice} setActiveView={handleSetActiveView} invoiceToEdit={invoiceToEdit as Quotation} clearEditingInvoice={() => setInvoiceToEdit(null)} onUpdateCompany={handleUpdateCompany} draftInvoice={draftInvoice} setDraftInvoice={setDraftInvoice} mode="quote" />;
       case 'NewCreditNote': return <NewInvoice company={activeCompany} saveInvoice={handleSaveInvoice} setActiveView={handleSetActiveView} invoiceToEdit={invoiceToEdit as Invoice} clearEditingInvoice={() => setInvoiceToEdit(null)} onUpdateCompany={handleUpdateCompany} draftInvoice={draftInvoice} setDraftInvoice={setDraftInvoice} mode="credit_note" />;
       case 'NewDebitNote': return <NewInvoice company={activeCompany} saveInvoice={handleSaveInvoice} setActiveView={handleSetActiveView} invoiceToEdit={invoiceToEdit as Invoice} clearEditingInvoice={() => setInvoiceToEdit(null)} onUpdateCompany={handleUpdateCompany} draftInvoice={draftInvoice} setDraftInvoice={setDraftInvoice} mode="debit_note" />;
-      case 'Invoices': return <Invoices invoices={activeCompany.invoices} company={activeCompany} setActiveView={handleSetActiveView} onEdit={handleEditInvoice} onDelete={handleDeleteInvoice} onStatusChange={handleUpdateInvoiceStatus} onBulkDelete={handleBulkDeleteInvoices} onBulkStatusChange={handleBulkStatusChange} onAddRecurring={handleAddRecurring} onUpdateRecurring={handleUpdateRecurring} onDeleteRecurring={handleDeleteRecurring} onIssueCreditNote={handleIssueCreditNote} onIssueDebitNote={handleIssueDebitNote} initialFilter={invoiceFilter} initialSearchQuery={activeSearchQuery} />;
+      case 'Invoices': return <Invoices invoices={activeCompany.invoices} company={activeCompany} setActiveView={handleSetActiveView} onEdit={handleEditInvoice} onDelete={handleDeleteInvoice} onStatusChange={handleUpdateInvoiceStatus} onBulkDelete={handleBulkDeleteInvoices} onBulkStatusChange={handleBulkStatusChange} onAddRecurring={handleAddRecurring} onUpdateRecurring={handleUpdateRecurring} onDeleteRecurring={handleDeleteRecurring} onIssueCreditNote={handleIssueCreditNote} onIssueDebitNote={handleIssueDebitNote} onRecordPayment={handleRecordPayment} onDeletePayment={handleDeletePayment} initialFilter={invoiceFilter} initialSearchQuery={activeSearchQuery} />;
       case 'Quotations': return <Quotations quotations={activeCompany.quotations || []} company={activeCompany} setActiveView={handleSetActiveView} onEdit={handleEditQuotation} onDelete={handleDeleteQuotation} onConvert={handleConvertQuoteToInvoice} onStatusChange={handleUpdateQuotationStatus} />;
       case 'GstReports': return <GstReports company={activeCompany} />;
-      case 'Clients': return <Clients clients={activeCompany.clients} setClients={setClients} invoices={activeCompany.invoices} company={activeCompany} onEditInvoice={handleEditInvoice} onDeleteInvoice={handleDeleteInvoice} onStatusChange={handleUpdateInvoiceStatus} onBulkDelete={handleBulkDeleteClients} initialSearchQuery={activeSearchQuery} />;
+      case 'Clients': return <Clients clients={activeCompany.clients} setClients={setClients} invoices={activeCompany.invoices} company={activeCompany} onEditInvoice={handleEditInvoice} onDeleteInvoice={handleDeleteInvoice} onStatusChange={handleUpdateInvoiceStatus} onBulkDelete={handleBulkDeleteClients} onRecordPayment={handleRecordPayment} initialSearchQuery={activeSearchQuery} />;
       case 'Items': return <Items items={activeCompany.items} setItems={setItems} company={activeCompany} onBulkDelete={handleBulkDeleteItems} initialSearchQuery={activeSearchQuery} />;
       case 'Inventory': return <Inventory items={activeCompany.items} setItems={setItems} onBulkStockUpdate={handleBulkStockUpdate} stockHistory={activeCompany.stockHistory || []} initialFilter={inventoryFilter} />;
       case 'Expenses': return <Expenses company={activeCompany} onAddExpense={handleAddExpense} onDeleteExpense={handleDeleteExpense} />;
@@ -1092,6 +1145,8 @@ const App: React.FC = () => {
             setInvoiceToEdit(null);
             handleSetActiveView('NewInvoice');
           }}
+          onRecordPayment={handleRecordPayment}
+          onDeletePayment={handleDeletePayment}
         />
       );
     }

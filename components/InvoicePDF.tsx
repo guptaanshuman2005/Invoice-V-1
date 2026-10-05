@@ -140,6 +140,18 @@ const ModernInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documen
               <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#0f172a' }}>Total</Text>
               <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#0f172a' }}>Rs. {invoice.grandTotal.toFixed(2)}</Text>
             </View>
+            {invoice.payments && invoice.payments.length > 0 && (
+              <>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
+                  <Text style={{ color: '#16a34a', fontSize: 9 }}>Paid to Date</Text>
+                  <Text style={{ color: '#16a34a', fontSize: 9, fontWeight: 'bold' }}>- Rs. {invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#cbd5e1' }}>
+                  <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#b91c1c' }}>Balance Due</Text>
+                  <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#b91c1c' }}>Rs. {Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</Text>
+                </View>
+              </>
+            )}
           </View>
         </View>
 
@@ -260,6 +272,18 @@ const TraditionalInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, do
                 <Text>Total Amount</Text>
                 <Text>Rs. {invoice.grandTotal.toFixed(2)}</Text>
               </View>
+              {invoice.payments && invoice.payments.length > 0 && (
+                <>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 4, borderTopWidth: 1, borderTopColor: '#000000' }}>
+                    <Text>Less: Amount Paid</Text>
+                    <Text>- Rs. {invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 4, fontWeight: 'bold', borderTopWidth: 1, borderTopColor: '#000000' }}>
+                    <Text>Balance Due</Text>
+                    <Text>Rs. {Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</Text>
+                  </View>
+                </>
+              )}
             </View>
           </View>
 
@@ -411,6 +435,18 @@ const PremiumInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, docume
                 <Text style={{ fontSize: 14, fontWeight: 'bold' }}>Total</Text>
                 <Text style={{ fontSize: 14, fontWeight: 'bold' }}>Rs. {invoice.grandTotal.toFixed(2)}</Text>
               </View>
+              {invoice.payments && invoice.payments.length > 0 && (
+                <View style={{ marginTop: 6, padding: 8, backgroundColor: '#f8fafc', borderRadius: 6, borderWidth: 1, borderColor: '#e2e8f0' }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 8, color: '#16a34a' }}>Amount Paid</Text>
+                    <Text style={{ fontSize: 8, fontWeight: 'bold', color: '#16a34a' }}>- Rs. {invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 3, paddingTop: 3, borderTopWidth: 1, borderTopColor: '#cbd5e1' }}>
+                    <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#b91c1c' }}>Balance Due</Text>
+                    <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#b91c1c' }}>Rs. {Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</Text>
+                  </View>
+                </View>
+              )}
             </View>
           </View>
 

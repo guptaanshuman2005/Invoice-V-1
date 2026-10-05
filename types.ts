@@ -73,6 +73,18 @@ export interface InvoiceItem extends Item {
   quantity: number;
 }
 
+export type PaymentMode = 'UPI' | 'NEFT' | 'RTGS' | 'Cash' | 'Cheque' | 'Card';
+
+export interface InvoicePayment {
+  id: string;
+  date: string;
+  amount: number;
+  mode: PaymentMode;
+  referenceNo?: string; // UTR Number, Cheque #, or UPI Transaction ID
+  notes?: string;
+  createdAt?: string;
+}
+
 export interface Invoice {
   id:string;
   invoiceNumber: string;
@@ -86,8 +98,11 @@ export interface Invoice {
   sgst: number;
   igst: number;
   grandTotal: number;
-  status: 'Paid' | 'Unpaid' | 'Overdue';
+  status: 'Paid' | 'Unpaid' | 'Overdue' | 'Partially Paid';
   selectedBankAccountId: string | null;
+
+  // Partial / Milestone Payments
+  payments?: InvoicePayment[];
 
   // Shipping Details - Snapshot for this specific invoice
   shippingName?: string;
