@@ -212,21 +212,21 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleQuickFill(1.0)}
-                    className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors"
+                    className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-all duration-200 active:scale-95 shadow-sm"
                   >
                     Full Balance (₹{summary.balanceDue.toFixed(2)})
                   </button>
                   <button
                     type="button"
                     onClick={() => handleQuickFill(0.5)}
-                    className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-200 transition-colors"
+                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200 active:scale-95 shadow-sm"
                   >
                     50% (₹{(summary.balanceDue * 0.5).toFixed(2)})
                   </button>
                   <button
                     type="button"
                     onClick={() => handleQuickFill(0.25)}
-                    className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-200 transition-colors"
+                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200 active:scale-95 shadow-sm"
                   >
                     25% (₹{(summary.balanceDue * 0.25).toFixed(2)})
                   </button>

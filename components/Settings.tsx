@@ -98,7 +98,7 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
     
     // Cleanup function to revert to saved color if unmounted without saving
     return () => {
-        if (activeCompany.details.brandColor) {
+        if (activeCompany?.details?.brandColor) {
             const savedColor = activeCompany.details.brandColor;
             document.documentElement.style.setProperty('--color-accent', savedColor);
             
@@ -117,7 +117,7 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
             document.documentElement.style.removeProperty('--color-accent-hover');
         }
     };
-  }, [details.brandColor, activeCompany.details.brandColor]);
+  }, [details.brandColor, activeCompany?.details?.brandColor]);
 
     useEffect(() => {
     const pincode = details.zip;

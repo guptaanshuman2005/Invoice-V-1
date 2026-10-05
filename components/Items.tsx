@@ -246,21 +246,42 @@ const Items: React.FC<ItemsProps> = ({ items, setItems, company, onBulkDelete, i
         </div>
       </div>
       
-      <div className="space-y-4 mb-4">
-          <div className="flex gap-4">
+      <div className="space-y-3 mb-5">
+          <div className="flex gap-3">
             <div className="flex-grow">
-                 <Input label="" placeholder="Search by name or HSN..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="!py-2.5"/>
+                 <Input label="" placeholder="Search by item name, SKU, or HSN code..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="!py-2.5 !rounded-xl"/>
             </div>
-            <Button variant="secondary" onClick={() => setShowFilters(!showFilters)} className="h-[42px] mt-0.5">
+            <Button variant="secondary" onClick={() => setShowFilters(!showFilters)} className="h-[42px] mt-0.5 !rounded-xl !px-4">
                 {showFilters ? 'Hide Filters' : 'Filters'}
             </Button>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2">
+              {[
+                  { id: 'All', label: 'All Items' },
+                  { id: 'In', label: 'In Stock' },
+                  { id: 'Low', label: 'Low Stock' },
+                  { id: 'Out', label: 'Out of Stock' },
+              ].map(tab => (
+                  <button
+                      key={tab.id}
+                      onClick={() => setFilterStockStatus(tab.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 active:scale-95 ${
+                          filterStockStatus === tab.id
+                              ? 'bg-accent text-white shadow-sm shadow-accent/25'
+                              : 'bg-white/70 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800/60'
+                      }`}
+                  >
+                      {tab.label}
+                  </button>
+              ))}
+          </div>
+
           {showFilters && (
-            <div className="glass-panel p-4 rounded-lg shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4 items-end animate-fade-in">
+            <div className="glass-panel p-4 rounded-2xl shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4 items-end animate-fade-in border border-slate-200/50 dark:border-slate-800/50">
                 <div>
-                    <label className="block text-sm font-medium text-slate-600 dark:text-medium-text mb-1">Stock Status</label>
-                    <select value={filterStockStatus} onChange={e => setFilterStockStatus(e.target.value)} className={`${inputClasses} !py-2 text-sm`}>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Stock Status</label>
+                    <select value={filterStockStatus} onChange={e => setFilterStockStatus(e.target.value)} className={`${inputClasses} !py-2 text-sm !rounded-xl`}>
                         <option value="All">All Items</option>
                         <option value="In">In Stock</option>
                         <option value="Low">Low Stock (≤ 5)</option>
@@ -268,30 +289,30 @@ const Items: React.FC<ItemsProps> = ({ items, setItems, company, onBulkDelete, i
                     </select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                    <Input label="Min Price" type="number" min="0" value={filterPriceMin} onChange={e => setFilterPriceMin(e.target.value)} placeholder="0" />
-                    <Input label="Max Price" type="number" min="0" value={filterPriceMax} onChange={e => setFilterPriceMax(e.target.value)} placeholder="∞" />
+                    <Input label="Min Price" type="number" min="0" value={filterPriceMin} onChange={e => setFilterPriceMin(e.target.value)} placeholder="0" className="!rounded-xl" />
+                    <Input label="Max Price" type="number" min="0" value={filterPriceMax} onChange={e => setFilterPriceMax(e.target.value)} placeholder="∞" className="!rounded-xl" />
                 </div>
                 <div>
-                    <Input label="GST Rate (%)" type="number" min="0" value={filterGstRate} onChange={e => setFilterGstRate(e.target.value)} placeholder="18" />
+                    <Input label="GST Rate (%)" type="number" min="0" value={filterGstRate} onChange={e => setFilterGstRate(e.target.value)} placeholder="18" className="!rounded-xl" />
                 </div>
                 <div className="flex justify-end">
-                     <Button variant="secondary" onClick={() => { setFilterStockStatus('All'); setFilterPriceMin(''); setFilterPriceMax(''); setFilterGstRate(''); }} className="w-full text-xs">Clear Filters</Button>
+                     <Button variant="secondary" onClick={() => { setFilterStockStatus('All'); setFilterPriceMin(''); setFilterPriceMax(''); setFilterGstRate(''); }} className="w-full text-xs !rounded-xl">Clear Filters</Button>
                 </div>
             </div>
           )}
       </div>
 
       {selectedIds.length > 0 && (
-          <div className="bg-accent/10 dark:bg-accent/20 border border-accent/20 p-3 rounded-md flex items-center justify-between mb-4 animate-fade-in">
+          <div className="bg-accent/10 dark:bg-accent/20 border border-accent/20 p-3 rounded-2xl flex items-center justify-between mb-4 animate-fade-in">
               <span className="text-sm font-semibold text-accent dark:text-indigo-300">{selectedIds.length} items selected</span>
               <div className="flex gap-2">
-                   <Button variant="secondary" className="!py-1 !text-xs" onClick={() => handleExport(false)}>Export Selected</Button>
-                   <Button variant="secondary" className="!py-1 !text-xs bg-red-600 hover:bg-red-700 !text-white dark:bg-red-800/80" onClick={handleBulkDelete}>Delete Selected</Button>
+                   <Button variant="secondary" className="!py-1 !text-xs !rounded-xl" onClick={() => handleExport(false)}>Export Selected</Button>
+                   <Button variant="secondary" className="!py-1 !text-xs bg-red-600 hover:bg-red-700 !text-white dark:bg-red-800/80 !rounded-xl" onClick={handleBulkDelete}>Delete Selected</Button>
               </div>
           </div>
       )}
 
-      <div className="glass-panel shadow-lg rounded-lg overflow-hidden">
+      <div className="glass-panel shadow-sm border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-slate-600 dark:text-medium-text">
                 <thead className="text-xs text-slate-700 dark:text-light-text uppercase bg-slate-100/50 dark:bg-tertiary-dark/50">
@@ -341,7 +362,24 @@ const Items: React.FC<ItemsProps> = ({ items, setItems, company, onBulkDelete, i
                                     </span>
                                 )}
                             </td>
-                            <td className="px-6 py-4 text-right space-x-2"><Button variant="secondary" onClick={() => handleOpenModal(item)}>Edit</Button><Button variant="secondary" onClick={() => handleDeleteItem(item.id)} className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-800/80 dark:hover:bg-red-700/80">Delete</Button></td>
+                            <td className="px-6 py-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                    <button 
+                                        onClick={() => handleOpenModal(item)}
+                                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-accent dark:hover:text-accent transition-all duration-200 hover:scale-105 active:scale-95"
+                                        title="Edit Item"
+                                    >
+                                        <Edit className="h-4 w-4" />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteItem(item.id)}
+                                        className="p-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-all duration-200 hover:scale-105 active:scale-95"
+                                        title="Delete Item"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                     ))}
                     {filteredItems.length === 0 && (<tr><td colSpan={8} className="text-center py-8 text-slate-500 dark:text-medium-text">{items.length > 0 ? 'No items match your filters.' : 'No items found. Add one to get started.'}</td></tr>)}

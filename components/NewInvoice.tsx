@@ -562,7 +562,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                      <select
                                          className="w-full text-[11px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-600 dark:text-slate-300 font-medium"
                                          onChange={e => {
-                                             const selected = company.invoices.find(i => i.invoiceNumber === e.target.value);
+                                             const selected = (company.invoices || []).find(i => i.invoiceNumber === e.target.value);
                                              if (selected) {
                                                  setDraftInvoice(prev => ({
                                                      ...prev,
@@ -574,8 +574,8 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                          value={draftInvoice.originalInvoiceNumber || ''}
                                      >
                                          <option value="">-- Or link past invoice of this client --</option>
-                                         {company.invoices
-                                             .filter(i => i.client.id === draftInvoice.clientId && i.documentType !== 'credit_note')
+                                         {(company.invoices || [])
+                                             .filter(i => i.client?.id === draftInvoice.clientId && i.documentType !== 'credit_note')
                                              .map(i => (
                                                  <option key={i.id} value={i.invoiceNumber}>
                                                      {i.invoiceNumber} ({i.issueDate}) - ₹{i.grandTotal.toFixed(0)}
