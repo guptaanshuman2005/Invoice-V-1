@@ -18,3 +18,15 @@ Every code modification, feature, or refactor must pass the following internal C
 4. **Ponytail / Minimal Code Principle**: Avoid installing new npm packages if native browser APIs (`fetch`, `<input type="date">`, `window.print`) or existing repository utilities (`invoiceUtils.ts`, `validation.ts`) can solve it. Write clean, direct, minimal code (YAGNI).
 5. **Edge Case & Null Safety**: Ensure fallback values for empty lists, missing client records, zero tax rates, and uninitialized bank accounts.
 6. **CodeRabbit Review Summary**: In completion reports, provide a structured CodeRabbit-style summary highlighting Architecture, Bug/Edge Case Mitigations, and Performance Impact.
+
+## Graphify & Dependency Graph Protocol (Mandatory)
+Before modifying shared state, utility functions, data types, or core component interfaces, trace the codebase dependency graph:
+1. **Upstream & Downstream Impact**: Identify all consumer modules importing the target symbol (e.g., `Invoice`, `Company`, `InvoicePayment`, `getInvoicePaymentSummary`).
+2. **Four-Pillar Synchronization**: When adding or updating fields in `types.ts`, simultaneously sync all four system pillars:
+   - **Input Forms**: `NewInvoice.tsx`, `RecordPaymentModal.tsx`, `CompanyManager.tsx`
+   - **UI Views & Tables**: `Invoices.tsx`, `Quotations.tsx`, `Dashboard.tsx`, `Clients.tsx`
+   - **Document Generation**: `InvoicePDF.tsx` (all 5 PDF templates) & HTML print views
+   - **Storage & Exporters**: `csvExport.ts`, `storage.ts`, `supabaseStorage.ts`
+3. **Acyclic Dependency Architecture**: Maintain clean one-directional imports (`types` -> `utils` -> `components` -> `App.tsx`) and eliminate circular dependencies.
+4. **Context & Token Conservation**: Consult the module dependency structure and relevant sub-graph before performing edits to avoid blind grep search cycles.
+
