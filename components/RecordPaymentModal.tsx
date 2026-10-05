@@ -3,7 +3,7 @@ import type { Company, Invoice, InvoicePayment, PaymentMode } from '../types';
 import { getInvoicePaymentSummary, printPaymentReceipt, sharePaymentReceiptWhatsApp } from '../utils/invoiceUtils';
 import Modal from './common/Modal';
 import Button from './common/Button';
-import { IndianRupee, Calendar, CreditCard, Hash, FileText, CheckCircle2, MessageCircle, Printer, Trash2, ArrowRight } from 'lucide-react';
+import { IndianRupee, Calendar, CreditCard, Hash, FileText, CheckCircle2, MessageCircle, Printer, Trash2, ArrowRight, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface RecordPaymentModalProps {
@@ -71,12 +71,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       return;
     }
 
-    if (numAmount > summary.balanceDue + 0.01) {
-      const confirmed = window.confirm(
-        `Entered amount (₹${numAmount}) exceeds the remaining balance (₹${summary.balanceDue}). Do you wish to record this overpayment/advance?`
-      );
-      if (!confirmed) return;
-    }
+    const isOverpayment = numAmount > summary.balanceDue + 0.01;
 
     const newPayment: InvoicePayment = {
       id: `PAY-${Date.now().toString().slice(-6)}`,
@@ -97,12 +92,17 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       payments: [...(invoice.payments || []), newPayment]
     };
 
-    toast.success(`Payment of ₹${numAmount.toLocaleString('en-IN')} recorded!`, {
-      action: {
-        label: 'Print Voucher',
-        onClick: () => printPaymentReceipt(company, updatedInvoice, newPayment, invoice.client)
+    toast.success(
+      isOverpayment 
+        ? `Payment of ₹${numAmount.toLocaleString('en-IN')} recorded (includes ₹${(numAmount - summary.balanceDue).toFixed(2)} advance credit)!`
+        : `Payment of ₹${numAmount.toLocaleString('en-IN')} recorded!`,
+      {
+        action: {
+          label: 'Print Voucher',
+          onClick: () => printPaymentReceipt(company, updatedInvoice, newPayment, invoice.client)
+        }
       }
-    });
+    );
 
     onClose();
   };
@@ -253,6 +253,12 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                     className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
+                {numAmount > summary.balanceDue + 0.01 && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>Exceeds balance by ₹{(numAmount - summary.balanceDue).toFixed(2)} (advance credit)</span>
+                  </div>
+                )}
               </div>
 
               <div>

@@ -645,6 +645,18 @@ const CustomInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documen
               <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#0f172a' }}>Total</Text>
               <Text style={{ fontSize: 13, fontWeight: 'bold', color: brandColor }}>Rs. {invoice.grandTotal.toFixed(2)}</Text>
             </View>
+            {invoice.payments && invoice.payments.length > 0 && (
+              <>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
+                  <Text style={{ color: '#16a34a', fontSize: 9 }}>Paid to Date</Text>
+                  <Text style={{ color: '#16a34a', fontSize: 9, fontWeight: 'bold' }}>- Rs. {invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#cbd5e1' }}>
+                  <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#b91c1c' }}>Balance Due</Text>
+                  <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#b91c1c' }}>Rs. {Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</Text>
+                </View>
+              </>
+            )}
           </View>
         </View>
 
@@ -867,6 +879,22 @@ const TallyInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, document
               <Text style={{ fontWeight: 'bold', fontSize: 8, marginTop: 2 }}>
                 INR {numberToWords(invoice.grandTotal)} Only
               </Text>
+              <View style={{ marginTop: 4, paddingTop: 3, borderTop: `1px solid ${borderCol}`, flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Grand Total:</Text>
+                <Text style={{ fontWeight: 'bold', fontSize: 8 }}>₹{invoice.grandTotal.toFixed(2)}</Text>
+              </View>
+              {invoice.payments && invoice.payments.length > 0 && (
+                <>
+                  <View style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 7, color: '#16a34a' }}>Paid to Date:</Text>
+                    <Text style={{ fontSize: 7, fontWeight: 'bold', color: '#16a34a' }}>- ₹{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</Text>
+                  </View>
+                  <View style={{ marginTop: 2, paddingTop: 2, borderTop: `1px dashed ${borderCol}`, flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 7.5, fontWeight: 'bold', color: '#b91c1c' }}>Balance Due:</Text>
+                    <Text style={{ fontSize: 7.5, fontWeight: 'bold', color: '#b91c1c' }}>₹{Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</Text>
+                  </View>
+                </>
+              )}
             </View>
           </View>
 

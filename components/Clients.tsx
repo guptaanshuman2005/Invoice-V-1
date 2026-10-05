@@ -766,43 +766,43 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
             </div>
 
             {/* Stats Overview: 2-column or 4-column depending on width */}
-            <div className={`grid ${isMaximized ? 'grid-cols-2 md:grid-cols-4' : (panelWidth >= 620 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2')} gap-3 mb-6`}>
-                <div className="glass-panel p-3.5 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
+            <div className={`grid ${isMaximized ? 'grid-cols-2 md:grid-cols-4' : (panelWidth >= 620 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2')} gap-2.5 mb-5`}>
+                <div className="glass-panel p-3 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
                     <div className="absolute right-1 top-1 p-2 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none text-slate-900 dark:text-white">
-                        <IndianRupee className="h-12 w-12" strokeWidth={2} />
+                        <IndianRupee className="h-10 w-10 sm:h-12 sm:w-12" strokeWidth={2} />
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Total Invoiced</p>
-                    <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate" title={`${currency}${stats.totalInvoiced.toLocaleString('en-IN')}`}>
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Total Invoiced</p>
+                    <p className={`font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate ${isMaximized || panelWidth >= 620 ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`} title={`${currency}${stats.totalInvoiced.toLocaleString('en-IN')}`}>
                         {currency}{stats.totalInvoiced.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </p>
                 </div>
 
-                <div className="glass-panel p-3.5 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
+                <div className="glass-panel p-3 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
                     <div className="absolute right-1 top-1 p-2 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none text-green-500">
-                        <CheckCircle className="h-12 w-12" strokeWidth={2} />
+                        <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12" strokeWidth={2} />
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Total Paid</p>
-                    <p className="text-xl sm:text-2xl font-black text-green-600 dark:text-green-400 mt-1 tracking-tight truncate" title={`${currency}${stats.totalPaid.toLocaleString('en-IN')}`}>
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Total Paid</p>
+                    <p className={`font-black text-green-600 dark:text-green-400 mt-1 tracking-tight truncate ${isMaximized || panelWidth >= 620 ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`} title={`${currency}${stats.totalPaid.toLocaleString('en-IN')}`}>
                         {currency}{stats.totalPaid.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </p>
                 </div>
 
-                <div className="glass-panel p-3.5 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
+                <div className="glass-panel p-3 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
                     <div className="absolute right-1 top-1 p-2 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none text-orange-500">
-                        <Clock className="h-12 w-12" strokeWidth={2} />
+                        <Clock className="h-10 w-10 sm:h-12 sm:w-12" strokeWidth={2} />
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Outstanding</p>
-                    <p className="text-xl sm:text-2xl font-black text-orange-500 dark:text-orange-400 mt-1 tracking-tight truncate" title={`${currency}${stats.totalOutstanding.toLocaleString('en-IN')}`}>
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Outstanding</p>
+                    <p className={`font-black text-orange-500 dark:text-orange-400 mt-1 tracking-tight truncate ${isMaximized || panelWidth >= 620 ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`} title={`${currency}${stats.totalOutstanding.toLocaleString('en-IN')}`}>
                         {currency}{stats.totalOutstanding.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </p>
                 </div>
 
-                <div className="glass-panel p-3.5 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
+                <div className="glass-panel p-3 sm:p-4 rounded-xl relative overflow-hidden group hover:shadow-md transition-all border border-slate-200/60 dark:border-slate-700/60">
                     <div className="absolute right-1 top-1 p-2 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none text-blue-500">
-                        <FileText className="h-12 w-12" strokeWidth={2} />
+                        <FileText className="h-10 w-10 sm:h-12 sm:w-12" strokeWidth={2} />
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Total Invoices</p>
-                    <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate">
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold truncate">Total Invoices</p>
+                    <p className={`font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate ${isMaximized || panelWidth >= 620 ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`}>
                         {stats.count}
                     </p>
                 </div>
@@ -838,31 +838,31 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
             {activeTab === 'ledger' && (
                 <div className="space-y-4">
                     {/* Date Filter & Export Header */}
-                    <div className="bg-white dark:bg-slate-900/60 p-3 sm:p-4 rounded-xl border border-slate-200/60 dark:border-slate-700/60 space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    <div className="bg-white dark:bg-slate-900/60 p-3 sm:p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 space-y-2.5">
+                        <div className={`flex ${isMaximized || panelWidth >= 700 ? 'flex-row items-center justify-between' : 'flex-col'} gap-2`}>
+                            <div className="flex items-center gap-1.5 w-full min-w-0">
                                 <Calendar className="w-3.5 h-3.5 text-accent shrink-0" />
                                 <input
                                     type="date"
                                     value={ledgerStartDate}
                                     onChange={e => setLedgerStartDate(e.target.value)}
-                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent min-w-0 flex-1"
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent min-w-0 flex-1 shadow-inner"
                                 />
-                                <span className="text-xs text-slate-400 shrink-0">to</span>
+                                <span className="text-xs text-slate-400 font-bold shrink-0">to</span>
                                 <input
                                     type="date"
                                     value={ledgerEndDate}
                                     onChange={e => setLedgerEndDate(e.target.value)}
-                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent min-w-0 flex-1"
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent min-w-0 flex-1 shadow-inner"
                                 />
                             </div>
 
                             {/* Export & View Mode Buttons */}
-                            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                            <div className="flex items-center gap-1.5 shrink-0 flex-wrap w-full sm:w-auto">
                                 {!isMaximized && (
                                     <button
                                         onClick={() => setLedgerViewMode(prev => prev === 'cards' ? 'table' : 'cards')}
-                                        className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+                                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
                                         title={ledgerViewMode === 'cards' ? "Switch to Accountant Table View" : "Switch to Compact Card Feed"}
                                     >
                                         <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -871,7 +871,7 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                                 )}
                                 <button
                                     onClick={handleDownloadLedgerCSV}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+                                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
                                     title="Export to Excel CSV"
                                 >
                                     <Download className="w-3.5 h-3.5" />
@@ -879,7 +879,7 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                                 </button>
                                 <button
                                     onClick={handlePrintStatement}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+                                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
                                     title="Download Statement as PDF / Print"
                                 >
                                     <Printer className="w-3.5 h-3.5" />
@@ -887,7 +887,7 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                                 </button>
                                 <button
                                     onClick={handleShareLedgerWhatsApp}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+                                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
                                     title="Share statement summary on WhatsApp"
                                 >
                                     <MessageCircle className="w-3.5 h-3.5" />
@@ -927,36 +927,36 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                     </div>
 
                     {/* Summary Balances Card */}
-                    <div className={`grid ${isMaximized ? 'grid-cols-2 md:grid-cols-4' : (panelWidth >= 680 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2')} gap-2.5`}>
-                        <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60 min-w-0 overflow-hidden">
+                    <div className={`grid ${isMaximized ? 'grid-cols-2 md:grid-cols-4' : (panelWidth >= 680 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2')} gap-2`}>
+                        <div className="p-2.5 sm:p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60 min-w-0 overflow-hidden">
                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Opening Balance</div>
-                            <div className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-200 mt-0.5 font-mono truncate" title={`₹${ledgerData.openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}>
+                            <div className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200 mt-0.5 font-mono truncate" title={`₹${ledgerData.openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}>
                                 ₹{ledgerData.openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                             <div className="text-[10px] text-slate-400 font-semibold truncate">{ledgerData.openingBalance >= 0 ? 'Dr (Receivable)' : 'Cr (Advance)'}</div>
                         </div>
 
-                        <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60 min-w-0 overflow-hidden">
+                        <div className="p-2.5 sm:p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60 min-w-0 overflow-hidden">
                             <div className="text-[10px] font-bold text-blue-500 uppercase tracking-wider truncate">Total Debits (Bills)</div>
-                            <div className="text-sm sm:text-base font-black text-blue-600 dark:text-blue-400 mt-0.5 font-mono truncate" title={`₹${ledgerData.totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}>
+                            <div className="text-xs sm:text-sm font-black text-blue-600 dark:text-blue-400 mt-0.5 font-mono truncate" title={`₹${ledgerData.totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}>
                                 ₹{ledgerData.totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                             <div className="text-[10px] text-slate-400 font-semibold truncate">{ledgerData.rows.filter(r => r.debit > 0).length} transactions</div>
                         </div>
 
-                        <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60 min-w-0 overflow-hidden">
+                        <div className="p-2.5 sm:p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60 min-w-0 overflow-hidden">
                             <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider truncate">Total Credits (Paid)</div>
-                            <div className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono truncate" title={`₹${ledgerData.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}>
+                            <div className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono truncate" title={`₹${ledgerData.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}>
                                 ₹{ledgerData.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                             <div className="text-[10px] text-slate-400 font-semibold truncate">{ledgerData.rows.filter(r => r.credit > 0).length} receipts</div>
                         </div>
 
-                        <div className={`p-3 rounded-xl border min-w-0 overflow-hidden ${ledgerData.closingBalance > 0 ? 'bg-rose-50/80 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40' : 'bg-emerald-50/80 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40'}`}>
+                        <div className={`p-2.5 sm:p-3 rounded-xl border min-w-0 overflow-hidden ${ledgerData.closingBalance > 0 ? 'bg-rose-50/80 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40' : 'bg-emerald-50/80 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40'}`}>
                             <div className={`text-[10px] font-bold uppercase tracking-wider truncate ${ledgerData.closingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                 Closing Balance
                             </div>
-                            <div className={`text-sm sm:text-base font-black mt-0.5 font-mono truncate ${ledgerData.closingBalance > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-emerald-700 dark:text-emerald-300'}`} title={`₹${ledgerData.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}>
+                            <div className={`text-xs sm:text-sm font-black mt-0.5 font-mono truncate ${ledgerData.closingBalance > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-emerald-700 dark:text-emerald-300'}`} title={`₹${ledgerData.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}>
                                 ₹{ledgerData.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                             <div className={`text-[10px] font-bold truncate ${ledgerData.closingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
@@ -1460,25 +1460,25 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
           )}
 
           {/* Resizable Split Container */}
-          <div ref={splitContainerRef} className="flex flex-col lg:flex-row items-stretch relative min-h-[550px] w-full gap-0">
+          <div ref={splitContainerRef} className="flex flex-col xl:flex-row items-stretch relative min-h-[550px] w-full gap-0">
               {/* Client List (Left Pane) */}
               <div 
                   style={{
                       display: isMaximized && viewingClient ? 'none' : 'block',
                       flex: viewingClient ? '1 1 0%' : '1 1 100%',
-                      minWidth: viewingClient ? '320px' : '100%'
+                      minWidth: viewingClient ? '280px' : '100%'
                   }}
                   className="glass-panel rounded-2xl overflow-hidden transition-[flex] duration-150 min-w-0 flex flex-col border border-slate-200/80 dark:border-slate-800/80 shadow-sm"
               >
                   <div className="overflow-x-auto custom-scrollbar flex-1">
-                      <table className="w-full min-w-[650px] text-left text-sm">
+                      <table className={`w-full text-left text-sm ${viewingClient ? 'min-w-0' : 'min-w-[650px]'}`}>
                           <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                               <tr>
-                                  <th className="px-4 py-3 w-10"><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={handleSelectAll} className="rounded border-slate-300 text-accent focus:ring-accent" /></th>
-                                  <th className="px-4 py-3">Name</th>
-                                  <th className="px-4 py-3">Contact</th>
-                                  <th className="px-4 py-3">Location</th>
-                                  <th className="px-4 py-3 text-right">Actions</th>
+                                  <th className="px-3 sm:px-4 py-3 w-10"><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={handleSelectAll} className="rounded border-slate-300 text-accent focus:ring-accent" /></th>
+                                  <th className="px-3 sm:px-4 py-3">Name</th>
+                                  <th className={`px-4 py-3 ${viewingClient ? 'hidden 2xl:table-cell' : ''}`}>Contact</th>
+                                  <th className={`px-4 py-3 ${viewingClient ? 'hidden xl:table-cell' : ''}`}>Location</th>
+                                  <th className="px-3 sm:px-4 py-3 text-right">Actions</th>
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -1492,10 +1492,10 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                                           }`} 
                                           onClick={() => setViewingClient(client)}
                                       >
-                                          <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                                          <td className="px-3 sm:px-4 py-3.5" onClick={e => e.stopPropagation()}>
                                               <input type="checkbox" checked={selectedIds.includes(client.id)} onChange={() => handleSelectOne(client.id)} className="rounded border-slate-300 text-accent focus:ring-accent" />
                                           </td>
-                                          <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
+                                          <td className="px-3 sm:px-4 py-3.5 font-bold text-slate-900 dark:text-white">
                                               <div className="flex items-center gap-2">
                                                   {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>}
                                                   <span>{client.name}</span>
@@ -1506,16 +1506,16 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                                                   </div>
                                               )}
                                           </td>
-                                          <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400">
+                                          <td className={`px-4 py-3.5 text-slate-500 dark:text-slate-400 ${viewingClient ? 'hidden 2xl:table-cell' : ''}`}>
                                               <div className="flex flex-col text-xs">
                                                   <span className="font-medium text-slate-700 dark:text-slate-300">{client.email || '—'}</span>
                                                   <span className="text-slate-400 mt-0.5">{client.phone || '—'}</span>
                                               </div>
                                           </td>
-                                          <td className="px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400">
+                                          <td className={`px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400 ${viewingClient ? 'hidden xl:table-cell' : ''}`}>
                                               {client.city ? `${client.city}${client.state ? `, ${client.state}` : ''}` : '—'}
                                           </td>
-                                          <td className="px-4 py-3.5 text-right space-x-1" onClick={e => e.stopPropagation()}>
+                                          <td className="px-3 sm:px-4 py-3.5 text-right space-x-1" onClick={e => e.stopPropagation()}>
                                               <button onClick={() => handleOpenModal(client)} className="text-slate-400 hover:text-indigo-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700" title="Edit Client"><Edit className="h-4 w-4" strokeWidth={2} /></button>
                                               <button onClick={() => handleDeleteClient(client.id)} className="text-slate-400 hover:text-red-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700" title="Delete Client"><Trash2 className="h-4 w-4" strokeWidth={2} /></button>
                                           </td>
@@ -1545,7 +1545,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                       onMouseDown={handleMouseDown}
                       onDoubleClick={handleResetWidth}
                       title="Drag left/right to resize • Double-click to reset"
-                      className={`hidden lg:flex flex-col justify-center items-center w-4 -mx-2 z-20 cursor-col-resize select-none transition-colors group ${
+                      className={`hidden xl:flex flex-col justify-center items-center w-4 -mx-2 z-20 cursor-col-resize select-none transition-colors group ${
                           isDragging ? 'bg-accent/20' : 'hover:bg-accent/15'
                       }`}
                   >
@@ -1564,7 +1564,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                           width: isMaximized ? '100%' : `${panelWidth}px`,
                           maxWidth: '100%'
                       }}
-                      className={`w-full ${isMaximized ? '' : 'lg:shrink-0'} animate-fade-in mt-6 lg:mt-0 ${viewingClient && !isMaximized ? 'lg:pl-3' : ''}`}
+                      className={`w-full ${isMaximized ? '' : 'xl:shrink-0'} animate-fade-in mt-6 xl:mt-0 ${viewingClient && !isMaximized ? 'xl:pl-3' : ''}`}
                   >
                       <div className="sticky top-6">
                           <ClientHistoryPanel 
@@ -1575,7 +1575,11 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                               onEditInvoice={onEditInvoice} 
                               onDeleteInvoice={onDeleteInvoice} 
                               onViewInvoice={(inv) => setInvoiceToView(inv)}
-                              onEmailInvoice={(inv) => alert(`This functionality is mainly in Invoices tab. In a real app, this would open email modal for ${inv.invoiceNumber}.`)}
+                              onEmailInvoice={(inv) => {
+                                  const subject = encodeURIComponent(`Invoice ${inv.invoiceNumber} from ${company.details?.name || 'Company'}`);
+                                  const body = encodeURIComponent(`Dear ${inv.client?.name || 'Client'},\n\nPlease find the billing details for Invoice #${inv.invoiceNumber}.\nGrand Total: ₹${inv.grandTotal.toFixed(2)}\nIssue Date: ${inv.issueDate}\nDue Date: ${inv.dueDate}\n\nThank you for your business,\n${company.details?.name || ''}`);
+                                  window.open(`mailto:${inv.client?.email || ''}?subject=${subject}&body=${body}`, '_blank');
+                              }}
                               onRecordPaymentClick={(inv) => setPaymentModalInvoice(inv)}
                               onClose={() => setViewingClient(null)}
                               isMaximized={isMaximized}

@@ -3,7 +3,7 @@ import type { Company, Expense } from '../types';
 import Input from './common/Input';
 import Button from './common/Button';
 import Modal from './common/Modal';
-import { Plus, Search, Filter, Trash2, DollarSign, Calendar, Tag, CreditCard, ArrowDownRight, Building2, TrendingDown } from 'lucide-react';
+import { Plus, Search, Filter, Trash2, Calendar, Tag, CreditCard, ArrowDownRight, Building2, TrendingDown } from 'lucide-react';
 
 interface ExpensesProps {
   company: Company;

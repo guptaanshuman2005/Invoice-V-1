@@ -765,7 +765,7 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
                         {activeCompany.subscription && activeCompany.subscription.plan !== 'free' && (
                             <Button variant="secondary" className="w-full !py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900/30" onClick={() => {
                                 if (window.confirm('Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your billing cycle.')) {
-                                    alert('Subscription cancellation requested. Please contact support to finalize.');
+                                    toast.info('Subscription cancellation requested. Please contact support to finalize.');
                                     trackEvent('cancel_subscription_requested', { companyId: activeCompany.id });
                                 }
                             }}>

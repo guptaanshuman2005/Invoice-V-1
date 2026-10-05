@@ -175,6 +175,18 @@ const ModernInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docum
                             <span>Total</span>
                             <span>{currency}{invoice.grandTotal.toFixed(2)}</span>
                         </div>
+                        {invoice.payments && invoice.payments.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-slate-100 space-y-1">
+                                <div className="flex justify-between text-xs text-emerald-600 font-semibold">
+                                    <span>Paid to Date:</span>
+                                    <span>- {currency}{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm font-bold text-rose-600 pt-1 border-t border-slate-100">
+                                    <span>Balance Due:</span>
+                                    <span>{currency}{Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -300,6 +312,18 @@ const TraditionalInvoiceContent: React.FC<{ invoice: Invoice, company: Company, 
                         <span>Total Amount</span>
                         <span>{currency} {invoice.grandTotal.toFixed(2)}</span>
                     </div>
+                    {invoice.payments && invoice.payments.length > 0 && (
+                        <>
+                            <div className="flex justify-between p-2 border-t border-black text-xs text-emerald-700 font-medium">
+                                <span>Less: Amount Paid</span>
+                                <span>- {currency} {invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between p-2 border-t border-black font-bold text-sm text-red-700">
+                                <span>Balance Due</span>
+                                <span>{currency} {Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</span>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -459,6 +483,18 @@ const PremiumInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docu
                             <span>Total</span>
                             <span>{currency}{invoice.grandTotal.toFixed(2)}</span>
                         </div>
+                        {invoice.payments && invoice.payments.length > 0 && (
+                            <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                                <div className="flex justify-between text-xs text-emerald-600 font-semibold">
+                                    <span>Amount Paid:</span>
+                                    <span>- {currency}{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm font-bold text-rose-600 pt-1 border-t border-slate-200">
+                                    <span>Balance Due:</span>
+                                    <span>{currency}{Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
                 
@@ -648,6 +684,18 @@ const TallyInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docume
                         <div className="text-right mt-2">
                             <span className="text-[10px] uppercase text-slate-500 mr-2">Grand Total:</span>
                             <span className="text-lg font-black text-slate-900">₹{invoice.grandTotal.toFixed(2)}</span>
+                            {invoice.payments && invoice.payments.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-slate-200 text-left">
+                                    <div className="flex justify-between text-xs text-emerald-700">
+                                        <span>Paid to Date:</span>
+                                        <span className="font-semibold">- ₹{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs font-bold text-red-600 mt-1">
+                                        <span>Balance Due:</span>
+                                        <span>₹{Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

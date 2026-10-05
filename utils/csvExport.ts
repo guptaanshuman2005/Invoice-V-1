@@ -1,5 +1,6 @@
 import type { Invoice, Company } from '../types';
 import { STATE_TO_GST_CODE } from '../constants';
+import { toast } from 'sonner';
 
 export const downloadCSV = (content: string, filename: string) => {
     try {
@@ -19,7 +20,7 @@ export const downloadCSV = (content: string, filename: string) => {
         return true;
     } catch (error) {
         console.error("Failed to download CSV:", error);
-        alert("Failed to download the file. Please try again.");
+        toast.error("Failed to download the CSV file. Please try again.");
         return false;
     }
 };
@@ -296,7 +297,7 @@ export const downloadJSON = (data: any, filename: string) => {
         return true;
     } catch (error) {
         console.error("Failed to download JSON:", error);
-        alert("Failed to download JSON file. Please try again.");
+        toast.error("Failed to download JSON file. Please try again.");
         return false;
     }
 };

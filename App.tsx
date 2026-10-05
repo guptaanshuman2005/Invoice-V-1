@@ -224,7 +224,7 @@ const App: React.FC = () => {
     if (sessionId) {
       // Clear the session_id from the URL
       window.history.replaceState({}, document.title, window.location.pathname);
-      alert('Subscription successful! You can now create invoices.');
+      toast.success('Subscription successful! You can now create invoices.');
       // The webhook will update the database, and the realtime subscription will update the UI.
       // For immediate feedback, we could optimistically update the active company here,
       // but waiting for the webhook is safer.

@@ -350,18 +350,18 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
     const handleSave = () => {
         // Strict Validation
         if (!draftInvoice.clientId) {
-            alert("Please select a Client.");
+            toast.error("Please select a Client.");
             return;
         }
         if (draftInvoice.items.length === 0) {
-            alert("Please add at least one item.");
+            toast.error("Please add at least one item.");
             return;
         }
         
         // Validate incomplete items
         const invalidItem = draftInvoice.items.find(i => !i.name.trim() || Number(i.quantity) <= 0 || Number(i.price) < 0);
         if (invalidItem) {
-            alert("One or more items have missing names, invalid quantity, or negative price.");
+            toast.error("One or more items have missing names, invalid quantity, or negative price.");
             return;
         }
         
