@@ -5,6 +5,7 @@
  */
 
 import { toast } from 'sonner';
+import { catalystConfig } from '../catalyst';
 
 export interface CatalystUser {
   id: string;
@@ -162,4 +163,12 @@ export function onCatalystAuthStateChange(callback: AuthListener): () => void {
   return () => {
     listeners.delete(callback);
   };
+}
+
+/**
+ * Redirect to Zoho Catalyst Hosted Login page
+ */
+export function redirectToHostedLogin(): void {
+  const redirectUri = encodeURIComponent(window.location.origin + '/');
+  window.location.href = `${catalystConfig.projectDomain}/baas/v1/project/${catalystConfig.projectId}/auth/login?redirect_url=${redirectUri}`;
 }

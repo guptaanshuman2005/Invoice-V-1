@@ -9,8 +9,8 @@ export interface CatalystConfig {
   environment?: 'development' | 'production';
 }
 
-const projectId = import.meta.env.VITE_CATALYST_PROJECT_ID || '';
-const projectDomain = import.meta.env.VITE_CATALYST_PROJECT_DOMAIN || 'https://catalyst.zoho.com';
+const projectId = import.meta.env.VITE_CATALYST_PROJECT_ID || '76189000000013052';
+const projectDomain = import.meta.env.VITE_CATALYST_PROJECT_DOMAIN || 'https://invoicepro-60091577554.development.catalystserverless.in';
 
 export const isCatalystConfigured = Boolean(projectId);
 
