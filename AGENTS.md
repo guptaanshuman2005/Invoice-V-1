@@ -1,14 +1,14 @@
 # Workflow & Deployment Rules
 
-## Automatic GitHub & Vercel Updates (Mandatory)
-- **Do not wait for the user to ask**: After completing any task, bug fix, feature, or code modification, **always proactively commit and push** the changes to GitHub and verify deployment.
+## Automatic GitHub & Zoho Catalyst Slate Updates (Mandatory)
+- **Do not wait for the user to ask**: After completing any task, bug fix, feature, or code modification, **always proactively commit and push** the changes to GitHub.
 - **Workflow**:
-  1. Verify the code compiles without errors (`npx tsc --noEmit` or build check).
+  1. Verify the code compiles without errors (`npx tsc --noEmit` and `npm run build`).
   2. Stage modified files (`git add <files>`).
   3. Commit with a clear, standard commit message (`git commit -m "..."`).
   4. Push directly to remote branch (`git push origin main`).
-  5. Check deployment status via `vercel ls invoicepro` to ensure the Vercel production build is successful.
-  6. Include the commit hash and Vercel live URL in the completion summary.
+  5. GitHub auto-triggers Zoho Catalyst Slate production deployment on `main`.
+  6. Include the commit hash in the completion summary.
 
 ## CodeRabbit & Senior Architect Review Protocol (Mandatory)
 Every code modification, feature, or refactor must pass the following internal CodeRabbit-style review before deployment:
