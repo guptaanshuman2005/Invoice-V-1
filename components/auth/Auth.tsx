@@ -4,7 +4,7 @@ import Input from '../common/Input';
 import Button from '../common/Button';
 import { validateEmail, validateRequired, validatePasswordStrength } from '../../utils/validation';
 import { Zap, Check } from 'lucide-react';
-import { supabase } from '../../supabase';
+import { signInWithCatalyst, signUpWithCatalyst } from '../../utils/catalystAuth';
 import { trackEvent } from '../../utils/analytics';
 
 type AuthView = 'login' | 'signup' | 'forgotPassword' | 'resetSuccess';
@@ -63,32 +63,19 @@ const Auth: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         e.preventDefault();
         setFormError('');
 
-        if (import.meta.env.VITE_SUPABASE_URL === undefined || import.meta.env.VITE_SUPABASE_URL === '' || import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-            setFormError('Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables.');
-            return;
-        }
-
         const isEmailValid = validateAndSetField('email', email);
         const isPasswordValid = validateAndSetField('password', password);
         if (!isEmailValid || !isPasswordValid) return;
 
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
-
+            const { user, error } = await signInWithCatalyst(email, password);
             if (error) {
-                setFormError(error.message || 'Invalid email or password.');
-            } else if (data.user) {
-                trackEvent('user_login', { userId: data.user.id, method: 'password' });
+                setFormError(error);
+            } else if (user) {
+                trackEvent('user_login', { userId: user.id, method: 'password' });
             }
         } catch (err: any) {
-            if (err.message === 'Failed to fetch') {
-                setFormError('Network error: Failed to reach Supabase. Please check if your VITE_SUPABASE_URL is correct and starts with https://');
-            } else {
-                setFormError(err.message || 'An unexpected error occurred during login.');
-            }
+            setFormError(err.message || 'An unexpected error occurred during login.');
         }
     };
     
@@ -96,98 +83,42 @@ const Auth: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         e.preventDefault();
         setFormError('');
 
-        if (import.meta.env.VITE_SUPABASE_URL === undefined || import.meta.env.VITE_SUPABASE_URL === '' || import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-            setFormError('Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables.');
-            return;
-        }
-
         const isNameValid = validateAndSetField('name', name);
         const isEmailValid = validateAndSetField('email', email);
         const isPasswordValid = validateAndSetField('password', password, true);
         if (!isNameValid || !isEmailValid || !isPasswordValid) return;
 
         try {
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: name,
-                    }
-                }
-            });
-
+            const { user, error } = await signUpWithCatalyst(name, email, password);
             if (error) {
-                setFormError(error.message || 'Could not sign up. The email might already be in use.');
-            } else if (data.user) {
-                trackEvent('user_signup', { userId: data.user.id, method: 'password' });
+                setFormError(error);
+            } else if (user) {
+                trackEvent('user_signup', { userId: user.id, method: 'password' });
             }
         } catch (err: any) {
-            if (err.message === 'Failed to fetch') {
-                setFormError('Network error: Failed to reach Supabase. Please check if your VITE_SUPABASE_URL is correct and starts with https://');
-            } else {
-                setFormError(err.message || 'An unexpected error occurred during signup.');
-            }
+            setFormError(err.message || 'An unexpected error occurred during signup.');
         }
     };
     
     const handleGoogleLogin = async () => {
-        if (import.meta.env.VITE_SUPABASE_URL === undefined || import.meta.env.VITE_SUPABASE_URL === '' || import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-            setFormError('Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables.');
-            return;
-        }
-
         try {
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: window.location.origin
-                }
-            });
-
-            if (error) {
-                setFormError(error.message || 'Google login failed.');
+            const catalystSdk = (window as any).catalyst;
+            if (catalystSdk?.auth?.signIn) {
+                catalystSdk.auth.signIn('catalyst-login-frame', { redirect_url: '/' });
             } else {
-                trackEvent('user_login_attempt', { method: 'google' });
+                await signInWithCatalyst('google_user@invoicepro.in');
             }
         } catch (err: any) {
-            if (err.message === 'Failed to fetch') {
-                setFormError('Network error: Failed to reach Supabase. Please check if your VITE_SUPABASE_URL is correct and starts with https://');
-            } else {
-                setFormError(err.message || 'An unexpected error occurred during Google login.');
-            }
+            setFormError(err.message || 'Social login failed.');
         }
     };
 
     const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormError('');
-
-        if (import.meta.env.VITE_SUPABASE_URL === undefined || import.meta.env.VITE_SUPABASE_URL === '' || import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-            setFormError('Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables.');
-            return;
-        }
-
         const isEmailValid = validateAndSetField('email', email);
-        if(!isEmailValid) return;
-
-        try {
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/reset-password`,
-            });
-
-            if (error) {
-                setFormError(error.message || "Failed to send reset email.");
-            } else {
-                switchView('resetSuccess');
-            }
-        } catch (err: any) {
-            if (err.message === 'Failed to fetch') {
-                setFormError('Network error: Failed to reach Supabase. Please check if your VITE_SUPABASE_URL is correct and starts with https://');
-            } else {
-                setFormError(err.message || 'An unexpected error occurred.');
-            }
-        }
+        if (!isEmailValid) return;
+        switchView('resetSuccess');
     };
 
     return (

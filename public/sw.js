@@ -41,9 +41,9 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Skip non-GET requests or external API calls (Supabase, CDN dynamic calls)
+  // Skip non-GET requests or external API calls (Zoho Catalyst, CDNs)
   if (req.method !== 'GET') return;
-  if (url.origin.includes('supabase.co')) return;
+  if (url.origin.includes('catalystserverless.in') || url.origin.includes('zohocdn.com') || url.origin.includes('zohomcp.in') || url.origin.includes('supabase.co')) return;
 
   // 1. Navigation requests (HTML pages) -> Network first, fallback to cached /index.html
   if (req.mode === 'navigate') {

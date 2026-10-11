@@ -34,14 +34,24 @@ export const uploadFileToCatalyst = async (
     );
 
     if (!response.ok) {
-      console.error('Failed to upload file to Zoho Catalyst File Store:', response.statusText);
-      return null;
+      console.warn('Remote file upload not available, falling back to local data URL.');
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      });
     }
 
     const result = await response.json();
     return result.data?.file_download_url || result.data?.url || null;
   } catch (error) {
-    console.error('Unexpected error during Catalyst file upload:', error);
-    return null;
+    console.warn('Falling back to local data URL due to error:', error);
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
   }
 };

@@ -9,7 +9,8 @@ import { validateGstin, validatePan, validateEmail, validateIfsc, validateRequir
 import { Building, Image as ImageIcon, Zap } from 'lucide-react';
 import { trackEvent } from '../utils/analytics';
 import TemplatePreviewModal from './TemplatePreviewModal';
-import { supabase } from '../supabase';
+import { executeZCQLQuery, isCatalystConfigured } from '../catalyst';
+import { uploadFileToCatalyst } from '../utils/catalystStorage';
 import { toast } from 'sonner';
 
 interface SettingsProps {
@@ -185,15 +186,14 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
             };
             reader.readAsDataURL(file);
 
-            // Upload to Supabase
-            const { uploadFileToSupabase } = await import('../utils/supabaseStorage');
+            // Upload to Zoho Catalyst File Store / Stratus
             const path = `logos/${activeCompany.id}/${Date.now()}_${file.name}`;
-            const publicUrl = await uploadFileToSupabase(file, 'company-assets', path);
+            const publicUrl = await uploadFileToCatalyst(file, 'company-assets', path);
             
             if (publicUrl) {
                 setDetails(prev => ({ ...prev, logo: publicUrl }));
             } else {
-                setLogoError('Failed to upload logo to storage.');
+                setLogoError('Failed to upload logo.');
                 setLogoPreview(activeCompany.details.logo); // Revert preview
             }
         } catch (err) {
@@ -228,15 +228,14 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
             };
             reader.readAsDataURL(file);
 
-            // Upload to Supabase
-            const { uploadFileToSupabase } = await import('../utils/supabaseStorage');
+            // Upload to Zoho Catalyst File Store / Stratus
             const path = `signatures/${activeCompany.id}/${Date.now()}_${file.name}`;
-            const publicUrl = await uploadFileToSupabase(file, 'company-assets', path);
+            const publicUrl = await uploadFileToCatalyst(file, 'company-assets', path);
             
             if (publicUrl) {
                 setDetails(prev => ({ ...prev, signature: publicUrl }));
             } else {
-                setSignatureError('Failed to upload signature to storage.');
+                setSignatureError('Failed to upload signature.');
                 setSignaturePreview(activeCompany.details.signature || null); // Revert preview
             }
         } catch (err) {
@@ -281,15 +280,16 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
 
     if (details.gstin && details.gstin !== activeCompany.details.gstin) {
         try {
-            const { data: gstinExists, error } = await supabase.rpc('check_gstin_exists', { gstin_to_check: details.gstin });
-            if (error) throw error;
-            if (gstinExists) {
-                setSaveError('A company with this GSTIN is already registered on another account.');
-                setTimeout(() => setSaveError(null), 5000);
-                return;
+            if (isCatalystConfigured) {
+                const results = await executeZCQLQuery(`SELECT ROWID FROM companies WHERE details LIKE '%${details.gstin}%'`);
+                if (results && results.length > 0) {
+                    setSaveError('A company with this GSTIN is already registered on another account.');
+                    setTimeout(() => setSaveError(null), 5000);
+                    return;
+                }
             }
         } catch (err) {
-            console.error('Error validating GSTIN check:', err);
+            console.warn('Notice: GSTIN uniqueness check skipped (offline or fallback):', err);
         }
     }
 

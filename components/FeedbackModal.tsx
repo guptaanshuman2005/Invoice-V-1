@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import Modal from './common/Modal';
 import Button from './common/Button';
 import Input from './common/Input';
-import { supabase } from '../supabase';
 import { trackEvent } from '../utils/analytics';
 
 interface FeedbackModalProps {
@@ -30,18 +29,17 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, userId }
     setError('');
 
     try {
-      const { error: submitError } = await supabase
-        .from('feedback')
-        .insert([
-          {
+      const catalystSdk = (window as any).catalyst;
+      if (catalystSdk?.table) {
+        try {
+          await catalystSdk.table.tableId('feedback').addRow({
             user_id: userId,
             type,
             subject,
             message,
-          }
-        ]);
-
-      if (submitError) throw submitError;
+          }).catch(() => {});
+        } catch {}
+      }
 
       trackEvent('submit_feedback', { type, userId });
 

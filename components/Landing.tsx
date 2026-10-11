@@ -171,7 +171,7 @@ const Landing: React.FC<LandingProps> = ({
                 <Cpu className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 font-display">Relational Synchronization</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Enjoy seamless Supabase syncing. Deleting items, invoices, or quotes updates your database relations instantly.</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Enjoy seamless Zoho Catalyst Cloud syncing. Deleting items, invoices, or quotes updates your database relations instantly.</p>
             </div>
 
           </div>

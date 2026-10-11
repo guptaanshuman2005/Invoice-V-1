@@ -219,23 +219,179 @@ export function useCatalystCompanies(userId: string | undefined): [Company[], (v
     setCompaniesState((prev) => {
       const newCompanies: Company[] = typeof value === 'function' ? value(prev) : value;
 
-      // Update local cache immediately
+      // Update local cache immediately for instant UI feedback
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newCompanies));
 
-      // Asynchronously sync to Catalyst Data Store
+      // Asynchronously sync to Catalyst Data Store in background
       const catalystSdk = (window as any).catalyst;
       if (catalystSdk?.table) {
         (async () => {
           for (const company of newCompanies) {
             try {
+              const companyId = company.id;
               const compTable = catalystSdk.table.tableId(CATALYST_TABLE_IDS.companies);
               await compTable.addRow({
                 owner_id: company.ownerId || userId || 'default',
                 details: JSON.stringify(company.details || {}),
                 subscription: JSON.stringify(company.subscription || {})
-              }).catch(() => {
-                // Ignore if update needed
-              });
+              }).catch(() => {});
+
+              // Sync Clients
+              if (company.clients && company.clients.length > 0) {
+                const clientTable = catalystSdk.table.tableId(CATALYST_TABLE_IDS.clients);
+                for (const client of company.clients) {
+                  await clientTable.addRow({
+                    company_id: companyId,
+                    name: client.name,
+                    gstin: client.gstin || '',
+                    email: client.email || '',
+                    phone: client.phone || '',
+                    address: client.address || '',
+                    city: client.city || '',
+                    state: client.state || '',
+                    zip: client.zip || '',
+                    shipping_address: client.shippingAddress || '',
+                    shipping_city: client.shippingCity || '',
+                    shipping_state: client.shippingState || '',
+                    shipping_zip: client.shippingZip || '',
+                    tags: JSON.stringify(client.tags || [])
+                  }).catch(() => {});
+                }
+              }
+
+              // Sync Items
+              if (company.items && company.items.length > 0) {
+                const itemTable = catalystSdk.table.tableId(CATALYST_TABLE_IDS.items);
+                for (const item of company.items) {
+                  await itemTable.addRow({
+                    company_id: companyId,
+                    name: item.name,
+                    hsn: item.hsn || '',
+                    price: Number(item.price) || 0,
+                    gst_rate: Number(item.gstRate) || 0,
+                    unit: item.unit || 'pcs',
+                    quantity_in_stock: Number(item.quantityInStock) || 0
+                  }).catch(() => {});
+                }
+              }
+
+              // Sync Bank Accounts
+              if (company.bankAccounts && company.bankAccounts.length > 0) {
+                const bankTable = catalystSdk.table.tableId(CATALYST_TABLE_IDS.bank_accounts);
+                for (const bank of company.bankAccounts) {
+                  await bankTable.addRow({
+                    company_id: companyId,
+                    bank_name: bank.bankName,
+                    account_number: bank.accountNumber,
+                    ifsc: bank.ifsc,
+                    branch: (bank as any).branch || '',
+                    upi_id: (bank as any).upiId || '',
+                    is_primary: String(bank.isDefault ?? false)
+                  }).catch(() => {});
+                }
+              }
+
+              // Sync Invoices & Line Items
+              if (company.invoices && company.invoices.length > 0) {
+                const invTable = catalystSdk.table.tableId(CATALYST_TABLE_IDS.invoices);
+                const invItemTable = catalystSdk.table.tableId(CATALYST_TABLE_IDS.invoice_items);
+                for (const inv of company.invoices) {
+                  const calculatedPaid = inv.payments?.reduce((acc, p) => acc + (p.amount || 0), 0) || (inv as any).amountPaid || 0;
+                  await invTable.addRow({
+                    company_id: companyId,
+                    client_id: inv.client?.id || (inv as any).clientId || '',
+                    invoice_number: inv.invoiceNumber,
+                    issue_date: inv.issueDate,
+                    due_date: inv.dueDate,
+                    status: inv.status,
+                    subtotal: Number(inv.subTotal) || 0,
+                    cgst: Number(inv.cgst) || 0,
+                    sgst: Number(inv.sgst) || 0,
+                    igst: Number(inv.igst) || 0,
+                    total: Number(inv.grandTotal) || 0,
+                    amount_paid: Number(calculatedPaid),
+                    notes: inv.notes || '',
+                    terms: (inv as any).terms || '',
+                    template: (inv as any).template || 'minimal',
+                    payments: JSON.stringify(inv.payments || []),
+                    eway_bill_no: inv.ewayBillNumber || ''
+                  }).catch(() => {});
+
+                  if (inv.items && inv.items.length > 0) {
+                    for (const ii of inv.items) {
+                      const itemTotal = Number(ii.price * ii.quantity * (1 + (ii.gstRate || 0) / 100));
+                      await invItemTable.addRow({
+                        invoice_id: inv.id,
+                        item_id: ii.id || '',
+                        name: ii.name,
+                        hsn: ii.hsn || '',
+                        quantity: Number(ii.quantity) || 1,
+                        price: Number(ii.price) || 0,
+                        gst_rate: Number(ii.gstRate) || 0,
+                        unit: ii.unit || 'pcs',
+                        total: itemTotal
+                      }).catch(() => {});
+                    }
+                  }
+                }
+              }
+
+              // Sync Quotations
+              if (company.quotations && company.quotations.length > 0) {
+                const qTable = catalystSdk.table.tableId(CATALYST_TABLE_IDS.quotations);
+                const qItemTable = catalystSdk.table.tableId(CATALYST_TABLE_IDS.quotation_items);
+                for (const q of company.quotations) {
+                  await qTable.addRow({
+                    company_id: companyId,
+                    client_id: q.client?.id || (q as any).clientId || '',
+                    quotation_number: q.quotationNumber,
+                    issue_date: q.issueDate,
+                    expiry_date: q.validUntil || (q as any).expiryDate || '',
+                    status: q.status,
+                    subtotal: Number(q.subTotal) || 0,
+                    cgst: Number(q.cgst) || 0,
+                    sgst: Number(q.sgst) || 0,
+                    igst: Number(q.igst) || 0,
+                    total: Number(q.grandTotal) || 0,
+                    notes: q.notes || '',
+                    terms: (q as any).terms || '',
+                    template: (q as any).template || 'minimal'
+                  }).catch(() => {});
+
+                  if (q.items && q.items.length > 0) {
+                    for (const qi of q.items) {
+                      const qItemTotal = Number(qi.price * qi.quantity * (1 + (qi.gstRate || 0) / 100));
+                      await qItemTable.addRow({
+                        quotation_id: q.id,
+                        name: qi.name,
+                        hsn: qi.hsn || '',
+                        quantity: Number(qi.quantity) || 1,
+                        price: Number(qi.price) || 0,
+                        gst_rate: Number(qi.gstRate) || 0,
+                        unit: qi.unit || 'pcs',
+                        total: qItemTotal
+                      }).catch(() => {});
+                    }
+                  }
+                }
+              }
+
+              // Sync Expenses
+              if (company.expenses && company.expenses.length > 0) {
+                const expTable = catalystSdk.table.tableId(CATALYST_TABLE_IDS.expenses);
+                for (const exp of company.expenses) {
+                  await expTable.addRow({
+                    company_id: companyId,
+                    category: exp.category,
+                    amount: Number(exp.amount) || 0,
+                    expense_date: exp.date,
+                    payment_mode: exp.paymentMode || 'cash',
+                    vendor_name: exp.vendorName || (exp as any).vendor || '',
+                    notes: exp.notes || '',
+                    receipt_url: (exp as any).receiptUrl || ''
+                  }).catch(() => {});
+                }
+              }
             } catch (syncErr) {
               console.warn('Background sync to Catalyst Data Store error:', syncErr);
             }

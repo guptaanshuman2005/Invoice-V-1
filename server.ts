@@ -3,31 +3,12 @@ import { createServer as createViteServer } from "vite";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
-import { createClient } from "@supabase/supabase-js";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
-
 console.log("Starting server.ts...");
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config();
-
-console.log("Initializing Supabase...");
-
-const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
-
-let supabase: any = null;
-if (supabaseUrl && supabaseServiceKey) {
-  try {
-    supabase = createClient(supabaseUrl, supabaseServiceKey);
-    console.log("Supabase client initialized.");
-  } catch (err) {
-    console.error("Failed to initialize Supabase client:", err);
-  }
-} else {
-  console.warn("Supabase keys missing or partial.");
-}
 
 // Rate limiters
 const apiLimiter = rateLimit({

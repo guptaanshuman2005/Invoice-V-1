@@ -30,7 +30,7 @@ import Expenses from './components/Expenses';
 import Quotations from './components/Quotations';
 import GstReports from './components/GstReports';
 import CompanyLogo from './components/common/CompanyLogo';
-import { supabase } from './supabase';
+import { getCatalystSession, onCatalystAuthStateChange, signOutCatalyst } from './utils/catalystAuth';
 import { trackPageView, trackEvent } from './utils/analytics';
 import { toast } from 'sonner';
 
@@ -232,38 +232,20 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setCurrentUser({ 
-          id: session.user.id, 
-          email: session.user.email || '', 
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '', 
-          passwordHash: '' 
-        });
-      } else {
-        setCurrentUser(null);
-      }
+    getCatalystSession().then(user => {
+      setCurrentUser(user);
       setIsAuthReady(true);
     }).catch(err => {
       console.error("Error getting session:", err);
       setIsAuthReady(true);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setCurrentUser({ 
-          id: session.user.id, 
-          email: session.user.email || '', 
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '', 
-          passwordHash: '' 
-        });
-      } else {
-        setCurrentUser(null);
-      }
+    const unsubscribe = onCatalystAuthStateChange(user => {
+      setCurrentUser(user);
       setIsAuthReady(true);
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -354,7 +336,7 @@ const App: React.FC = () => {
   // --- Auth Handlers ---
   const handleLogout = async () => {
       try {
-          await supabase.auth.signOut();
+          await signOutCatalyst();
       } catch (err) {
           console.error("Error signing out:", err);
       } finally {

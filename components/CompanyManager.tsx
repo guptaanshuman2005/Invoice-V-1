@@ -9,7 +9,8 @@ import { Zap, Check, BarChart2, ArrowLeft, Image as ImageIcon } from 'lucide-rea
 
 import Modal from './common/Modal';
 import TemplatePreviewModal from './TemplatePreviewModal';
-import { supabase } from '../supabase';
+import { uploadFileToCatalyst } from '../utils/catalystStorage';
+import { executeZCQLQuery, isCatalystConfigured } from '../catalyst';
 
 interface CompanyManagerProps {
     onAddCompany: (details: CompanyDetails) => void;
@@ -79,10 +80,9 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                 };
                 reader.readAsDataURL(file);
 
-                // Upload to Supabase
-                const { uploadFileToSupabase } = await import('../utils/supabaseStorage');
+                // Upload to Zoho Catalyst File Store / Stratus
                 const path = `${type}s/temp_${Date.now()}_${file.name}`;
-                const publicUrl = await uploadFileToSupabase(file, 'company-assets', path);
+                const publicUrl = await uploadFileToCatalyst(file, 'company-assets', path);
                 
                 if (publicUrl) {
                     setDetails(prev => ({ ...prev, [type]: publicUrl }));
@@ -137,14 +137,15 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
 
         if (details.gstin) {
             try {
-                const { data: gstinExists, error } = await supabase.rpc('check_gstin_exists', { gstin_to_check: details.gstin });
-                if (error) throw error;
-                if (gstinExists) {
-                    setErrors({ gstin: 'A company with this GSTIN is already registered on another account.' });
-                    return;
+                if (isCatalystConfigured) {
+                    const results = await executeZCQLQuery(`SELECT ROWID FROM companies WHERE details LIKE '%${details.gstin}%'`);
+                    if (results && results.length > 0) {
+                        setErrors({ gstin: 'A company with this GSTIN is already registered on another account.' });
+                        return;
+                    }
                 }
             } catch (err) {
-                console.error('Error validating GSTIN check:', err);
+                console.warn('Notice: GSTIN uniqueness check skipped (offline or fallback):', err);
             }
         }
 
