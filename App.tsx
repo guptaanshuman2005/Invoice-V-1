@@ -20,7 +20,7 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import FeedbackModal from './components/FeedbackModal';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { useSupabaseCompanies } from './hooks/useSupabaseCompanies';
+import { useCatalystCompanies } from './hooks/useCatalystCompanies';
 import type { Company, Client, Item, Invoice, Transporter, User, CompanyDetails, BankAccount, RecurringInvoice, RecurringFrequency, DraftInvoice, InvoiceItem, StockHistoryEntry, Quotation, Expense, InvoicePayment } from './types';
 import Modal from './components/common/Modal';
 import Input from './components/common/Input';
@@ -76,7 +76,7 @@ const App: React.FC = () => {
   const [inventoryFilter, setInventoryFilter] = useState<'all' | 'in' | 'low' | 'out'>('all');
   const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [companies, setCompanies, isLoadingCompanies] = useSupabaseCompanies(currentUser?.id);
+  const [companies, setCompanies, isLoadingCompanies] = useCatalystCompanies(currentUser?.id);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [activeCompanyId, setActiveCompanyId] = useState<string | null>(() => {
     return sessionStorage.getItem('activeCompanyId');
