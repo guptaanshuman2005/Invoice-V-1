@@ -30,3 +30,18 @@ Before modifying shared state, utility functions, data types, or core component 
 3. **Acyclic Dependency Architecture**: Maintain clean one-directional imports (`types` -> `utils` -> `components` -> `App.tsx`) and eliminate circular dependencies.
 4. **Context & Token Conservation**: Consult the module dependency structure and relevant sub-graph before performing edits to avoid blind grep search cycles.
 
+## Cloudflare Pages & Edge Routing Protocol (Mandatory)
+1. **Edge Rewrites & Security Headers**: Whenever routing or static assets change, verify `public/_redirects` (SPA rewrite `/* /index.html 200`) and `public/_headers` (security and cache headers).
+2. **Wrangler Configuration**: Maintain `wrangler.jsonc` compatibility with output directory `dist` and Node.js compatibility flags.
+3. **Dual Deployment Parity**: Maintain deployment parity during the migration phase (`npm run build` / `npm run build:cloudflare` verified on both Vercel and Cloudflare Pages).
+
+## Zoho Catalyst Infrastructure Protocol (Mandatory)
+1. **Schema Synchronization**: All schema modifications across tables, columns, or data types must be synchronized with `catalyst_schema.json` before applying to Catalyst Data Store.
+2. **Data Store Type Guardrails**:
+   - Primary keys are always auto-generated `ROWID` (Catalyst standard).
+   - Foreign keys store parent `ROWID` as `bigint`.
+   - In ZCQL results, booleans may return as string representations (`"true"` / `"false"`); always parse safely using `val === true || val === 'true'`.
+   - Maintain exact double/currency precision for all GST tax splits (`cgst`, `sgst`, `igst`, `total`).
+3. **MCP-First Infrastructure Operations**: Always utilize `CatalystbyZoho_*` tools first for table creation, schema inspection, and storage management before manual console actions.
+4. **Zero-Downtime Storage Fallback**: Maintain seamless fallback in `catalystStorage.ts` so local development and live previews remain 100% operational during cloud transition.
+
