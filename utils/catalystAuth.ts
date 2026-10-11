@@ -192,8 +192,14 @@ export const CATALYST_HOSTED_LOGIN_URL = 'https://invoicepro-60091577554.develop
 
 /**
  * Redirect to Zoho Catalyst Hosted Login page
+ * Note: Uses service_url query param for external Slate/SPA origins.
+ * Using redirect_url triggers PATTERN_NOT_MATCHED on the Catalyst server.
  */
 export function redirectToHostedLogin(): void {
-  const redirectUri = encodeURIComponent(window.location.origin + '/');
-  window.location.href = `${CATALYST_HOSTED_LOGIN_URL}?redirect_url=${redirectUri}`;
+  let origin = window.location.origin;
+  if (origin.includes('localhost')) {
+    origin = origin.replace('localhost', '127.0.0.1');
+  }
+  const serviceUrl = encodeURIComponent(`${origin}/`);
+  window.location.href = `${CATALYST_HOSTED_LOGIN_URL}?service_url=${serviceUrl}`;
 }
