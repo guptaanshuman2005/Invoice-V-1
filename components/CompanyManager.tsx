@@ -208,9 +208,9 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                             </div>
                             <p className="text-xs font-medium text-slate-400">Trusted by 2,000+ Businesses</p>
                         </div>
-                        <button onClick={onLogout} className="text-sm text-slate-400 hover:text-white flex items-center gap-2 transition-colors">
+                        <button onClick={onLogout} className="text-sm font-semibold text-slate-400 hover:text-white flex items-center gap-2 transition-colors">
                             <ArrowLeft className="w-4 h-4" strokeWidth={2} />
-                            Back to Login
+                            Sign Out & Back to Home
                         </button>
                     </div>
                 </div>
