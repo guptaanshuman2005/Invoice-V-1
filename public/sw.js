@@ -1,33 +1,19 @@
-// InvoicePro Service Worker
-const CACHE_NAME = 'invoicepro-cache-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.svg',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-maskable-512.png'
-];
+// InvoicePro Service Worker - Auto-purging Network-First Strategy
+const CACHE_NAME = 'invoicepro-cache-v3';
 
-// Install: pre-cache shell assets
+// Install: immediately activate without waiting
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch((err) => {
-        console.warn('[SW] Pre-caching warning:', err);
-      });
-    }).then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
-// Activate: clean up older caches and claim clients
+// Activate: delete all old caches to guarantee users get fresh bundles
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('[SW] Deleting stale cache:', key);
             return caches.delete(key);
           }
         })
@@ -36,72 +22,39 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: Network-first for navigation, Cache-first for static assets
+// Fetch: Network-first for everything to ensure continuous fresh deployments
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Skip non-GET requests or external API calls (Zoho Catalyst, CDNs)
+  // Skip non-GET requests or external API calls
   if (req.method !== 'GET') return;
-  if (url.origin.includes('catalystserverless.in') || url.origin.includes('zohocdn.com') || url.origin.includes('zohomcp.in') || url.origin.includes('supabase.co')) return;
-
-  // 1. Navigation requests (HTML pages) -> Network first, fallback to cached /index.html
-  if (req.mode === 'navigate') {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
-          }
-          return res;
-        })
-        .catch(async () => {
-          const cached = await caches.match(req);
-          if (cached) return cached;
-          return caches.match('/index.html');
-        })
-    );
-    return;
-  }
-
-  // 2. Static assets (JS, CSS, fonts, images) -> Cache first, fallback to network
   if (
-    url.pathname.startsWith('/assets/') ||
-    url.pathname.startsWith('/icons/') ||
-    url.pathname.endsWith('.css') ||
-    url.pathname.endsWith('.js') ||
-    url.pathname.endsWith('.svg') ||
-    url.pathname.endsWith('.png') ||
-    url.hostname.includes('fonts.googleapis.com') ||
-    url.hostname.includes('fonts.gstatic.com')
+    url.origin.includes('catalystserverless.in') || 
+    url.origin.includes('zohocdn.com') || 
+    url.origin.includes('zohomcp.in') || 
+    url.origin.includes('supabase.co')
   ) {
-    event.respondWith(
-      caches.match(req).then((cachedResponse) => {
-        if (cachedResponse) {
-          // Revalidate in background
-          fetch(req).then((networkRes) => {
-            if (networkRes && networkRes.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => cache.put(req, networkRes));
-            }
-          }).catch(() => {});
-          return cachedResponse;
-        }
-
-        return fetch(req).then((res) => {
-          if (res && res.status === 200) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
-          }
-          return res;
-        });
-      })
-    );
     return;
   }
 
-  // Default: Network with cache fallback
+  // Network first with fallback to cache if offline
   event.respondWith(
-    fetch(req).catch(() => caches.match(req))
+    fetch(req)
+      .then((networkRes) => {
+        if (networkRes && networkRes.status === 200 && req.method === 'GET') {
+          const clone = networkRes.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+        }
+        return networkRes;
+      })
+      .catch(async () => {
+        const cached = await caches.match(req);
+        if (cached) return cached;
+        if (req.mode === 'navigate') {
+          return caches.match('/index.html');
+        }
+        return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+      })
   );
 });
