@@ -30,7 +30,7 @@ import Expenses from './components/Expenses';
 import Quotations from './components/Quotations';
 import GstReports from './components/GstReports';
 import CompanyLogo from './components/common/CompanyLogo';
-import { getCatalystSession, onCatalystAuthStateChange, signOutCatalyst, redirectToHostedLogin } from './utils/catalystAuth';
+import { getCatalystSession, onCatalystAuthStateChange, signOutCatalyst } from './utils/catalystAuth';
 import { trackPageView, trackEvent } from './utils/analytics';
 import { toast } from 'sonner';
 
@@ -94,9 +94,10 @@ const App: React.FC = () => {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   
-  // Profile State
+  // Profile & Auth Modal State
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [authInitialView, setAuthInitialView] = useState<'login' | 'signup'>('login');
 
   // Lifted State for New Invoice Draft
   const [draftInvoice, setDraftInvoice] = useState<DraftInvoice>(emptyDraftInvoice);
@@ -1047,14 +1048,24 @@ const App: React.FC = () => {
           handleSetActiveView('Dashboard');
         }}
         onBackToLanding={() => handleSetActiveView('Dashboard')}
-        onGetStarted={() => redirectToHostedLogin()}
+        onGetStarted={() => {
+          setAuthInitialView('signup');
+          setShowAuth(true);
+        }}
       />;
     }
     if (showAuth) {
-      return <Auth onBack={() => setShowAuth(false)} />;
+      return <Auth initialView={authInitialView} onBack={() => setShowAuth(false)} />;
     }
     return <Landing 
-      onGetStarted={() => redirectToHostedLogin()} 
+      onGetStarted={() => {
+        setAuthInitialView('signup');
+        setShowAuth(true);
+      }} 
+      onSignIn={() => {
+        setAuthInitialView('login');
+        setShowAuth(true);
+      }}
       onExploreDemo={() => handleSetActiveView('Demo')}
       onLaunchSandbox={() => {
         setIsDemoMode(true);
@@ -1124,7 +1135,7 @@ const App: React.FC = () => {
       case 'Transporters': return <Transporters transporters={activeCompany.transporters} setTransporters={setTransporters} />;
       case 'Settings': return <Settings activeCompany={activeCompany} updateCompany={handleUpdateCompany} />;
       case 'PrivacyPolicy': return <PrivacyPolicy onBack={() => handleSetActiveView('Dashboard')} />;
-      case 'Demo': return <DemoPage onLaunchSandbox={() => handleSetActiveView('Dashboard')} onBackToLanding={handleExitDemo} onGetStarted={() => { handleExitDemo(); redirectToHostedLogin(); }} />;
+      case 'Demo': return <DemoPage onLaunchSandbox={() => handleSetActiveView('Dashboard')} onBackToLanding={handleExitDemo} onGetStarted={() => { handleExitDemo(); setAuthInitialView('signup'); setShowAuth(true); }} />;
       case 'TermsOfService': return <TermsOfService onBack={() => handleSetActiveView('Dashboard')} />;
       default: return (
         <Dashboard 

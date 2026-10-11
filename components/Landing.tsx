@@ -3,6 +3,7 @@ import { Zap, CheckCircle2, ArrowRight, Shield, BarChart3, Mail, CreditCard, Cpu
 
 interface LandingProps {
   onGetStarted: () => void;
+  onSignIn?: () => void;
   onExploreDemo?: () => void;
   onLaunchSandbox?: () => void;
   onNavigateToPrivacy?: () => void;
@@ -11,6 +12,7 @@ interface LandingProps {
 
 const Landing: React.FC<LandingProps> = ({ 
   onGetStarted, 
+  onSignIn,
   onExploreDemo, 
   onLaunchSandbox, 
   onNavigateToPrivacy, 
@@ -49,7 +51,7 @@ const Landing: React.FC<LandingProps> = ({
             Pricing
           </button>
           <button 
-            onClick={onGetStarted}
+            onClick={onSignIn || onGetStarted}
             className="text-xs uppercase tracking-wider font-extrabold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             Sign In
