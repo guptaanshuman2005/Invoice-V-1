@@ -26,7 +26,7 @@ Before modifying shared state, utility functions, data types, or core component 
    - **Input Forms**: `NewInvoice.tsx`, `RecordPaymentModal.tsx`, `CompanyManager.tsx`
    - **UI Views & Tables**: `Invoices.tsx`, `Quotations.tsx`, `Dashboard.tsx`, `Clients.tsx`
    - **Document Generation**: `InvoicePDF.tsx` (all 5 PDF templates) & HTML print views
-   - **Storage & Exporters**: `csvExport.ts`, `storage.ts`, `supabaseStorage.ts`
+   - **Storage & Exporters**: `csvExport.ts`, `supabaseStorage.ts`, `catalystStorage.ts`
 3. **Acyclic Dependency Architecture**: Maintain clean one-directional imports (`types` -> `utils` -> `components` -> `App.tsx`) and eliminate circular dependencies.
 4. **Context & Token Conservation**: Consult the module dependency structure and relevant sub-graph before performing edits to avoid blind grep search cycles.
 

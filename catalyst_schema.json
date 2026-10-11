@@ -1,0 +1,188 @@
+{
+  "version": "1.0",
+  "platform": "Zoho Catalyst",
+  "project": "InvoicePro",
+  "description": "Catalyst Data Store schema definition for InvoicePro Indian GST billing & accounting platform",
+  "tables": [
+    {
+      "tableName": "companies",
+      "description": "Multi-tenant company accounts",
+      "columns": [
+        { "columnName": "id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true, "isUnique": true },
+        { "columnName": "owner_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "details", "dataType": "VarChar", "maxLength": 8000, "description": "JSON serialized company profile, GSTIN, bank, logo and branding" },
+        { "columnName": "subscription", "dataType": "VarChar", "maxLength": 1000, "description": "JSON plan status, tier, billing frequency" },
+        { "columnName": "created_at", "dataType": "DateTime" },
+        { "columnName": "updated_at", "dataType": "DateTime" }
+      ]
+    },
+    {
+      "tableName": "clients",
+      "description": "Buyer directory and client master",
+      "columns": [
+        { "columnName": "id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true, "isUnique": true },
+        { "columnName": "company_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "name", "dataType": "VarChar", "maxLength": 255, "isMandatory": true },
+        { "columnName": "gstin", "dataType": "VarChar", "maxLength": 20 },
+        { "columnName": "email", "dataType": "VarChar", "maxLength": 120 },
+        { "columnName": "phone", "dataType": "VarChar", "maxLength": 25 },
+        { "columnName": "address", "dataType": "VarChar", "maxLength": 500 },
+        { "columnName": "city", "dataType": "VarChar", "maxLength": 100 },
+        { "columnName": "state", "dataType": "VarChar", "maxLength": 100 },
+        { "columnName": "zip", "dataType": "VarChar", "maxLength": 10 },
+        { "columnName": "shipping_address", "dataType": "VarChar", "maxLength": 500 },
+        { "columnName": "shipping_city", "dataType": "VarChar", "maxLength": 100 },
+        { "columnName": "shipping_state", "dataType": "VarChar", "maxLength": 100 },
+        { "columnName": "shipping_zip", "dataType": "VarChar", "maxLength": 10 },
+        { "columnName": "tags", "dataType": "VarChar", "maxLength": 500 }
+      ]
+    },
+    {
+      "tableName": "items",
+      "description": "Goods & services inventory master",
+      "columns": [
+        { "columnName": "id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true, "isUnique": true },
+        { "columnName": "company_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "name", "dataType": "VarChar", "maxLength": 255, "isMandatory": true },
+        { "columnName": "hsn", "dataType": "VarChar", "maxLength": 20 },
+        { "columnName": "price", "dataType": "Double", "isMandatory": true },
+        { "columnName": "gst_rate", "dataType": "Double", "isMandatory": true },
+        { "columnName": "unit", "dataType": "VarChar", "maxLength": 20 },
+        { "columnName": "quantity_in_stock", "dataType": "Double", "defaultValue": 0 }
+      ]
+    },
+    {
+      "tableName": "bank_accounts",
+      "description": "Company bank accounts for payment deposits",
+      "columns": [
+        { "columnName": "id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true, "isUnique": true },
+        { "columnName": "company_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "bank_name", "dataType": "VarChar", "maxLength": 150, "isMandatory": true },
+        { "columnName": "account_number", "dataType": "VarChar", "maxLength": 50, "isMandatory": true },
+        { "columnName": "ifsc", "dataType": "VarChar", "maxLength": 20, "isMandatory": true },
+        { "columnName": "is_default", "dataType": "Boolean", "defaultValue": false }
+      ]
+    },
+    {
+      "tableName": "transporters",
+      "description": "Logistics carriers and E-Way Bill transit partners",
+      "columns": [
+        { "columnName": "id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true, "isUnique": true },
+        { "columnName": "company_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "name", "dataType": "VarChar", "maxLength": 200, "isMandatory": true },
+        { "columnName": "gstin", "dataType": "VarChar", "maxLength": 20 }
+      ]
+    },
+    {
+      "tableName": "invoices",
+      "description": "GST Tax Invoices, Credit Notes, and Debit Notes",
+      "columns": [
+        { "columnName": "id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true, "isUnique": true },
+        { "columnName": "company_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "invoice_number", "dataType": "VarChar", "maxLength": 50, "isMandatory": true },
+        { "columnName": "client_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "issue_date", "dataType": "VarChar", "maxLength": 20, "isMandatory": true },
+        { "columnName": "due_date", "dataType": "VarChar", "maxLength": 20 },
+        { "columnName": "status", "dataType": "VarChar", "maxLength": 30, "isMandatory": true },
+        { "columnName": "document_type", "dataType": "VarChar", "maxLength": 30, "defaultValue": "invoice" },
+        { "columnName": "original_invoice_number", "dataType": "VarChar", "maxLength": 50 },
+        { "columnName": "original_invoice_date", "dataType": "VarChar", "maxLength": 20 },
+        { "columnName": "reason", "dataType": "VarChar", "maxLength": 255 },
+        { "columnName": "subtotal", "dataType": "Double", "defaultValue": 0 },
+        { "columnName": "tax_total", "dataType": "Double", "defaultValue": 0 },
+        { "columnName": "grand_total", "dataType": "Double", "defaultValue": 0 },
+        { "columnName": "notes", "dataType": "VarChar", "maxLength": 1000 },
+        { "columnName": "terms", "dataType": "VarChar", "maxLength": 1000 },
+        { "columnName": "payments", "dataType": "VarChar", "maxLength": 4000, "description": "JSON array of payment transactions" },
+        { "columnName": "transporter_id", "dataType": "VarChar", "maxLength": 64 },
+        { "columnName": "vehicle_number", "dataType": "VarChar", "maxLength": 30 },
+        { "columnName": "eway_bill_number", "dataType": "VarChar", "maxLength": 50 }
+      ]
+    },
+    {
+      "tableName": "invoice_items",
+      "description": "Itemized line items for invoices",
+      "columns": [
+        { "columnName": "id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true, "isUnique": true },
+        { "columnName": "invoice_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "item_id", "dataType": "VarChar", "maxLength": 64 },
+        { "columnName": "name", "dataType": "VarChar", "maxLength": 255, "isMandatory": true },
+        { "columnName": "hsn", "dataType": "VarChar", "maxLength": 20 },
+        { "columnName": "quantity", "dataType": "Double", "isMandatory": true },
+        { "columnName": "unit", "dataType": "VarChar", "maxLength": 20 },
+        { "columnName": "price", "dataType": "Double", "isMandatory": true },
+        { "columnName": "gst_rate", "dataType": "Double", "isMandatory": true },
+        { "columnName": "total", "dataType": "Double", "isMandatory": true }
+      ]
+    },
+    {
+      "tableName": "quotations",
+      "description": "Customer estimates and formal quotations",
+      "columns": [
+        { "columnName": "id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true, "isUnique": true },
+        { "columnName": "company_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "quotation_number", "dataType": "VarChar", "maxLength": 50, "isMandatory": true },
+        { "columnName": "client_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "issue_date", "dataType": "VarChar", "maxLength": 20, "isMandatory": true },
+        { "columnName": "valid_until", "dataType": "VarChar", "maxLength": 20 },
+        { "columnName": "status", "dataType": "VarChar", "maxLength": 30, "isMandatory": true },
+        { "columnName": "subtotal", "dataType": "Double", "defaultValue": 0 },
+        { "columnName": "tax_total", "dataType": "Double", "defaultValue": 0 },
+        { "columnName": "grand_total", "dataType": "Double", "defaultValue": 0 },
+        { "columnName": "notes", "dataType": "VarChar", "maxLength": 1000 },
+        { "columnName": "terms", "dataType": "VarChar", "maxLength": 1000 }
+      ]
+    },
+    {
+      "tableName": "quotation_items",
+      "description": "Line items for quotations",
+      "columns": [
+        { "columnName": "id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true, "isUnique": true },
+        { "columnName": "quotation_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "item_id", "dataType": "VarChar", "maxLength": 64 },
+        { "columnName": "name", "dataType": "VarChar", "maxLength": 255, "isMandatory": true },
+        { "columnName": "hsn", "dataType": "VarChar", "maxLength": 20 },
+        { "columnName": "quantity", "dataType": "Double", "isMandatory": true },
+        { "columnName": "unit", "dataType": "VarChar", "maxLength": 20 },
+        { "columnName": "price", "dataType": "Double", "isMandatory": true },
+        { "columnName": "gst_rate", "dataType": "Double", "isMandatory": true },
+        { "columnName": "total", "dataType": "Double", "isMandatory": true }
+      ]
+    },
+    {
+      "tableName": "expenses",
+      "description": "Operating expenditure logging for P&L tracking",
+      "columns": [
+        { "columnName": "id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true, "isUnique": true },
+        { "columnName": "company_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "category", "dataType": "VarChar", "maxLength": 50, "isMandatory": true },
+        { "columnName": "description", "dataType": "VarChar", "maxLength": 500, "isMandatory": true },
+        { "columnName": "amount", "dataType": "Double", "isMandatory": true },
+        { "columnName": "date", "dataType": "VarChar", "maxLength": 20, "isMandatory": true },
+        { "columnName": "vendor_name", "dataType": "VarChar", "maxLength": 200 },
+        { "columnName": "payment_mode", "dataType": "VarChar", "maxLength": 50 },
+        { "columnName": "notes", "dataType": "VarChar", "maxLength": 1000 }
+      ]
+    },
+    {
+      "tableName": "stock_history",
+      "description": "Warehouse inventory movement audit log",
+      "columns": [
+        { "columnName": "id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true, "isUnique": true },
+        { "columnName": "company_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "item_id", "dataType": "VarChar", "maxLength": 64, "isMandatory": true },
+        { "columnName": "item_name", "dataType": "VarChar", "maxLength": 255, "isMandatory": true },
+        { "columnName": "timestamp", "dataType": "DateTime", "isMandatory": true },
+        { "columnName": "previous_quantity", "dataType": "Double", "isMandatory": true },
+        { "columnName": "new_quantity", "dataType": "Double", "isMandatory": true },
+        { "columnName": "action", "dataType": "VarChar", "maxLength": 100, "isMandatory": true }
+      ]
+    }
+  ],
+  "fileStoreBuckets": [
+    {
+      "bucketName": "company-assets",
+      "description": "Storage for company logos, digital signatures, and bill attachments"
+    }
+  ]
+}
