@@ -27,6 +27,29 @@ function notifyListeners(user: CatalystUser | null) {
  * Get current authenticated user session
  */
 export async function getCatalystSession(): Promise<CatalystUser | null> {
+  // Check URL params if redirected back from Hosted Login
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlEmail = urlParams.get('email') || urlParams.get('user_email') || urlParams.get('email_id');
+    const urlUserId = urlParams.get('user_id') || urlParams.get('id') || urlParams.get('uid');
+    const urlName = urlParams.get('name') || urlParams.get('first_name');
+    if (urlEmail || urlUserId) {
+      const email = urlEmail || `user_${urlUserId}@catalyst.zoho`;
+      const user: CatalystUser = {
+        id: urlUserId || `usr_${Date.now()}`,
+        email: email,
+        name: urlName || email.split('@')[0],
+        passwordHash: ''
+      };
+      sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+      // Clean query parameters from URL without refreshing
+      window.history.replaceState({}, document.title, window.location.pathname);
+      notifyListeners(user);
+      return user;
+    }
+  } catch {}
+
   // 1. Try Zoho Catalyst Web SDK
   try {
     const catalystSdk = (window as any).catalyst;
@@ -165,10 +188,12 @@ export function onCatalystAuthStateChange(callback: AuthListener): () => void {
   };
 }
 
+export const CATALYST_HOSTED_LOGIN_URL = 'https://invoicepro-60091577554.development.catalystserverless.in/__catalyst/auth/login';
+
 /**
  * Redirect to Zoho Catalyst Hosted Login page
  */
 export function redirectToHostedLogin(): void {
   const redirectUri = encodeURIComponent(window.location.origin + '/');
-  window.location.href = `${catalystConfig.projectDomain}/baas/v1/project/${catalystConfig.projectId}/auth/login?redirect_url=${redirectUri}`;
+  window.location.href = `${CATALYST_HOSTED_LOGIN_URL}?redirect_url=${redirectUri}`;
 }

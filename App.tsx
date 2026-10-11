@@ -30,7 +30,7 @@ import Expenses from './components/Expenses';
 import Quotations from './components/Quotations';
 import GstReports from './components/GstReports';
 import CompanyLogo from './components/common/CompanyLogo';
-import { getCatalystSession, onCatalystAuthStateChange, signOutCatalyst } from './utils/catalystAuth';
+import { getCatalystSession, onCatalystAuthStateChange, signOutCatalyst, redirectToHostedLogin } from './utils/catalystAuth';
 import { trackPageView, trackEvent } from './utils/analytics';
 import { toast } from 'sonner';
 
@@ -1047,14 +1047,14 @@ const App: React.FC = () => {
           handleSetActiveView('Dashboard');
         }}
         onBackToLanding={() => handleSetActiveView('Dashboard')}
-        onGetStarted={() => setShowAuth(true)}
+        onGetStarted={() => redirectToHostedLogin()}
       />;
     }
     if (showAuth) {
       return <Auth onBack={() => setShowAuth(false)} />;
     }
     return <Landing 
-      onGetStarted={() => setShowAuth(true)} 
+      onGetStarted={() => redirectToHostedLogin()} 
       onExploreDemo={() => handleSetActiveView('Demo')}
       onLaunchSandbox={() => {
         setIsDemoMode(true);
@@ -1124,7 +1124,7 @@ const App: React.FC = () => {
       case 'Transporters': return <Transporters transporters={activeCompany.transporters} setTransporters={setTransporters} />;
       case 'Settings': return <Settings activeCompany={activeCompany} updateCompany={handleUpdateCompany} />;
       case 'PrivacyPolicy': return <PrivacyPolicy onBack={() => handleSetActiveView('Dashboard')} />;
-      case 'Demo': return <DemoPage onLaunchSandbox={() => handleSetActiveView('Dashboard')} onBackToLanding={handleExitDemo} onGetStarted={() => { handleExitDemo(); setShowAuth(true); }} />;
+      case 'Demo': return <DemoPage onLaunchSandbox={() => handleSetActiveView('Dashboard')} onBackToLanding={handleExitDemo} onGetStarted={() => { handleExitDemo(); redirectToHostedLogin(); }} />;
       case 'TermsOfService': return <TermsOfService onBack={() => handleSetActiveView('Dashboard')} />;
       default: return (
         <Dashboard 
