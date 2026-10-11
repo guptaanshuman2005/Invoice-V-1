@@ -21,6 +21,20 @@ export const catalystConfig: CatalystConfig = {
   environment: (import.meta.env.MODE === 'production' ? 'production' : 'development')
 };
 
+export const CATALYST_TABLE_IDS = {
+  companies: '76189000000025001',
+  clients: '76189000000013077',
+  items: '76189000000022007',
+  invoices: '76189000000023003',
+  invoice_items: '76189000000026001',
+  quotations: '76189000000027001',
+  quotation_items: '76189000000028029',
+  expenses: '76189000000025374',
+  bank_accounts: '76189000000025733',
+  transporters: '76189000000027360',
+  stock_history: '76189000000019005',
+} as const;
+
 /**
  * Execute ZCQL (Zoho Catalyst Query Language) query via REST
  */
