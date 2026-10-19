@@ -41,9 +41,7 @@ declare global {
   }
 }
 
-export const isCashfreeConfigured = Boolean(
-  import.meta.env.VITE_CASHFREE_APP_ID && import.meta.env.VITE_CASHFREE_SECRET_KEY
-);
+export const isCashfreeConfigured = true;
 
 export const getCashfreeMode = (): 'sandbox' | 'production' => {
   return (import.meta.env.VITE_CASHFREE_ENV === 'production') ? 'production' : 'sandbox';
@@ -52,14 +50,32 @@ export const getCashfreeMode = (): 'sandbox' | 'production' => {
 // Cached singleton instance to adhere to Cashfree SDK v3 initialization rules
 let cachedCashfreeInstance: any = null;
 
-export function getCashfreeInstance(): any {
+export async function getCashfreeInstance(): Promise<any> {
   if (cachedCashfreeInstance) return cachedCashfreeInstance;
-  if (typeof window !== 'undefined' && typeof window.Cashfree === 'function') {
+  if (typeof window === 'undefined') return null;
+
+  if (typeof window.Cashfree === 'function') {
     const mode = getCashfreeMode();
     cachedCashfreeInstance = window.Cashfree({ mode });
     return cachedCashfreeInstance;
   }
-  return null;
+
+  // Poll briefly in case the script tag in index.html is still initializing
+  return new Promise((resolve) => {
+    let retries = 0;
+    const interval = setInterval(() => {
+      retries++;
+      if (typeof window.Cashfree === 'function') {
+        clearInterval(interval);
+        const mode = getCashfreeMode();
+        cachedCashfreeInstance = window.Cashfree({ mode });
+        resolve(cachedCashfreeInstance);
+      } else if (retries >= 30) {
+        clearInterval(interval);
+        resolve(null);
+      }
+    }, 100);
+  });
 }
 
 /**
@@ -127,7 +143,7 @@ export async function initiateCashfreePayment({
       const paymentSessionId = orderData.payment_session_id;
 
       if (paymentSessionId) {
-        const cashfreeInstance = getCashfreeInstance();
+        const cashfreeInstance = await getCashfreeInstance();
         if (cashfreeInstance) {
           const result = await cashfreeInstance.checkout({
             paymentSessionId,

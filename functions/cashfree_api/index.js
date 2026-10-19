@@ -1,15 +1,19 @@
 const express = require('express');
-const cors = require('cors');
 
 const app = express();
 
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Note: Catalyst Authorized Domains handles CORS automatically at the edge.
+// Do NOT add manual CORS headers here to avoid duplicate Access-Control-Allow-Origin values.
 
 app.use(express.json());
+
+// Normalize Catalyst /execute prefix if present
+app.use((req, res, next) => {
+  if (req.url.startsWith('/execute')) {
+    req.url = req.url.replace(/^\/execute/, '') || '/';
+  }
+  next();
+});
 
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || process.env.VITE_CASHFREE_APP_ID;
 const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || process.env.VITE_CASHFREE_SECRET_KEY;
@@ -82,7 +86,18 @@ app.get('/verify-order/:order_id', async (req, res) => {
 
 // Root / health check
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', service: 'cashfree_api', environment: CASHFREE_ENV });
+  res.json({
+    status: 'ok',
+    service: 'cashfree_api',
+    environment: CASHFREE_ENV,
+    appIdConfigured: Boolean(CASHFREE_APP_ID)
+  });
 });
 
-module.exports = app;
+// Export handler supporting both (req, res) and legacy (catalystApp, context, req, res) signatures
+module.exports = (param1, param2, param3, param4) => {
+  if (param3 && param4 && typeof param3.pipe === 'function') {
+    return app(param3, param4);
+  }
+  return app(param1, param2);
+};
