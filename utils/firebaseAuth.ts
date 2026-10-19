@@ -26,21 +26,28 @@ export interface AuthUser {
 
 const AUTH_STORAGE_KEY = 'invoicepro_auth_session';
 
-// Configuration from environment variables with smart development defaults
+// Helper to sanitize environment variables
+const clean = (val: string | undefined, fallback: string) => {
+  if (!val) return fallback;
+  const sanitized = val.trim().replace(/^["']|["']$/g, '').trim();
+  return sanitized || fallback;
+};
+
+// Configuration from environment variables with real project fallback
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyD-invoicepro-dev-placeholder-key",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "invoicepro-app.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "invoicepro-app",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "invoicepro-app.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "102938475612",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:102938475612:web:abcdef9876543210"
+  apiKey: clean(import.meta.env.VITE_FIREBASE_API_KEY, "AIzaSyC2YFO9JFiJOCspzyVmSbga8Z_Fe1ZDfY8"),
+  authDomain: clean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN, "invoicein-c8046.firebaseapp.com"),
+  projectId: clean(import.meta.env.VITE_FIREBASE_PROJECT_ID, "invoicein-c8046"),
+  storageBucket: clean(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, "invoicein-c8046.firebasestorage.app"),
+  messagingSenderId: clean(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, "1003608237028"),
+  appId: clean(import.meta.env.VITE_FIREBASE_APP_ID, "1:1003608237028:web:49462aa028146bdc799df1")
 };
 
 // Check if user has provided their real Firebase configuration
 export const isFirebaseConfigured = Boolean(
-  import.meta.env.VITE_FIREBASE_API_KEY && 
-  import.meta.env.VITE_FIREBASE_PROJECT_ID &&
-  !import.meta.env.VITE_FIREBASE_API_KEY.includes('placeholder')
+  firebaseConfig.apiKey && 
+  firebaseConfig.projectId &&
+  !firebaseConfig.apiKey.includes('placeholder')
 );
 
 // Initialize Firebase App
