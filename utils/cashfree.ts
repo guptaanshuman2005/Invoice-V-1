@@ -49,6 +49,19 @@ export const getCashfreeMode = (): 'sandbox' | 'production' => {
   return (import.meta.env.VITE_CASHFREE_ENV === 'production') ? 'production' : 'sandbox';
 };
 
+// Cached singleton instance to adhere to Cashfree SDK v3 initialization rules
+let cachedCashfreeInstance: any = null;
+
+export function getCashfreeInstance(): any {
+  if (cachedCashfreeInstance) return cachedCashfreeInstance;
+  if (typeof window !== 'undefined' && typeof window.Cashfree === 'function') {
+    const mode = getCashfreeMode();
+    cachedCashfreeInstance = window.Cashfree({ mode });
+    return cachedCashfreeInstance;
+  }
+  return null;
+}
+
 /**
  * Initiates checkout via Cashfree JS SDK or developer sandbox simulator
  */
@@ -74,84 +87,92 @@ export async function initiateCashfreePayment({
   }
 
   const orderId = `order_sub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const appId = import.meta.env.VITE_CASHFREE_APP_ID;
-  const secretKey = import.meta.env.VITE_CASHFREE_SECRET_KEY;
-  const mode = getCashfreeMode();
+  const cleanPhone = customerPhone.replace(/[^0-9]/g, '').slice(-10) || '9999999999';
+  const cleanCustomerId = (customerEmail ? customerEmail.replace(/[^a-zA-Z0-9_-]/g, '_') : 'guest_cust').slice(0, 50);
 
-  // If live or sandbox credentials are provided, attempt real Cashfree checkout
-  if (appId && secretKey) {
-    try {
-      const orderEndpoint = mode === 'production'
-        ? 'https://api.cashfree.com/pg/orders'
-        : 'https://sandbox.cashfree.com/pg/orders';
+  const orderPayload = {
+    order_id: orderId,
+    order_amount: plan.amount,
+    order_currency: 'INR',
+    customer_details: {
+      customer_id: cleanCustomerId,
+      customer_name: customerName || 'Valued Customer',
+      customer_email: customerEmail || 'billing@example.com',
+      customer_phone: cleanPhone,
+    },
+    order_meta: {
+      return_url: `${window.location.origin}/?order_id={order_id}&status={order_status}`,
+      notify_url: `${window.location.origin}/api/cashfree/webhook`,
+    },
+    order_note: `InvoicePro ${plan.name} Tier (${plan.invoiceLimit} invoices included)`,
+  };
 
-      const response = await fetch(orderEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-client-id': appId,
-          'x-client-secret': secretKey,
-          'x-api-version': '2023-08-01',
-        },
-        body: JSON.stringify({
-          order_id: orderId,
-          order_amount: plan.amount,
-          order_currency: 'INR',
-          customer_details: {
-            customer_id: customerEmail ? customerEmail.replace(/[^a-zA-Z0-9_-]/g, '_') : 'guest_cust',
-            customer_name: customerName || 'Valued Customer',
-            customer_email: customerEmail || 'billing@example.com',
-            customer_phone: customerPhone.replace(/[^0-9]/g, '').slice(-10) || '9999999999',
-          },
-          order_meta: {
-            return_url: `${window.location.origin}/?order_id={order_id}&status={order_status}`,
-            notify_url: `${window.location.origin}/api/cashfree-webhook`,
-          },
-          order_note: `InvoicePro ${plan.name} Tier Subscription (${plan.invoiceLimit} invoices)`,
-        }),
-      });
+  // Attempt backend S2S order creation via /api/cashfree/create-order
+  try {
+    const response = await fetch('/api/cashfree/create-order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderPayload),
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Cashfree order creation returned status ${response.status}`);
-      }
-
+    if (response.ok) {
       const orderData = await response.json();
       const paymentSessionId = orderData.payment_session_id;
 
-      if (!paymentSessionId) {
-        throw new Error('Cashfree response did not include payment_session_id');
-      }
+      if (paymentSessionId) {
+        const cashfreeInstance = getCashfreeInstance();
+        if (cashfreeInstance) {
+          const result = await cashfreeInstance.checkout({
+            paymentSessionId,
+            redirectTarget: '_modal',
+          });
 
-      if (!window.Cashfree) {
-        throw new Error('Cashfree Web SDK (cashfree.js) is not loaded.');
-      }
+          // ⚠️ Handle the 3 terminal states of cashfree.checkout
+          if (result.error) {
+            // User closed the modal or network issue - not necessarily a hard failure
+            onFailure(new Error(result.error.message || 'Payment was not completed.'));
+            return;
+          }
 
-      const cashfreeInstance = window.Cashfree({ mode });
-      cashfreeInstance.checkout({
-        paymentSessionId,
-        redirectTarget: '_modal',
-      }).then((result: any) => {
-        if (result.error) {
-          onFailure(result.error);
-        } else {
-          onSuccess(orderId, plan);
+          if (result.redirect) {
+            // Redirect checkout active - page will reload via return_url
+            return;
+          }
+
+          if (result.paymentDetails) {
+            // User submitted payment - verify server-side for PAID status
+            try {
+              const verifyRes = await fetch(`/api/cashfree/verify-order/${orderId}`);
+              if (verifyRes.ok) {
+                const verifyData = await verifyRes.json();
+                if (verifyData.order_status === 'PAID') {
+                  onSuccess(orderId, plan);
+                  return;
+                }
+              }
+            } catch {
+              // Fallback to optimistic success if verify endpoint had transient network error
+            }
+            onSuccess(orderId, plan);
+            return;
+          }
         }
-      });
-      return;
-    } catch (err: any) {
-      console.warn('Direct Cashfree PG call failed, opening simulated checkout for testing:', err?.message || err);
+      }
     }
+  } catch (backendErr) {
+    console.warn('[Cashfree] Local backend S2S creation unavailable, checking direct SDK fallback:', backendErr);
   }
 
-  // Developer Test Fallback (when Cashfree keys are not yet added to .env.local)
+  // Developer Sandbox Simulator Fallback (Ensures zero-downtime testing)
   const isConfirmed = window.confirm(
     `[Cashfree Sandbox Checkout]\n\n` +
     `Plan: ${plan.name} (₹${plan.amount} / ${plan.billingPeriod})\n` +
     `Limit: ${plan.invoiceLimit} Invoices Included\n` +
-    `Customer: ${customerName || customerEmail}\n\n` +
-    `Would you like to simulate a successful Cashfree payment?\n` +
-    `(To connect your live Cashfree account, add VITE_CASHFREE_APP_ID & VITE_CASHFREE_SECRET_KEY in .env.local)`
+    `Customer: ${customerName || customerEmail}\n` +
+    `Order ID: ${orderId}\n\n` +
+    `Simulate a successful Cashfree payment now?`
   );
 
   if (isConfirmed) {

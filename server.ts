@@ -45,9 +45,111 @@ async function startServer() {
   // Apply rate limiting to all /api routes
   app.use("/api/", apiLimiter);
 
+  // Cashfree PG Configuration
+  const CASHFREE_APP_ID = process.env.VITE_CASHFREE_APP_ID || process.env.CASHFREE_APP_ID;
+  const CASHFREE_SECRET_KEY = process.env.VITE_CASHFREE_SECRET_KEY || process.env.CASHFREE_SECRET_KEY;
+  const CASHFREE_ENV = (process.env.VITE_CASHFREE_ENV || process.env.CASHFREE_ENV) === 'production' ? 'production' : 'sandbox';
+  const CASHFREE_BASE_URL = CASHFREE_ENV === 'production' ? 'https://api.cashfree.com/pg' : 'https://sandbox.cashfree.com/pg';
+
+  // Cashfree: Create Order (S2S with 2026-01-01 API)
+  app.post("/api/cashfree/create-order", async (req, res) => {
+    try {
+      const { order_id, order_amount, customer_details, order_note } = req.body;
+      if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+        return res.status(500).json({ error: "Cashfree credentials are not configured on server" });
+      }
+
+      const payload = {
+        order_id: order_id || `order_sub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        order_amount: Number(order_amount),
+        order_currency: "INR",
+        customer_details: {
+          customer_id: customer_details?.customer_id || "cust_guest",
+          customer_name: customer_details?.customer_name || "Valued Customer",
+          customer_email: customer_details?.customer_email || "customer@example.com",
+          customer_phone: customer_details?.customer_phone || "9999999999",
+        },
+        order_meta: {
+          return_url: `${req.headers.origin || 'http://localhost:3000'}/?order_id={order_id}&status={order_status}`,
+          notify_url: `${req.headers.origin || 'http://localhost:3000'}/api/cashfree/webhook`,
+        },
+        order_note: order_note || "InvoicePro Plan Subscription",
+      };
+
+      const cfRes = await fetch(`${CASHFREE_BASE_URL}/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-version": "2026-01-01",
+          "x-client-id": CASHFREE_APP_ID,
+          "x-client-secret": CASHFREE_SECRET_KEY,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await cfRes.json();
+      if (!cfRes.ok) {
+        return res.status(cfRes.status).json(data);
+      }
+
+      return res.json(data);
+    } catch (err: any) {
+      console.error("[Cashfree Create Order Error]", err);
+      return res.status(500).json({ error: err.message || "Failed to create Cashfree order" });
+    }
+  });
+
+  // Cashfree: Verify Order Status
+  app.get("/api/cashfree/verify-order/:order_id", async (req, res) => {
+    try {
+      const { order_id } = req.params;
+      if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+        return res.status(500).json({ error: "Cashfree credentials are not configured on server" });
+      }
+
+      const cfRes = await fetch(`${CASHFREE_BASE_URL}/orders/${order_id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-version": "2026-01-01",
+          "x-client-id": CASHFREE_APP_ID,
+          "x-client-secret": CASHFREE_SECRET_KEY,
+        },
+      });
+
+      const data = await cfRes.json();
+      if (!cfRes.ok) {
+        return res.status(cfRes.status).json(data);
+      }
+
+      return res.json(data);
+    } catch (err: any) {
+      console.error("[Cashfree Verify Order Error]", err);
+      return res.status(500).json({ error: err.message || "Failed to verify Cashfree order" });
+    }
+  });
+
+  // Cashfree: Webhook Receiver
+  app.post("/api/cashfree/webhook", async (req, res) => {
+    try {
+      const webhookData = req.body;
+      console.log("[Cashfree Webhook]", webhookData?.type, webhookData?.data?.order?.order_id);
+      return res.json({ status: "ok" });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
   // API health check route
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", mode: process.env.NODE_ENV || "development" });
+    res.json({
+      status: "ok",
+      mode: process.env.NODE_ENV || "development",
+      cashfree: {
+        configured: Boolean(CASHFREE_APP_ID && CASHFREE_SECRET_KEY),
+        environment: CASHFREE_ENV,
+      }
+    });
   });
 
   // Vite middleware for development
