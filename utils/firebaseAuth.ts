@@ -33,25 +33,30 @@ const clean = (val: string | undefined, fallback: string) => {
   return sanitized || fallback;
 };
 
-// Configuration from environment variables with real project fallback
+// Configuration strictly read from environment variables
 const firebaseConfig = {
-  apiKey: clean(import.meta.env.VITE_FIREBASE_API_KEY, "AIzaSyC2YFO9JFiJOCspzyVmSbga8Z_Fe1ZDfY8"),
-  authDomain: clean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN, "invoicein-c8046.firebaseapp.com"),
-  projectId: clean(import.meta.env.VITE_FIREBASE_PROJECT_ID, "invoicein-c8046"),
-  storageBucket: clean(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, "invoicein-c8046.firebasestorage.app"),
-  messagingSenderId: clean(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, "1003608237028"),
-  appId: clean(import.meta.env.VITE_FIREBASE_APP_ID, "1:1003608237028:web:49462aa028146bdc799df1")
+  apiKey: clean(import.meta.env.VITE_FIREBASE_API_KEY, ""),
+  authDomain: clean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN, ""),
+  projectId: clean(import.meta.env.VITE_FIREBASE_PROJECT_ID, ""),
+  storageBucket: clean(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, ""),
+  messagingSenderId: clean(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, ""),
+  appId: clean(import.meta.env.VITE_FIREBASE_APP_ID, "")
 };
 
-// Check if user has provided their real Firebase configuration
+// Check if Firebase configuration is provided via environment variables
 export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey && 
-  firebaseConfig.projectId &&
-  !firebaseConfig.apiKey.includes('placeholder')
+  firebaseConfig.projectId
 );
 
-// Initialize Firebase App
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+// Safe initialization
+const app = getApps().length > 0 
+  ? getApp() 
+  : initializeApp(isFirebaseConfigured ? firebaseConfig : {
+      apiKey: "AIzaSy_dev_placeholder_key",
+      authDomain: "dev.firebaseapp.com",
+      projectId: "dev-app"
+    });
 export const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
