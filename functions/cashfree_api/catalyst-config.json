@@ -1,0 +1,6 @@
+{
+  "name": "cashfree_api",
+  "type": "advancedio",
+  "stack": "node18",
+  "main": "index.js"
+}

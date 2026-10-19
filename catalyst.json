@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "folder_path": "functions",
+    "targets": [
+      "cashfree_api"
+    ]
+  }
+}

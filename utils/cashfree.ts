@@ -107,9 +107,14 @@ export async function initiateCashfreePayment({
     order_note: `InvoicePro ${plan.name} Tier (${plan.invoiceLimit} invoices included)`,
   };
 
-  // Attempt backend S2S order creation via /api/cashfree/create-order
+  const CATALYST_FUNCTION_URL = 'https://invoicepro-60091577554.development.catalystserverless.in/server/cashfree_api/execute';
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const createOrderUrl = isLocal ? '/api/cashfree/create-order' : `${CATALYST_FUNCTION_URL}/create-order`;
+  const verifyOrderBaseUrl = isLocal ? '/api/cashfree/verify-order' : `${CATALYST_FUNCTION_URL}/verify-order`;
+
+  // Attempt backend S2S order creation
   try {
-    const response = await fetch('/api/cashfree/create-order', {
+    const response = await fetch(createOrderUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -144,7 +149,7 @@ export async function initiateCashfreePayment({
           if (result.paymentDetails) {
             // User submitted payment - verify server-side for PAID status
             try {
-              const verifyRes = await fetch(`/api/cashfree/verify-order/${orderId}`);
+              const verifyRes = await fetch(`${verifyOrderBaseUrl}/${orderId}`);
               if (verifyRes.ok) {
                 const verifyData = await verifyRes.json();
                 if (verifyData.order_status === 'PAID') {
@@ -162,7 +167,7 @@ export async function initiateCashfreePayment({
       }
     }
   } catch (backendErr) {
-    console.warn('[Cashfree] Local backend S2S creation unavailable, checking direct SDK fallback:', backendErr);
+    console.warn('[Cashfree] Backend S2S creation unavailable, falling back:', backendErr);
   }
 
   // Developer Sandbox Simulator Fallback (Ensures zero-downtime testing)
