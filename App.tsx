@@ -30,7 +30,7 @@ import Expenses from './components/Expenses';
 import Quotations from './components/Quotations';
 import GstReports from './components/GstReports';
 import CompanyLogo from './components/common/CompanyLogo';
-import { getCatalystSession, onCatalystAuthStateChange, signOutCatalyst } from './utils/catalystAuth';
+import { getFirebaseSession, onFirebaseAuthStateChange, signOutFirebase } from './utils/firebaseAuth';
 import { trackPageView, trackEvent } from './utils/analytics';
 import { toast } from 'sonner';
 
@@ -233,16 +233,16 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    getCatalystSession().then(user => {
-      setCurrentUser(user);
+    getFirebaseSession().then(user => {
+      setCurrentUser(user as any);
       setIsAuthReady(true);
     }).catch(err => {
       console.error("Error getting session:", err);
       setIsAuthReady(true);
     });
 
-    const unsubscribe = onCatalystAuthStateChange(user => {
-      setCurrentUser(user);
+    const unsubscribe = onFirebaseAuthStateChange(user => {
+      setCurrentUser(user as any);
       setIsAuthReady(true);
     });
 
@@ -337,7 +337,7 @@ const App: React.FC = () => {
   // --- Auth Handlers ---
   const handleLogout = async () => {
       try {
-          await signOutCatalyst();
+          await signOutFirebase();
       } catch (err) {
           console.error("Error signing out:", err);
       } finally {
