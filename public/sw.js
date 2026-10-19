@@ -1,5 +1,5 @@
 // InvoicePro Service Worker - Auto-purging Network-First Strategy
-const CACHE_NAME = 'invoicepro-cache-v3';
+const CACHE_NAME = 'invoicepro-cache-v6';
 
 // Install: immediately activate without waiting
 self.addEventListener('install', (event) => {

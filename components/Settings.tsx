@@ -759,8 +759,8 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
                     )}
 
                     <div className="space-y-3">
-                        <Button className="w-full !py-3" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>
-                            View Plans (Coming Soon)
+                        <Button className="w-full !py-3 font-semibold shadow-md shadow-accent/20" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>
+                            Upgrade Plan (Instant Activation)
                         </Button>
                         {activeCompany.subscription && activeCompany.subscription.plan !== 'free' && (
                             <Button variant="secondary" className="w-full !py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900/30" onClick={() => {
@@ -806,10 +806,10 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
                                 </div>
 
                                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-100 dark:border-slate-700">
-                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Free Testing Tier (5 Invoices)</h4>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">You have 5 free invoices during our testing preview. Higher-tier plans and add-on packs are Coming Soon!</p>
-                                    <Button variant="secondary" className="w-full text-sm" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>
-                                        View Upcoming Plans
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Invoice Volume Plan</h4>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Upgrade your plan securely via Cashfree Payments with UPI, Debit/Credit Cards, or NetBanking.</p>
+                                    <Button variant="secondary" className="w-full text-sm font-semibold" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>
+                                        Upgrade Volume
                                     </Button>
                                 </div>
                             </div>
