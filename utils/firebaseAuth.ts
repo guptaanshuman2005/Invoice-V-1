@@ -33,17 +33,27 @@ const clean = (val: string | undefined, fallback: string) => {
   return sanitized || fallback;
 };
 
-// Configuration strictly read from environment variables
-const firebaseConfig = {
-  apiKey: clean(import.meta.env.VITE_FIREBASE_API_KEY, ""),
-  authDomain: clean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN, ""),
-  projectId: clean(import.meta.env.VITE_FIREBASE_PROJECT_ID, ""),
-  storageBucket: clean(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, ""),
-  messagingSenderId: clean(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, ""),
-  appId: clean(import.meta.env.VITE_FIREBASE_APP_ID, "")
+// Default Firebase credentials for invoicein-c8046
+const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC2YFO9JFiJOCspzyVmSbga8Z_Fe1ZDfY8",
+  authDomain: "invoicein-c8046.firebaseapp.com",
+  projectId: "invoicein-c8046",
+  storageBucket: "invoicein-c8046.firebasestorage.app",
+  messagingSenderId: "1003608237028",
+  appId: "1:1003608237028:web:49462aa028146bdc799df1"
 };
 
-// Check if Firebase configuration is provided via environment variables
+// Configuration read from environment variables with fallback
+const firebaseConfig = {
+  apiKey: clean(import.meta.env.VITE_FIREBASE_API_KEY, DEFAULT_FIREBASE_CONFIG.apiKey),
+  authDomain: clean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN, DEFAULT_FIREBASE_CONFIG.authDomain),
+  projectId: clean(import.meta.env.VITE_FIREBASE_PROJECT_ID, DEFAULT_FIREBASE_CONFIG.projectId),
+  storageBucket: clean(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, DEFAULT_FIREBASE_CONFIG.storageBucket),
+  messagingSenderId: clean(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, DEFAULT_FIREBASE_CONFIG.messagingSenderId),
+  appId: clean(import.meta.env.VITE_FIREBASE_APP_ID, DEFAULT_FIREBASE_CONFIG.appId)
+};
+
+// Check if Firebase configuration is provided
 export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey && 
   firebaseConfig.projectId
@@ -52,11 +62,7 @@ export const isFirebaseConfigured = Boolean(
 // Safe initialization
 const app = getApps().length > 0 
   ? getApp() 
-  : initializeApp(isFirebaseConfigured ? firebaseConfig : {
-      apiKey: "AIzaSy_dev_placeholder_key",
-      authDomain: "dev.firebaseapp.com",
-      projectId: "dev-app"
-    });
+  : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
@@ -177,18 +183,6 @@ export async function signInWithFirebase(
  */
 export async function signInWithGoogle(): Promise<{ user: AuthUser | null; error: string | null }> {
   try {
-    if (!isFirebaseConfigured) {
-      const demoUser: AuthUser = {
-        id: `usr_google_${Date.now()}`,
-        email: 'user@company.com',
-        name: 'Google User'
-      };
-      sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(demoUser));
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(demoUser));
-      notifyListeners(demoUser);
-      return { user: demoUser, error: null };
-    }
-
     const result = await signInWithPopup(auth, googleProvider);
     const authUser = mapFirebaseUser(result.user);
     sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
@@ -196,8 +190,19 @@ export async function signInWithGoogle(): Promise<{ user: AuthUser | null; error
     notifyListeners(authUser);
     return { user: authUser, error: null };
   } catch (err: any) {
-    if (err.code === 'auth/popup-closed-by-user') {
+    console.error('[Google Auth Error]', err);
+    if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
       return { user: null, error: null }; // User closed the popup, cancel gracefully
+    }
+    if (err.code === 'auth/popup-blocked') {
+      return { user: null, error: 'Google Sign-In popup was blocked by your browser. Please allow popups for this site and try again.' };
+    }
+    if (err.code === 'auth/unauthorized-domain') {
+      const hostname = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
+      return { 
+        user: null, 
+        error: `Domain "${hostname}" is not authorized in Firebase Console. Please add "${hostname}" to Firebase Console -> Authentication -> Settings -> Authorized Domains.` 
+      };
     }
     return { user: null, error: err.message || 'Failed to sign in with Google.' };
   }
