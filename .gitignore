@@ -28,3 +28,9 @@ dist-ssr
 
 .vercel
 .env*
+.cursor/cashfree-skills/
+.claude/skills/
+.opencode/skills/cashfree-skills/
+.github/skills/cashfree-skills/
+.gemini/skills/cashfree-skills/
+.kiro/skills/
