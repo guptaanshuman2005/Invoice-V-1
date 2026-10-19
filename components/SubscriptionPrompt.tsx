@@ -1,19 +1,61 @@
-import React from 'react';
-import { CheckCircle2, Lock, Sparkles, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { CheckCircle2, Sparkles, Check, CreditCard, ShieldCheck, Loader2 } from 'lucide-react';
 import Modal from './common/Modal';
 import Button from './common/Button';
 import { trackEvent } from '../utils/analytics';
+import { initiateCashfreePayment, SubscriptionPlan, SUBSCRIPTION_PLANS } from '../utils/cashfree';
+import { toast } from 'sonner';
 
 interface SubscriptionPromptProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubscribe?: (plan: string) => void;
+  onSubscribe?: (planId: 'basic' | 'standard' | 'premium', orderId: string) => void;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  currentPlan?: string;
 }
 
-const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose, onSubscribe }) => {
-  const handleNotifyMe = (plan: string) => {
-    trackEvent('waitlist_interest', { plan });
-    if (onSubscribe) onSubscribe(plan);
+const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSubscribe,
+  customerName = '',
+  customerEmail = '',
+  customerPhone = '',
+  currentPlan = 'free'
+}) => {
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+
+  const handleCashfreeCheckout = async (planId: 'basic' | 'standard' | 'premium') => {
+    setProcessingPlan(planId);
+    trackEvent('begin_checkout', { plan: planId, gateway: 'cashfree' });
+
+    try {
+      await initiateCashfreePayment({
+        planId,
+        customerName: customerName || 'InvoicePro User',
+        customerEmail: customerEmail || 'billing@invoicein.onslate.in',
+        customerPhone: customerPhone || '9999999999',
+        onSuccess: (orderId: string, plan: SubscriptionPlan) => {
+          setProcessingPlan(null);
+          trackEvent('purchase_success', { plan: plan.id, orderId, amount: plan.amount });
+          toast.success(`Payment verified! Upgraded to ${plan.name} plan (${plan.invoiceLimit} invoices).`);
+          if (onSubscribe) {
+            onSubscribe(plan.id, orderId);
+          }
+          onClose();
+        },
+        onFailure: (err: any) => {
+          setProcessingPlan(null);
+          console.error('Cashfree checkout failed:', err);
+          toast.error(err?.message || 'Payment was cancelled or could not be completed.');
+        }
+      });
+    } catch (err: any) {
+      setProcessingPlan(null);
+      toast.error(err?.message || 'Failed to initialize Cashfree payment.');
+    }
   };
 
   return (
@@ -25,7 +67,7 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             <Sparkles className="w-3.5 h-3.5" /> All Features Included
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-2">
-            Pay Only For What You Invoice
+            Upgrade Your Invoicing Volume
           </h2>
           <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-sm sm:text-base">
             <span className="font-semibold text-slate-900 dark:text-white">Every plan includes 100% of features</span> — full GST suite, recurring billing, quotations, all PDF templates, multi-company, and inventory tracking.
@@ -44,7 +86,7 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             <Check className="w-4 h-4" /> Quotations to Invoices
           </div>
           <div className="flex items-center gap-1.5 text-accent font-semibold">
-            <Check className="w-4 h-4" /> All 4 PDF Templates
+            <Check className="w-4 h-4" /> All PDF Templates
           </div>
           <div className="flex items-center gap-1.5 text-accent font-semibold">
             <Check className="w-4 h-4" /> Real-time Inventory
@@ -52,12 +94,14 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
         </div>
 
         {/* Plan Cards */}
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
+        <div className="grid md:grid-cols-4 gap-4 mb-6">
           {/* Free Tier */}
-          <div className="p-5 rounded-2xl border-2 border-emerald-500/40 bg-emerald-500/[0.03] dark:bg-emerald-500/[0.05] flex flex-col relative">
-            <div className="absolute top-0 right-4 -translate-y-1/2 bg-emerald-600 text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">
-              Current Plan
-            </div>
+          <div className={`p-5 rounded-2xl border-2 flex flex-col relative ${currentPlan === 'free' ? 'border-emerald-500/40 bg-emerald-500/[0.03] dark:bg-emerald-500/[0.05]' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60'}`}>
+            {currentPlan === 'free' && (
+              <div className="absolute top-0 right-4 -translate-y-1/2 bg-emerald-600 text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">
+                Active Plan
+              </div>
+            )}
             
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Free Tier</h3>
             <p className="text-xs text-slate-500 mb-3">For testing & evaluation</p>
@@ -84,15 +128,17 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             </ul>
 
             <Button variant="secondary" disabled className="w-full text-xs !py-2.5 opacity-80 cursor-default">
-              ✓ Active Plan
+              {currentPlan === 'free' ? '✓ Current Plan' : 'Free Tier'}
             </Button>
           </div>
 
           {/* Basic (Monthly) */}
-          <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 flex flex-col relative opacity-95">
-            <div className="absolute top-0 right-4 -translate-y-1/2 bg-amber-500 text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">
-              Coming Soon
-            </div>
+          <div className={`p-5 rounded-2xl border-2 flex flex-col relative ${currentPlan === 'basic' ? 'border-accent bg-accent/5' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60'}`}>
+            {currentPlan === 'basic' && (
+              <div className="absolute top-0 right-4 -translate-y-1/2 bg-accent text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">
+                Active Plan
+              </div>
+            )}
 
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Basic</h3>
             <p className="text-xs text-slate-500 mb-3">Pay-as-you-go monthly</p>
@@ -120,18 +166,24 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             </ul>
 
             <Button 
-              variant="secondary" 
-              onClick={() => handleNotifyMe('basic')}
-              className="w-full text-xs !py-2.5 border-slate-300 dark:border-slate-700 text-slate-500 hover:text-accent gap-1"
+              onClick={() => handleCashfreeCheckout('basic')}
+              disabled={processingPlan !== null || currentPlan === 'basic'}
+              className="w-full text-xs !py-2.5 shadow-sm"
             >
-              <Lock className="w-3.5 h-3.5" /> Coming Soon
+              {processingPlan === 'basic' ? (
+                <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...</span>
+              ) : currentPlan === 'basic' ? (
+                '✓ Current Plan'
+              ) : (
+                'Pay ₹49'
+              )}
             </Button>
           </div>
 
           {/* Standard (Quarterly) */}
           <div className="p-5 rounded-2xl border-2 border-accent/60 bg-accent/[0.02] dark:bg-accent/[0.04] relative flex flex-col shadow-lg shadow-accent/5">
             <div className="absolute top-0 right-4 -translate-y-1/2 bg-accent text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">
-              Popular • Save 12%
+              {currentPlan === 'standard' ? 'Active Plan' : 'Popular • Save 12%'}
             </div>
 
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Standard</h3>
@@ -161,18 +213,24 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             </ul>
 
             <Button 
-              variant="secondary" 
-              onClick={() => handleNotifyMe('standard')}
-              className="w-full text-xs !py-2.5 border-accent/40 text-accent font-semibold gap-1"
+              onClick={() => handleCashfreeCheckout('standard')}
+              disabled={processingPlan !== null || currentPlan === 'standard'}
+              className="w-full text-xs !py-2.5 font-bold shadow-md shadow-accent/20"
             >
-              <Lock className="w-3.5 h-3.5" /> Coming Soon
+              {processingPlan === 'standard' ? (
+                <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...</span>
+              ) : currentPlan === 'standard' ? (
+                '✓ Current Plan'
+              ) : (
+                'Pay ₹129'
+              )}
             </Button>
           </div>
 
           {/* Premium (Yearly) */}
-          <div className="p-5 rounded-2xl border-2 border-purple-500/40 bg-purple-500/[0.02] dark:bg-purple-500/[0.04] flex flex-col relative opacity-95">
+          <div className="p-5 rounded-2xl border-2 border-purple-500/40 bg-purple-500/[0.02] dark:bg-purple-500/[0.04] flex flex-col relative">
             <div className="absolute top-0 right-4 -translate-y-1/2 bg-gradient-to-r from-purple-600 to-accent text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">
-              Best Value • Save 32%
+              {currentPlan === 'premium' ? 'Active Plan' : 'Best Value • Save 32%'}
             </div>
 
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Premium</h3>
@@ -202,12 +260,30 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ isOpen, onClose
             </ul>
 
             <Button 
-              variant="secondary" 
-              onClick={() => handleNotifyMe('premium')}
-              className="w-full text-xs !py-2.5 border-purple-400/40 text-purple-600 dark:text-purple-400 font-semibold gap-1"
+              onClick={() => handleCashfreeCheckout('premium')}
+              disabled={processingPlan !== null || currentPlan === 'premium'}
+              className="w-full text-xs !py-2.5 bg-gradient-to-r from-purple-600 to-accent text-white font-bold shadow-md shadow-purple-500/20"
             >
-              <Lock className="w-3.5 h-3.5" /> Coming Soon
+              {processingPlan === 'premium' ? (
+                <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...</span>
+              ) : currentPlan === 'premium' ? (
+                '✓ Current Plan'
+              ) : (
+                'Pay ₹399'
+              )}
             </Button>
+          </div>
+        </div>
+
+        {/* Cashfree Payment Security Callout */}
+        <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 mb-6">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            <span>Secured by <strong>Cashfree Payments</strong> • Bank-grade 256-bit encryption</span>
+          </div>
+          <div className="flex items-center gap-2 font-medium">
+            <CreditCard className="w-4 h-4 text-accent" />
+            <span>Supports <strong>UPI (GPay, PhonePe, Paytm)</strong>, NetBanking & Cards</span>
           </div>
         </div>
 

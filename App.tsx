@@ -224,13 +224,14 @@ const App: React.FC = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
-    if (sessionId) {
-      // Clear the session_id from the URL
+    const orderId = urlParams.get('order_id');
+    const orderStatus = urlParams.get('status');
+
+    if (sessionId || orderId) {
       window.history.replaceState({}, document.title, window.location.pathname);
-      toast.success('Subscription successful! You can now create invoices.');
-      // The webhook will update the database, and the realtime subscription will update the UI.
-      // For immediate feedback, we could optimistically update the active company here,
-      // but waiting for the webhook is safer.
+      if (orderStatus === 'SUCCESS' || sessionId) {
+        toast.success('Subscription payment confirmed! Your invoice limit has been upgraded.');
+      }
     }
   }, []);
 
@@ -1389,8 +1390,31 @@ const App: React.FC = () => {
         <SubscriptionPrompt 
           isOpen={isSubscriptionPromptOpen} 
           onClose={() => setIsSubscriptionPromptOpen(false)} 
-          onSubscribe={(plan) => {
-            toast.info(`The ${plan.toUpperCase()} tier is Coming Soon! You can currently create up to 5 free invoices during this preview.`);
+          customerName={currentUser?.name || activeCompany?.details.name || ''}
+          customerEmail={currentUser?.email || activeCompany?.details.email || ''}
+          customerPhone={activeCompany?.details.phone || ''}
+          currentPlan={activeCompany?.subscription?.plan || 'free'}
+          onSubscribe={(planId, orderId) => {
+            if (!activeCompany) return;
+            const limits = { basic: 50, standard: 200, premium: 1000 };
+            const months = { basic: 1, standard: 3, premium: 12 };
+            const endDate = new Date();
+            endDate.setMonth(endDate.getMonth() + (months[planId] || 1));
+
+            const updatedCompany: Company = {
+              ...activeCompany,
+              subscription: {
+                plan: planId,
+                status: 'active',
+                invoiceCount: activeCompany.subscription?.invoiceCount || 0,
+                invoiceLimit: limits[planId] || 50,
+                addonInvoices: activeCompany.subscription?.addonInvoices || 0,
+                currentPeriodEnd: endDate.toISOString()
+              }
+            };
+
+            handleUpdateCompany(updatedCompany);
+            trackEvent('subscription_activated', { plan: planId, orderId });
             setIsSubscriptionPromptOpen(false);
           }} 
         />
