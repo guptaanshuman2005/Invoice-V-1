@@ -142,15 +142,17 @@ const App: React.FC = () => {
     return null;
   }, [currentUser, isDemoMode]);
 
-  const activeCompany = useMemo(() => {
-    if (isDemoMode) return demoCompany;
-    return companies.find(c => c.id === activeCompanyId) || null;
-  }, [isDemoMode, demoCompany, companies, activeCompanyId]);
-
   const userCompanies = useMemo(() => {
     if (isDemoMode) return [demoCompany];
-    return companies.filter(c => c.ownerId === currentUser?.id);
+    if (!currentUser) return [];
+    return companies.filter(c => c.ownerId === currentUser.id);
   }, [isDemoMode, demoCompany, companies, currentUser]);
+
+  const activeCompany = useMemo(() => {
+    if (isDemoMode) return demoCompany;
+    if (!currentUser) return null;
+    return userCompanies.find(c => c.id === activeCompanyId) || userCompanies[0] || null;
+  }, [isDemoMode, demoCompany, userCompanies, activeCompanyId, currentUser]);
 
   useEffect(() => {
     if (activeCompanyId) {
@@ -250,11 +252,20 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (currentUser && companies.length > 0 && !activeCompanyId) {
-        const firstCompany = companies.find(c => c.ownerId === currentUser.id);
-        if (firstCompany) setActiveCompanyId(firstCompany.id);
+    if (currentUser) {
+        const userComps = companies.filter(c => c.ownerId === currentUser.id);
+        if (userComps.length > 0) {
+            const currentBelongsToUser = userComps.some(c => c.id === activeCompanyId);
+            if (!currentBelongsToUser) {
+                setActiveCompanyId(userComps[0].id);
+            }
+        } else {
+            setActiveCompanyId(null);
+        }
+    } else {
+        setActiveCompanyId(null);
     }
-  }, [currentUser, companies, activeCompanyId]);
+  }, [currentUser?.id, companies]);
 
   useEffect(() => {
     const handleOpenSubscription = () => setIsSubscriptionPromptOpen(true);
@@ -343,6 +354,7 @@ const App: React.FC = () => {
       } finally {
           setCurrentUser(null);
           setActiveCompanyId(null);
+          sessionStorage.removeItem('activeCompanyId');
       }
   };
   

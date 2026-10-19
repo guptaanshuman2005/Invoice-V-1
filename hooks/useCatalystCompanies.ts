@@ -3,7 +3,7 @@ import type { Company, Invoice, Client, Item, BankAccount } from '../types';
 import { CATALYST_TABLE_IDS, executeZCQLQuery, isCatalystConfigured } from '../catalyst';
 import { toast } from 'sonner';
 
-const LOCAL_STORAGE_KEY = 'invoicepro_companies_cache';
+const getStorageKey = (userId?: string) => userId ? `invoicepro_companies_${userId}` : 'invoicepro_companies_guest';
 
 /**
  * Parses Catalyst boolean strings ("true" / "false") or booleans safely
@@ -30,15 +30,27 @@ function parseJSON<T = any>(str: any, fallback: T): T {
  * Provides zero-downtime localStorage fallback when Catalyst is offline or during local dev.
  */
 export function useCatalystCompanies(userId: string | undefined): [Company[], (value: any) => void, boolean] {
+  const storageKey = getStorageKey(userId);
+
   const [companies, setCompaniesState] = useState<Company[]>(() => {
     try {
-      const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+      const cached = localStorage.getItem(storageKey);
       return cached ? JSON.parse(cached) : [];
     } catch {
       return [];
     }
   });
   const [loading, setLoading] = useState(true);
+
+  // Sync state when userId changes (e.g. logging into new account)
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(storageKey);
+      setCompaniesState(cached ? JSON.parse(cached) : []);
+    } catch {
+      setCompaniesState([]);
+    }
+  }, [storageKey]);
 
   // 1. Fetch from Zoho Catalyst Data Store
   const fetchCompanies = useCallback(async () => {
@@ -88,8 +100,19 @@ export function useCatalystCompanies(userId: string | undefined): [Company[], (v
       }
 
       if (rawCompanies.length > 0) {
+        // Only load companies belonging to the current user
+        const userRawCompanies = userId 
+          ? rawCompanies.filter((c: any) => c.owner_id === userId)
+          : rawCompanies;
+
+        if (userRawCompanies.length === 0) {
+          setCompaniesState([]);
+          localStorage.setItem(storageKey, JSON.stringify([]));
+          return;
+        }
+
         // Group items and lines by parent relationships
-        const transformed: Company[] = rawCompanies.map((c: any) => {
+        const transformed: Company[] = userRawCompanies.map((c: any) => {
           const companyDetails: any = parseJSON(c.details, {});
           const companyId = companyDetails.original_id || (c.ROWID ? `comp_${c.ROWID}` : String(c.ROWID || c.id));
 
@@ -200,7 +223,10 @@ export function useCatalystCompanies(userId: string | undefined): [Company[], (v
         });
 
         setCompaniesState(transformed);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(transformed));
+        localStorage.setItem(storageKey, JSON.stringify(transformed));
+      } else {
+        setCompaniesState([]);
+        localStorage.setItem(storageKey, JSON.stringify([]));
       }
     } catch (err: any) {
       console.warn('Notice: Loading companies from local cache (offline or Catalyst fallback):', err?.message || err);
@@ -208,7 +234,7 @@ export function useCatalystCompanies(userId: string | undefined): [Company[], (v
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, storageKey]);
 
   useEffect(() => {
     fetchCompanies();
@@ -220,7 +246,7 @@ export function useCatalystCompanies(userId: string | undefined): [Company[], (v
       const newCompanies: Company[] = typeof value === 'function' ? value(prev) : value;
 
       // Update local cache immediately for instant UI feedback
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newCompanies));
+      localStorage.setItem(storageKey, JSON.stringify(newCompanies));
 
       // Asynchronously sync to Catalyst Data Store in background
       const catalystSdk = (window as any).catalyst;
