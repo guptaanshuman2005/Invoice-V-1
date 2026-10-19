@@ -14,10 +14,7 @@ dist-ssr
 .env
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.vscode/mcp.json
-.cursor/
+
 .idea
 .DS_Store
 *.suo
@@ -28,9 +25,3 @@ dist-ssr
 
 .vercel
 .env*
-.cursor/cashfree-skills/
-.claude/skills/
-.opencode/skills/cashfree-skills/
-.github/skills/cashfree-skills/
-.gemini/skills/cashfree-skills/
-.kiro/skills/
