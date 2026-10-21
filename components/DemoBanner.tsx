@@ -5,12 +5,14 @@ interface DemoBannerProps {
   onResetData: () => void;
   onExitDemo: () => void;
   onOpenDemoShowcase?: () => void;
+  onExitToAuth?: () => void;
 }
 
 export const DemoBanner: React.FC<DemoBannerProps> = ({
   onResetData,
   onExitDemo,
-  onOpenDemoShowcase
+  onOpenDemoShowcase,
+  onExitToAuth
 }) => {
   const [isMinimized, setIsMinimized] = React.useState(false);
 
@@ -75,6 +77,17 @@ export const DemoBanner: React.FC<DemoBannerProps> = ({
             <RotateCcw className="w-3.5 h-3.5 text-amber-200" />
             <span>Reset Data</span>
           </button>
+
+          {onExitToAuth && (
+            <button
+              onClick={onExitToAuth}
+              className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-3.5 py-1 rounded-xl font-black transition-all shadow-md hover:scale-105 active:scale-95"
+              title="Turn off demo mode and sign in to connect cloud database"
+            >
+              <span>Sign In / Sign Up</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
 
           <button
             onClick={onExitDemo}

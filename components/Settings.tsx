@@ -16,6 +16,9 @@ import { toast } from 'sonner';
 interface SettingsProps {
   activeCompany: Company;
   updateCompany: (updatedCompany: Company) => void;
+  isDemoMode?: boolean;
+  onExitDemoToAuth?: () => void;
+  currentUser?: { id: string; email: string; name?: string } | null;
 }
 
 type DetailsFormErrors = { [K in keyof Omit<CompanyDetails, 'logo' | 'invoicePrefix' | 'nextInvoiceNumber'>]?: string };
@@ -43,7 +46,13 @@ const BankAccountForm: React.FC<{
     );
 };
 
-const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => {
+const Settings: React.FC<SettingsProps> = ({ 
+  activeCompany, 
+  updateCompany,
+  isDemoMode = false,
+  onExitDemoToAuth,
+  currentUser
+}) => {
   const [details, setDetails] = useState(activeCompany.details);
   const [logoPreview, setLogoPreview] = useState<string | null>(activeCompany.details.logo);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
@@ -55,6 +64,12 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
   const [saveError, setSaveError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'profile' | 'customization' | 'bank' | 'billing'>('profile');
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isDemoMode && activeTab === 'billing') {
+      setActiveTab('profile');
+    }
+  }, [isDemoMode, activeTab]);
 
   const [detailErrors, setDetailErrors] = useState<DetailsFormErrors>({});
   const [bankErrors, setBankErrors] = useState<BankFormErrors>({});
@@ -383,9 +398,29 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
           {showSuccess && <div className="bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm font-semibold animate-fade-in mb-1">Settings Saved!</div>}
       </div>
 
+      {/* Demo Notice Banner */}
+      {isDemoMode && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-accent/10 to-indigo-500/10 border border-amber-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Demo Sandbox Mode Active</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Billing, payments, and permanent cloud database sync are disabled in Demo Mode. To upgrade your plan or save data to the cloud database, sign in or create a free account.
+              </p>
+            </div>
+          </div>
+          {onExitDemoToAuth && (
+            <Button onClick={onExitDemoToAuth} className="!py-2 !px-4 text-xs font-bold shrink-0 shadow-md">
+              Sign In / Sign Up →
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex space-x-1 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl overflow-x-auto">
-        {['profile', 'customization', 'bank', 'billing'].map((tab) => (
+        {(isDemoMode ? ['profile', 'customization', 'bank'] : ['profile', 'customization', 'bank', 'billing']).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
@@ -491,6 +526,53 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
                     <div className="flex items-center gap-4">
                         {saveError && <span className="text-sm font-semibold text-red-500 animate-fade-in">{saveError}</span>}
                         <Button onClick={handleSaveDetails} className="px-8 !py-3 !text-base shadow-lg shadow-accent/20">Save Profile</Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Cloud Database & Account Isolation Card */}
+            <div className="glass-panel p-8 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                <div className="flex flex-wrap justify-between items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-700/50 pb-3">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-light-text flex items-center gap-2">
+                        <span>Database & User Isolation</span>
+                    </h2>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Zoho Catalyst Data Store (India Region)
+                    </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
+                    Every company and invoice record in InvoicePro is strictly partitioned and mapped to your specific user identity in the cloud database.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <span className="text-slate-400 uppercase font-semibold text-[10px] block mb-1">Account Owner</span>
+                        <span className="font-bold text-slate-900 dark:text-white truncate block">
+                            {currentUser?.email || (isDemoMode ? 'Demo Sandbox User' : 'Guest Account')}
+                        </span>
+                        <span className="text-[10px] text-slate-500 mt-1 block truncate">
+                            UID: {currentUser?.id || (isDemoMode ? 'sandbox_demo_guest' : 'local_storage')}
+                        </span>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <span className="text-slate-400 uppercase font-semibold text-[10px] block mb-1">Company Database ID</span>
+                        <span className="font-bold text-slate-900 dark:text-white truncate block font-mono">
+                            {activeCompany.id}
+                        </span>
+                        <span className="text-[10px] text-slate-500 mt-1 block">
+                            Mapped to Catalyst Table <code className="text-accent">companies</code>
+                        </span>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <span className="text-slate-400 uppercase font-semibold text-[10px] block mb-1">Invoices Partition</span>
+                        <span className="font-bold text-slate-900 dark:text-white block font-mono">
+                            {activeCompany.invoices.length} Invoices Stored
+                        </span>
+                        <span className="text-[10px] text-slate-500 mt-1 block">
+                            Foreign Key: <code className="text-accent">company_id = "{activeCompany.id}"</code>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -728,54 +810,153 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
         {/* Billing & Usage Tab */}
         {activeTab === 'billing' && (
           <div className="space-y-8 animate-fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Current Plan */}
+            {isDemoMode ? (
+              /* DEMO MODE: Disallow direct billing and prompt to sign in/up */
+              <div className="glass-panel p-8 sm:p-12 rounded-2xl text-center space-y-5 max-w-2xl mx-auto my-6 border border-amber-500/30 bg-amber-500/[0.04]">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center mx-auto border border-amber-500/20 shadow-md">
+                  <Zap className="w-8 h-8 text-amber-500" />
+                </div>
+                <div>
+                  <span className="inline-block px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider mb-2 border border-amber-500/20">
+                    Demo Sandbox Mode
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+                    Sign In to Unlock Cloud Billing & Storage
+                  </h2>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+                  You are currently exploring InvoicePro in <strong>Demo Sandbox Mode</strong>. Data created here is temporary and not stored in your permanent cloud database. To choose an invoice volume plan and securely preserve all your financial year records, please sign in or create an account.
+                </p>
+                <div className="pt-2">
+                  <Button 
+                    className="w-full sm:w-auto !py-3.5 !px-8 text-base font-bold shadow-xl shadow-accent/25 hover:scale-[1.02] transition-transform"
+                    onClick={onExitDemoToAuth}
+                  >
+                    Sign In / Sign Up to Activate Plan
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* NORMAL MODE: Live Billing, Cancellation, and Usage */
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Current Plan Card */}
                 <div className="glass-panel p-8 rounded-2xl">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-light-text mb-6 border-b border-slate-100 dark:border-slate-700/50 pb-4">Current Plan</h2>
                     
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                                <Zap className="w-6 h-6 text-accent" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white capitalize">{activeCompany.subscription?.plan || 'Free'} Plan</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">
-                                    {activeCompany.subscription?.status === 'active' ? 'Active Subscription' : 'Basic Features'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    {(() => {
+                      const sub = activeCompany.subscription || { plan: 'free', status: 'active', invoiceCount: 0, invoiceLimit: 5, addonInvoices: 0, currentPeriodEnd: '' };
+                      const isCancelled = sub.status === 'cancelled' || (sub as any).status === 'canceled';
+                      const periodEnd = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
+                      const isPeriodValid = periodEnd ? periodEnd.getTime() > Date.now() : false;
+                      const planTitles: Record<string, string> = {
+                        free: 'Free Tier (5 Invoices)',
+                        basic: 'Basic Monthly (50 Invoices)',
+                        standard: 'Standard Quarterly (200 Invoices)',
+                        premium: 'Premium Annual (1,000 Invoices)'
+                      };
 
-                    {activeCompany.subscription && activeCompany.subscription.plan !== 'free' && (
-                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-100 dark:border-slate-700">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm text-slate-500 dark:text-slate-400">Renews On</span>
-                                <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                    {new Date(activeCompany.subscription.currentPeriodEnd).toLocaleDateString()}
-                                </span>
-                            </div>
-                        </div>
-                    )}
+                      return (
+                        <>
+                          <div className="flex items-center justify-between mb-6">
+                              <div className="flex items-center gap-3">
+                                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
+                                      <Zap className="w-6 h-6 text-accent" />
+                                  </div>
+                                  <div>
+                                      <h3 className="text-xl font-bold text-slate-900 dark:text-white capitalize">
+                                        {planTitles[sub.plan] || `${sub.plan} Plan`}
+                                      </h3>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                                          isCancelled && isPeriodValid
+                                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                                            : isCancelled && !isPeriodValid
+                                            ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'
+                                            : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                        }`}>
+                                          {isCancelled && isPeriodValid 
+                                            ? 'Cancelled (Active until cycle end)'
+                                            : isCancelled && !isPeriodValid
+                                            ? 'Expired (Reverted to Free)'
+                                            : 'Active Subscription'}
+                                        </span>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
 
-                    <div className="space-y-3">
-                        <Button className="w-full !py-3 font-semibold shadow-md shadow-accent/20" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>
-                            Upgrade Plan (Instant Activation)
-                        </Button>
-                        {activeCompany.subscription && activeCompany.subscription.plan !== 'free' && (
-                            <Button variant="secondary" className="w-full !py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900/30" onClick={() => {
-                                if (window.confirm('Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your billing cycle.')) {
-                                    toast.info('Subscription cancellation requested. Please contact support to finalize.');
-                                    trackEvent('cancel_subscription_requested', { companyId: activeCompany.id });
-                                }
-                            }}>
-                                Cancel Subscription
-                            </Button>
-                        )}
-                    </div>
+                          {sub.plan !== 'free' && periodEnd && (
+                              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-100 dark:border-slate-700">
+                                  <div className="flex justify-between items-center mb-1">
+                                      <span className="text-sm text-slate-500 dark:text-slate-400">
+                                        {isCancelled ? 'Benefits Expire On' : 'Renews On'}
+                                      </span>
+                                      <span className="text-sm font-bold text-slate-900 dark:text-white">
+                                          {periodEnd.toLocaleDateString()}
+                                      </span>
+                                  </div>
+                                  {isCancelled && isPeriodValid && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 font-medium">
+                                      Your paid invoice quota remains fully usable until {periodEnd.toLocaleDateString()}. After this date, your plan will revert to Free (5 invoices limit).
+                                    </p>
+                                  )}
+                              </div>
+                          )}
+
+                          {/* Financial Year Reassurance */}
+                          <div className="p-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 text-xs text-blue-800 dark:text-blue-300 mb-6">
+                            <strong>🛡️ Financial Year Record Retention:</strong> All invoices and receipts across all financial years remain 100% saved, searchable, and exportable even after subscription cancellation or expiration.
+                          </div>
+
+                          <div className="space-y-3">
+                              <Button className="w-full !py-3 font-semibold shadow-md shadow-accent/20" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>
+                                  {sub.plan === 'free' ? 'Upgrade Plan (Instant Activation)' : 'Change / Upgrade Plan'}
+                              </Button>
+                              
+                              {sub.plan !== 'free' && !isCancelled && (
+                                  <Button 
+                                      variant="secondary" 
+                                      className="w-full !py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900/30" 
+                                      onClick={() => {
+                                          if (window.confirm(`Are you sure you want to cancel your ${sub.plan} subscription? You will retain all plan benefits until ${periodEnd?.toLocaleDateString() || 'the end of your period'}, after which new invoice creation will follow the Free limit (5 invoices). All existing invoices across all financial years will remain permanently saved.`)) {
+                                              const updatedSub = {
+                                                  ...sub,
+                                                  status: 'cancelled' as const
+                                              };
+                                              updateCompany({ ...activeCompany, subscription: updatedSub });
+                                              toast.success(`Subscription cancelled. Your benefits remain active until ${periodEnd?.toLocaleDateString() || 'end of period'}.`);
+                                              trackEvent('cancel_subscription', { companyId: activeCompany.id, plan: sub.plan });
+                                          }
+                                      }}
+                                  >
+                                      Cancel Subscription
+                                  </Button>
+                              )}
+
+                              {sub.plan !== 'free' && isCancelled && isPeriodValid && (
+                                  <Button 
+                                      variant="secondary" 
+                                      className="w-full !py-3 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-emerald-200 dark:border-emerald-900/30 font-semibold" 
+                                      onClick={() => {
+                                          const updatedSub = {
+                                              ...sub,
+                                              status: 'active' as const
+                                          };
+                                          updateCompany({ ...activeCompany, subscription: updatedSub });
+                                          toast.success('Subscription reactivated! Auto-renewal restored.');
+                                          trackEvent('reactivate_subscription', { companyId: activeCompany.id, plan: sub.plan });
+                                      }}
+                                  >
+                                      Reactivate Subscription
+                                  </Button>
+                              )}
+                          </div>
+                        </>
+                      );
+                    })()}
                 </div>
 
-                {/* Usage */}
+                {/* Usage Card */}
                 <div className="glass-panel p-8 rounded-2xl">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-light-text mb-6 border-b border-slate-100 dark:border-slate-700/50 pb-4">Invoice Usage</h2>
                     
@@ -816,7 +997,8 @@ const Settings: React.FC<SettingsProps> = ({ activeCompany, updateCompany }) => 
                         );
                     })()}
                 </div>
-            </div>
+              </div>
+            )}
           </div>
         )}
       </div>

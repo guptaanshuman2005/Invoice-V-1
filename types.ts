@@ -159,7 +159,7 @@ export interface StockHistoryEntry {
 
 export interface Subscription {
   plan: 'free' | 'basic' | 'standard' | 'premium';
-  status: 'active' | 'past_due' | 'canceled' | 'incomplete';
+  status: 'active' | 'past_due' | 'canceled' | 'cancelled' | 'incomplete' | 'expired';
   currentPeriodEnd: string;
   invoiceCount: number;
   invoiceLimit: number;

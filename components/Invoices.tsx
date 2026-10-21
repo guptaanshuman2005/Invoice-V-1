@@ -12,6 +12,7 @@ import { Dropdown } from './common/Dropdown';
 import { sendInvoiceViaWhatsApp, sendPaymentReminderViaWhatsApp } from '../utils/whatsapp';
 import { RecordPaymentModal } from './RecordPaymentModal';
 import { getInvoicePaymentSummary } from '../utils/invoiceUtils';
+import { getFinancialYear } from '../utils/subscriptionUtils';
 
 // --- Icons ---
 const WhatsAppIcon = () => <MessageCircle className="w-4 h-4" />;
@@ -1084,6 +1085,7 @@ const Invoices: React.FC<InvoicesProps> = ({
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [filterStatus, setFilterStatus] = useState(initialFilter || '');
   const [filterDocType, setFilterDocType] = useState<'all' | 'invoice' | 'credit_note' | 'debit_note'>('all');
+  const [filterFY, setFilterFY] = useState<string>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [paymentModalInvoice, setPaymentModalInvoice] = useState<Invoice | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -1091,6 +1093,19 @@ const Invoices: React.FC<InvoicesProps> = ({
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const currency = '₹';
+
+  // Discover all Financial Years present in current company invoices
+  const availableFYs = useMemo(() => {
+    const set = new Set<string>();
+    invoices.forEach(inv => {
+      if (inv.issueDate) {
+        set.add(getFinancialYear(inv.issueDate));
+      }
+    });
+    // Ensure current financial year is always an option
+    set.add(getFinancialYear(new Date().toISOString()));
+    return Array.from(set).sort().reverse();
+  }, [invoices]);
 
   useEffect(() => {
     if (initialFilter !== undefined) {
@@ -1117,8 +1132,11 @@ const Invoices: React.FC<InvoicesProps> = ({
     if (filterDocType !== 'all') {
         result = result.filter(invoice => (invoice.documentType || 'invoice') === filterDocType);
     }
+    if (filterFY !== 'all') {
+        result = result.filter(invoice => getFinancialYear(invoice.issueDate) === filterFY);
+    }
     return result;
-  }, [invoices, searchQuery, filterStatus, filterDocType]);
+  }, [invoices, searchQuery, filterStatus, filterDocType, filterFY]);
 
   const handleSelectOne = (id: string) => {
       if (selectedIds.includes(id)) setSelectedIds(selectedIds.filter(sid => sid !== id));
@@ -1240,6 +1258,18 @@ const Invoices: React.FC<InvoicesProps> = ({
                         <option value="invoice">Tax Invoices Only</option>
                         <option value="credit_note">Credit Notes (CN)</option>
                         <option value="debit_note">Debit Notes (DN)</option>
+                    </select>
+                    {/* Financial Year Filter */}
+                    <select 
+                        value={filterFY} 
+                        onChange={e => setFilterFY(e.target.value)}
+                        className="bg-white dark:bg-primary-dark border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-accent outline-none cursor-pointer"
+                        title="Filter invoices by Indian Financial Year"
+                    >
+                        <option value="all">All Financial Years</option>
+                        {availableFYs.map(fy => (
+                            <option key={fy} value={fy}>{fy}</option>
+                        ))}
                     </select>
                     <select 
                         value={filterStatus} 

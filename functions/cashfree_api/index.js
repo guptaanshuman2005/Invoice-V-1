@@ -26,20 +26,29 @@ app.post('/create-order', async (req, res) => {
     const { order_id, order_amount, customer_details, order_note } = req.body;
     const cleanId = order_id || `order_sub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const cleanCustomerId = (customer_details?.customer_id || 'cust_guest').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50);
+    const cleanPhone = (customer_details?.customer_phone || '9999999999').replace(/[^0-9]/g, '').slice(-10) || '9999999999';
+
+    // Static, clean return URL per Cashfree API v6 standards.
+    // Cashfree automatically appends ?order_id=... to this URL upon redirect.
+    // Do NOT include unescaped {order_id} or {order_status} query parameters.
+    const origin = (req.headers.origin && !req.headers.origin.includes('localhost') && !req.headers.origin.includes('127.0.0.1'))
+      ? req.headers.origin
+      : 'https://invoicein.onslate.in';
+    const returnUrl = `${origin.replace(/\/+$/, '')}/`;
 
     const payload = {
       order_id: cleanId,
-      order_amount: Number(order_amount),
+      order_amount: Math.max(1, Number(order_amount) || 149),
       order_currency: 'INR',
       customer_details: {
         customer_id: cleanCustomerId,
         customer_name: customer_details?.customer_name || 'Valued Customer',
-        customer_email: customer_details?.customer_email || 'customer@example.com',
-        customer_phone: (customer_details?.customer_phone || '9999999999').replace(/[^0-9]/g, '').slice(-10) || '9999999999'
+        customer_email: customer_details?.customer_email || 'billing@invoicein.onslate.in',
+        customer_phone: cleanPhone
       },
       order_meta: {
-        return_url: `${req.headers.origin || 'https://invoicein.onslate.in'}/?order_id={order_id}&status={order_status}`,
-        notify_url: `${req.headers.origin || 'https://invoicein.onslate.in'}/api/cashfree/webhook`
+        return_url: returnUrl,
+        notify_url: `${origin.replace(/\/+$/, '')}/api/cashfree/webhook`
       },
       order_note: order_note || 'InvoicePro Plan Subscription'
     };

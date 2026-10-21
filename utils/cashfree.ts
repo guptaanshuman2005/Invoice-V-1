@@ -117,8 +117,10 @@ export async function initiateCashfreePayment({
       customer_phone: cleanPhone,
     },
     order_meta: {
-      return_url: `${window.location.origin}/?order_id={order_id}&status={order_status}`,
-      notify_url: `${window.location.origin}/api/cashfree/webhook`,
+      return_url: (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1'))
+        ? `${window.location.origin.replace(/\/+$/, '')}/`
+        : 'https://invoicein.onslate.in/',
+      notify_url: 'https://invoicein.onslate.in/api/cashfree/webhook',
     },
     order_note: `InvoicePro ${plan.name} Tier (${plan.invoiceLimit} invoices included)`,
   };

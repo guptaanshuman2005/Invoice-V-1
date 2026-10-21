@@ -33,6 +33,7 @@ import CompanyLogo from './components/common/CompanyLogo';
 import { getFirebaseSession, onFirebaseAuthStateChange, signOutFirebase } from './utils/firebaseAuth';
 import { trackPageView, trackEvent } from './utils/analytics';
 import { toast } from 'sonner';
+import { checkInvoiceQuota } from './utils/subscriptionUtils';
 
 const simpleHash = (s: string) => {
     let h = 0;
@@ -268,11 +269,27 @@ const App: React.FC = () => {
     }
   }, [currentUser?.id, companies]);
 
+  const handleExitDemoToAuth = (view: 'login' | 'signup' = 'signup') => {
+    setIsDemoMode(false);
+    sessionStorage.removeItem('isDemoMode');
+    sessionStorage.removeItem('demoCompanyData');
+    setAuthInitialView(view);
+    setShowAuth(true);
+    toast.info('Demo Mode turned off. Please sign in or create an account to continue.');
+  };
+
   useEffect(() => {
-    const handleOpenSubscription = () => setIsSubscriptionPromptOpen(true);
+    const handleOpenSubscription = () => {
+      if (isDemoMode) {
+        toast.info('Demo Mode active. Please sign in or create an account to view and activate subscription plans.');
+        handleExitDemoToAuth('signup');
+        return;
+      }
+      setIsSubscriptionPromptOpen(true);
+    };
     window.addEventListener('openSubscriptionPrompt', handleOpenSubscription);
     return () => window.removeEventListener('openSubscriptionPrompt', handleOpenSubscription);
-  }, []);
+  }, [isDemoMode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -365,18 +382,9 @@ const App: React.FC = () => {
 
   const handleSetActiveView = (view: string) => {
     if (view === 'NewInvoice' && !isDemoMode && activeCompany && !invoiceToEdit) {
-      const sub = activeCompany.subscription;
-      const limit = (!sub || sub.plan === 'free') ? 5 : sub.invoiceLimit;
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
-      const invoicesThisMonth = activeCompany.invoices.filter(inv => {
-        const d = new Date(inv.issueDate);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-      }).length;
-      const addons = sub?.addonInvoices || 0;
-
-      if (invoicesThisMonth >= limit && addons <= 0) {
-        toast.error('Free tier testing limit reached (5 invoices). Paid plans are Coming Soon!');
+      const quota = checkInvoiceQuota(activeCompany, isDemoMode);
+      if (!quota.allowed) {
+        toast.error(`Invoice limit reached (${quota.currentCount}/${quota.limit}). Upgrade your plan to continue creating invoices.`);
         setIsSubscriptionPromptOpen(true);
         return;
       }
@@ -686,25 +694,11 @@ const App: React.FC = () => {
             toast.success(`Invoice ${updatedInvoice.invoiceNumber} updated`);
         } else {
             // Create Mode
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            const invoicesThisMonth = activeCompany.invoices.filter(inv => {
-                const d = new Date(inv.issueDate);
-                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-            }).length;
-
-            const sub = activeCompany.subscription;
-            const monthlyLimit = (!sub || sub.plan === 'free') ? 5 : sub.invoiceLimit;
-            let newAddonInvoices = sub?.addonInvoices || 0;
-
-            if (!isDemoMode && invoicesThisMonth >= monthlyLimit) {
-                if (newAddonInvoices > 0) {
-                    newAddonInvoices -= 1;
-                } else {
-                    toast.error('Free tier testing limit reached (5 invoices). Pro plans are Coming Soon!');
-                    setIsSubscriptionPromptOpen(true);
-                    return;
-                }
+            const quota = checkInvoiceQuota(activeCompany, isDemoMode);
+            if (!quota.allowed) {
+                toast.error(`Invoice limit reached (${quota.currentCount}/${quota.limit}). Upgrade your plan to continue creating invoices.`);
+                setIsSubscriptionPromptOpen(true);
+                return;
             }
 
             const newInvoiceData = invoiceData as Omit<Invoice, 'id' | 'status'>;
@@ -1146,7 +1140,7 @@ const App: React.FC = () => {
       case 'Inventory': return <Inventory items={activeCompany.items} setItems={setItems} onBulkStockUpdate={handleBulkStockUpdate} stockHistory={activeCompany.stockHistory || []} initialFilter={inventoryFilter} />;
       case 'Expenses': return <Expenses company={activeCompany} onAddExpense={handleAddExpense} onDeleteExpense={handleDeleteExpense} />;
       case 'Transporters': return <Transporters transporters={activeCompany.transporters} setTransporters={setTransporters} />;
-      case 'Settings': return <Settings activeCompany={activeCompany} updateCompany={handleUpdateCompany} />;
+      case 'Settings': return <Settings activeCompany={activeCompany} updateCompany={handleUpdateCompany} isDemoMode={isDemoMode} onExitDemoToAuth={() => handleExitDemoToAuth('signup')} currentUser={currentUser} />;
       case 'PrivacyPolicy': return <PrivacyPolicy onBack={() => handleSetActiveView('Dashboard')} />;
       case 'Demo': return <DemoPage onLaunchSandbox={() => handleSetActiveView('Dashboard')} onBackToLanding={handleExitDemo} onGetStarted={() => { handleExitDemo(); setAuthInitialView('signup'); setShowAuth(true); }} />;
       case 'TermsOfService': return <TermsOfService onBack={() => handleSetActiveView('Dashboard')} />;
@@ -1176,6 +1170,7 @@ const App: React.FC = () => {
                 onResetData={handleResetDemoData} 
                 onExitDemo={handleExitDemo}
                 onOpenDemoShowcase={() => handleSetActiveView('Demo')}
+                onExitToAuth={() => handleExitDemoToAuth('signup')}
               />
             )}
             <div className="flex flex-1 min-h-0 overflow-hidden relative">
@@ -1276,6 +1271,30 @@ const App: React.FC = () => {
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    {/* Database & Cloud Status Pill */}
+                    <div className="hidden md:flex items-center ml-2">
+                      {isDemoMode ? (
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-semibold">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                          <span>Demo Sandbox (Local Session Only)</span>
+                          <button
+                            onClick={() => handleExitDemoToAuth('signup')}
+                            className="ml-1 text-[11px] font-bold text-accent underline hover:opacity-80"
+                          >
+                            Sign In to Cloud Sync →
+                          </button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold"
+                          title={`Connected to Zoho Catalyst Cloud Database • Company ID: ${activeCompany?.id}`}
+                        >
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span className="font-mono text-[11px]">Cloud: {activeCompany?.id}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 sm:gap-4 ml-4">
@@ -1394,6 +1413,8 @@ const App: React.FC = () => {
           customerEmail={currentUser?.email || activeCompany?.details.email || ''}
           customerPhone={activeCompany?.details.phone || ''}
           currentPlan={activeCompany?.subscription?.plan || 'free'}
+          isDemoMode={isDemoMode}
+          onExitDemoToAuth={() => handleExitDemoToAuth('signup')}
           onSubscribe={(planId, orderId) => {
             if (!activeCompany) return;
             const limits = { basic: 50, standard: 200, premium: 1000 };

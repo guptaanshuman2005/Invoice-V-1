@@ -14,6 +14,8 @@ interface SubscriptionPromptProps {
   customerEmail?: string;
   customerPhone?: string;
   currentPlan?: string;
+  isDemoMode?: boolean;
+  onExitDemoToAuth?: () => void;
 }
 
 const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ 
@@ -23,11 +25,20 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
   customerName = '',
   customerEmail = '',
   customerPhone = '',
-  currentPlan = 'free'
+  currentPlan = 'free',
+  isDemoMode = false,
+  onExitDemoToAuth
 }) => {
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
 
   const handleCashfreeCheckout = async (planId: 'basic' | 'standard' | 'premium') => {
+    if (isDemoMode) {
+      toast.info('Demo Mode active. Please sign in or create an account to subscribe.');
+      onClose();
+      if (onExitDemoToAuth) onExitDemoToAuth();
+      return;
+    }
+
     setProcessingPlan(planId);
     trackEvent('begin_checkout', { plan: planId, gateway: 'cashfree' });
 
@@ -36,7 +47,7 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
         planId,
         customerName: customerName || 'InvoicePro User',
         customerEmail: customerEmail || 'billing@invoicein.onslate.in',
-        customerPhone: customerPhone || '9999999999',
+        customerPhone: customerPhone || '9820012345',
         onSuccess: (orderId: string, plan: SubscriptionPlan) => {
           setProcessingPlan(null);
           trackEvent('purchase_success', { plan: plan.id, orderId, amount: plan.amount });
@@ -92,6 +103,29 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
             <Check className="w-4 h-4" /> Real-time Inventory
           </div>
         </div>
+
+        {/* Demo Mode Guard Callout */}
+        {isDemoMode && (
+          <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-left">
+              <h4 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                <span>⚠️ Demo Sandbox Active</span>
+              </h4>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                Paid subscription plans and invoice limits are linked to registered user accounts. Sign in or create an account to upgrade and activate permanent cloud storage.
+              </p>
+            </div>
+            <Button
+              className="whitespace-nowrap !py-2 !px-4 text-xs font-bold shadow-md shadow-accent/20"
+              onClick={() => {
+                onClose();
+                if (onExitDemoToAuth) onExitDemoToAuth();
+              }}
+            >
+              Sign In / Sign Up to Upgrade
+            </Button>
+          </div>
+        )}
 
         {/* Plan Cards */}
         <div className="grid md:grid-cols-4 gap-4 mb-6">
