@@ -14,6 +14,7 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
+  browserPopupRedirectResolver,
   User as FirebaseUser
 } from 'firebase/auth';
 
@@ -183,7 +184,7 @@ export async function signInWithFirebase(
  */
 export async function signInWithGoogle(): Promise<{ user: AuthUser | null; error: string | null }> {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
+    const result = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
     const authUser = mapFirebaseUser(result.user);
     sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
