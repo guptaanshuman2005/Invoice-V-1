@@ -36,6 +36,17 @@ export const CATALYST_TABLE_IDS = {
 } as const;
 
 /**
+ * Escapes a string for use in ZCQL queries to prevent injection vulnerabilities.
+ * It does this by replacing single quotes with double single quotes (' -> '').
+ */
+export function escapeZCQLString(value: string): string {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  return value.replace(/'/g, "''");
+}
+
+/**
  * Execute ZCQL (Zoho Catalyst Query Language) query via REST
  */
 export async function executeZCQLQuery<T = any>(zcqlQuery: string): Promise<T[]> {

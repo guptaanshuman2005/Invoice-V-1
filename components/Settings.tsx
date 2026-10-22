@@ -9,7 +9,7 @@ import { validateGstin, validatePan, validateEmail, validateIfsc, validateRequir
 import { Building, Image as ImageIcon, Zap } from 'lucide-react';
 import { trackEvent } from '../utils/analytics';
 import TemplatePreviewModal from './TemplatePreviewModal';
-import { executeZCQLQuery, isCatalystConfigured } from '../catalyst';
+import { executeZCQLQuery, isCatalystConfigured, escapeZCQLString } from '../catalyst';
 import { uploadFileToCatalyst } from '../utils/catalystStorage';
 import { toast } from 'sonner';
 
@@ -296,7 +296,8 @@ const Settings: React.FC<SettingsProps> = ({
     if (details.gstin && details.gstin !== activeCompany.details.gstin) {
         try {
             if (isCatalystConfigured) {
-                const results = await executeZCQLQuery(`SELECT ROWID FROM companies WHERE details LIKE '%${details.gstin}%'`);
+                const safeGstin = escapeZCQLString(details.gstin);
+                const results = await executeZCQLQuery(`SELECT ROWID FROM companies WHERE details LIKE '%${safeGstin}%'`);
                 if (results && results.length > 0) {
                     setSaveError('A company with this GSTIN is already registered on another account.');
                     setTimeout(() => setSaveError(null), 5000);
