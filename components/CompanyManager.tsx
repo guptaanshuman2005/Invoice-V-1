@@ -10,7 +10,7 @@ import { Zap, Check, BarChart2, ArrowLeft, Image as ImageIcon } from 'lucide-rea
 import Modal from './common/Modal';
 import TemplatePreviewModal from './TemplatePreviewModal';
 import { uploadFileToCatalyst } from '../utils/catalystStorage';
-import { executeZCQLQuery, isCatalystConfigured } from '../catalyst';
+import { executeZCQLQuery, isCatalystConfigured, escapeZCQLString } from '../catalyst';
 
 interface CompanyManagerProps {
     onAddCompany: (details: CompanyDetails) => void;
@@ -138,7 +138,8 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
         if (details.gstin) {
             try {
                 if (isCatalystConfigured) {
-                    const results = await executeZCQLQuery(`SELECT ROWID FROM companies WHERE details LIKE '%${details.gstin}%'`);
+                    const safeGstin = escapeZCQLString(details.gstin);
+                    const results = await executeZCQLQuery(`SELECT ROWID FROM companies WHERE details LIKE '%${safeGstin}%'`);
                     if (results && results.length > 0) {
                         setErrors({ gstin: 'A company with this GSTIN is already registered on another account.' });
                         return;
