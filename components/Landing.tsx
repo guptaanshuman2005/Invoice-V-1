@@ -37,9 +37,11 @@ const Landing: React.FC<LandingProps> = ({
         
         {/* Brand Area - 100% Identical to Sidebar.tsx */}
         <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-br from-accent to-indigo-600 text-white p-2.5 rounded-2xl shadow-lg shadow-accent/20 shrink-0 hover:shadow-accent/40 hover:scale-105 active:scale-95 transition-all duration-300">
-            <Receipt className="w-5 h-5" strokeWidth={2.5} />
-          </div>
+          <img 
+            src="/icons/icon-192.png" 
+            alt="InvoiceProIn Logo" 
+            className="w-10 h-10 rounded-2xl shadow-lg shadow-accent/20 shrink-0 object-contain hover:scale-105 active:scale-95 transition-all duration-300" 
+          />
           <div className="text-left">
             <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white leading-none font-display flex items-center">
               InvoicePro<span className="text-accent bg-clip-text text-transparent bg-gradient-to-r from-accent to-indigo-400 font-extrabold ml-0.5">In</span>
@@ -366,9 +368,11 @@ const Landing: React.FC<LandingProps> = ({
       <footer className="bg-white/50 dark:bg-[#0A0A0A]/80 border-t border-slate-200/50 dark:border-slate-800/50 backdrop-blur-md py-12 relative z-10">
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
-            <div className="bg-gradient-to-br from-accent to-indigo-600 text-white p-2 rounded-xl shadow-md">
-              <Receipt className="w-4 h-4" />
-            </div>
+            <img 
+              src="/icons/icon-192.png" 
+              alt="InvoiceProIn Logo" 
+              className="w-7 h-7 rounded-lg shadow-sm shrink-0 object-contain" 
+            />
             <span className="font-extrabold text-slate-900 dark:text-white font-display">
               InvoicePro<span className="text-accent">In</span>
             </span>

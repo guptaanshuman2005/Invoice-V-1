@@ -62,9 +62,11 @@ export const DemoPage: React.FC<DemoPageProps> = ({
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
-              <div className="bg-gradient-to-r from-accent to-indigo-600 text-white p-2 rounded-xl shadow-md flex items-center justify-center">
-                <Zap className="w-4 h-4" />
-              </div>
+              <img 
+                src="/icons/icon-192.png" 
+                alt="InvoiceProIn Logo" 
+                className="w-8 h-8 rounded-xl shadow-md object-contain shrink-0" 
+              />
               <span className="font-extrabold text-lg tracking-tight font-display flex items-center">
                 InvoicePro<span className="text-accent bg-clip-text text-transparent bg-gradient-to-r from-accent to-indigo-400 font-extrabold ml-0.5">In</span>
               </span>

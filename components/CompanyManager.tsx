@@ -170,9 +170,11 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                     <div className="relative z-10 space-y-8">
                         <div>
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="bg-white/10 p-2 rounded-lg backdrop-blur-md">
-                                    <Zap className="h-8 w-8 text-accent" strokeWidth={2} />
-                                </div>
+                                <img 
+                                    src="/icons/icon-192.png" 
+                                    alt="InvoiceProIn Logo" 
+                                    className="w-10 h-10 rounded-2xl shadow-lg shadow-accent/20 object-contain shrink-0" 
+                                />
                                 <span className="text-xl font-bold tracking-tight">InvoiceProIn</span>
                             </div>
                             <h1 className="text-4xl font-extrabold mb-4 leading-tight">Setup your <br/>workspace</h1>

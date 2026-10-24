@@ -26,9 +26,11 @@ const BrandLogo = ({ size = 'md', dark = false }: { size?: 'sm' | 'md' | 'lg'; d
   
   return (
     <div className="flex items-center gap-3">
-      <div className={`bg-gradient-to-r from-accent to-indigo-600 text-white p-1.5 rounded-xl shadow-md ${dim} flex items-center justify-center`}>
-        <Zap className="w-full h-full" strokeWidth={2.5} />
-      </div>
+      <img 
+        src="/icons/icon-192.png" 
+        alt="InvoiceProIn Logo" 
+        className={`${dim} rounded-2xl shadow-lg shadow-accent/20 object-contain shrink-0`} 
+      />
       <span className={`font-black tracking-tight ${dark ? 'text-white' : 'text-slate-900 dark:text-white'} ${text} font-display flex items-center`}>
         InvoicePro<span className="text-accent bg-clip-text text-transparent bg-gradient-to-r from-accent to-indigo-400 font-extrabold ml-0.5">In</span>
       </span>

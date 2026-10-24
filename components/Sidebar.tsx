@@ -57,9 +57,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* Brand Area */}
         <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="bg-gradient-to-br from-accent to-indigo-600 text-white p-2.5 rounded-2xl shadow-lg shadow-accent/20 shrink-0 hover:shadow-accent/40 hover:scale-105 active:scale-95 transition-all duration-300">
-                    <Receipt className="w-5 h-5" />
-                </div>
+                <img 
+                    src="/icons/icon-192.png" 
+                    alt="InvoiceProIn Logo" 
+                    className="w-10 h-10 rounded-2xl shadow-lg shadow-accent/20 shrink-0 object-contain hover:scale-105 active:scale-95 transition-all duration-300" 
+                />
                 {!isCollapsed && (
                     <div className="animate-fade-in text-left">
                         <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white leading-none font-display flex items-center">
