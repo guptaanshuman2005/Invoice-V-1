@@ -149,15 +149,6 @@ const Landing: React.FC<LandingProps> = ({
             </div>
 
             <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
-              {onExploreDemo && (
-                <Button
-                  variant="secondary"
-                  onClick={onExploreDemo}
-                  className="!py-3 !px-4 text-xs flex-1 md:flex-none"
-                >
-                  Template Tour
-                </Button>
-              )}
               <Button
                 variant="primary"
                 onClick={onLaunchSandbox || onGetStarted}
