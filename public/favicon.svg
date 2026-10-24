@@ -1,27 +1,66 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#4f46e5" />
-      <stop offset="100%" stop-color="#7c3aed" />
+    <!-- Background Squircle Gradient (Electric Indigo to Royal Violet) -->
+    <linearGradient id="bgGrad" x1="15%" y1="10%" x2="85%" y2="90%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="50%" stop-color="#5B45F0" />
+      <stop offset="100%" stop-color="#7C3AED" />
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#4338ca" flood-opacity="0.4"/>
+
+    <!-- Frosted Glass Rim Gradient -->
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A5B4FC" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#6366F1" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#C084FC" stop-opacity="0.6" />
+    </linearGradient>
+
+    <!-- Glowing Drop Shadow -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#4338CA" flood-opacity="0.5" />
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#818CF8" flood-opacity="0.4" />
+    </filter>
+
+    <filter id="iconGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.3" />
     </filter>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#grad)" />
-  <g filter="url(#shadow)">
-    <!-- Receipt outline -->
-    <path d="M144 112h224a24 24 0 0 1 24 24v256l-32-16-32 16-32-16-32 16-32-16-32 16-32-16-24 12V136a24 24 0 0 1 24-24z" fill="#ffffff" fill-opacity="0.15" />
-    <!-- Receipt document card -->
-    <rect x="156" y="128" width="200" height="232" rx="16" fill="#ffffff" />
-    <!-- Receipt lines -->
-    <rect x="184" y="160" width="80" height="12" rx="6" fill="#4f46e5" />
-    <rect x="184" y="188" width="144" height="8" rx="4" fill="#cbd5e1" />
-    <rect x="184" y="208" width="120" height="8" rx="4" fill="#cbd5e1" />
-    <line x1="184" y1="232" x2="328" y2="232" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="4 4" />
-    <!-- Lightning Bolt / Fast Invoicing Emblem -->
-    <path d="M264 248l-28 44h24l-8 36 32-48h-24l12-32h-8z" fill="#4f46e5" />
-    <!-- Bottom total bar -->
-    <rect x="184" y="324" width="144" height="12" rx="6" fill="#10b981" />
+
+  <!-- Dark Obsidian Base Background -->
+  <rect width="512" height="512" rx="128" fill="#070A12" />
+
+  <!-- Outer Glowing Glass Squircle -->
+  <rect x="32" y="32" width="448" height="448" rx="112" fill="url(#bgGrad)" filter="url(#glow)" />
+  <rect x="32" y="32" width="448" height="448" rx="112" fill="none" stroke="url(#rimGrad)" stroke-width="4" />
+
+  <!-- Inner Soft Light Caustic -->
+  <ellipse cx="256" cy="120" rx="180" ry="80" fill="#FFFFFF" fill-opacity="0.12" />
+
+  <g filter="url(#iconGlow)">
+    <!-- Invoice Document Outline with Folded Top-Right Corner -->
+    <path d="M168 128 H312 L368 184 V384 C368 397.25 357.25 408 344 408 H168 C154.75 408 144 397.25 144 384 V152 C144 138.75 154.75 128 168 128 Z" 
+          fill="#FFFFFF" fill-opacity="0.08" 
+          stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <!-- Top-Right Fold Flap -->
+    <path d="M312 128 V184 H368" fill="none" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Top Document Text Line -->
+    <line x1="188" y1="184" x2="272" y2="184" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" />
+    <line x1="188" y1="214" x2="236" y2="214" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-opacity="0.8" />
+
+    <!-- Indian Rupee (₹) Symbol Centered -->
+    <!-- Top Bar 1 -->
+    <line x1="200" y1="262" x2="284" y2="262" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" />
+    <!-- Top Bar 2 -->
+    <line x1="200" y1="288" x2="276" y2="288" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" />
+    <!-- Stem and Loop -->
+    <path d="M228 262 V304 C256 304 274 294 274 276 C274 262 254 262 228 262" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Diagonal Leg -->
+    <line x1="228" y1="304" x2="280" y2="356" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" />
+
+    <!-- Verified Badge Squircle at Bottom Right -->
+    <circle cx="360" cy="368" r="44" fill="#3B82F6" stroke="#FFFFFF" stroke-width="10" />
+    <!-- Checkmark inside Badge -->
+    <path d="M342 368 L354 380 L378 354" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
   </g>
 </svg>
