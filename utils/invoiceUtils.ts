@@ -328,7 +328,7 @@ export const sharePaymentReceiptWhatsApp = (
     `• *Total Received to Date:* ₹${paymentSummary.totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n` +
     `• *Remaining Balance Due:* ₹${paymentSummary.balanceDue.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ${paymentSummary.balanceDue === 0 ? '*(Fully Paid!)*' : ''}\n\n` +
     `Thank you for your business!\n` +
-    `*${company.details.name || 'InvoicePro Merchant'}*`;
+    `*${company.details.name || 'InvoiceProIn Merchant'}*`;
 
   const url = phoneParam
     ? `https://wa.me/${phoneParam}?text=${encodeURIComponent(message)}`

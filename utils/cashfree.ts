@@ -119,10 +119,10 @@ export async function initiateCashfreePayment({
     order_meta: {
       return_url: (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1'))
         ? `${window.location.origin.replace(/\/+$/, '')}/`
-        : 'https://invoicein.onslate.in/',
-      notify_url: 'https://invoicein.onslate.in/api/cashfree/webhook',
+        : 'https://invoiceproin.onslate.in/',
+      notify_url: 'https://invoiceproin.onslate.in/api/cashfree/webhook',
     },
-    order_note: `InvoicePro ${plan.name} Tier (${plan.invoiceLimit} invoices included)`,
+    order_note: `InvoiceProIn ${plan.name} Tier (${plan.invoiceLimit} invoices included)`,
   };
 
   const CATALYST_FUNCTION_URL = 'https://invoicepro-60091577554.development.catalystserverless.in/server/cashfree_api/execute';

@@ -542,7 +542,7 @@ const Settings: React.FC<SettingsProps> = ({
                     </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
-                    Every company and invoice record in InvoicePro is strictly partitioned and mapped to your specific user identity in the cloud database.
+                    Every company and invoice record in InvoiceProIn is strictly partitioned and mapped to your specific user identity in the cloud database.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                     <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700">
@@ -825,7 +825,7 @@ const Settings: React.FC<SettingsProps> = ({
                   </h2>
                 </div>
                 <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
-                  You are currently exploring InvoicePro in <strong>Demo Sandbox Mode</strong>. Data created here is temporary and not stored in your permanent cloud database. To choose an invoice volume plan and securely preserve all your financial year records, please sign in or create an account.
+                  You are currently exploring InvoiceProIn in <strong>Demo Sandbox Mode</strong>. Data created here is temporary and not stored in your permanent cloud database. To choose an invoice volume plan and securely preserve all your financial year records, please sign in or create an account.
                 </p>
                 <div className="pt-2">
                   <Button 

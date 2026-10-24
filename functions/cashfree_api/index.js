@@ -33,7 +33,7 @@ app.post('/create-order', async (req, res) => {
     // Do NOT include unescaped {order_id} or {order_status} query parameters.
     const origin = (req.headers.origin && !req.headers.origin.includes('localhost') && !req.headers.origin.includes('127.0.0.1'))
       ? req.headers.origin
-      : 'https://invoicein.onslate.in';
+      : 'https://invoiceproin.onslate.in';
     const returnUrl = `${origin.replace(/\/+$/, '')}/`;
 
     const payload = {
@@ -43,14 +43,14 @@ app.post('/create-order', async (req, res) => {
       customer_details: {
         customer_id: cleanCustomerId,
         customer_name: customer_details?.customer_name || 'Valued Customer',
-        customer_email: customer_details?.customer_email || 'billing@invoicein.onslate.in',
+        customer_email: customer_details?.customer_email || 'billing@invoiceproin.onslate.in',
         customer_phone: cleanPhone
       },
       order_meta: {
         return_url: returnUrl,
         notify_url: `${origin.replace(/\/+$/, '')}/api/cashfree/webhook`
       },
-      order_note: order_note || 'InvoicePro Plan Subscription'
+      order_note: order_note || 'InvoiceProIn Plan Subscription'
     };
 
     const cfRes = await fetch(`${BASE_URL}/orders`, {

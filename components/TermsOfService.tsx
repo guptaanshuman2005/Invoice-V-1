@@ -21,12 +21,12 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
           <div className="space-y-6 text-slate-700 dark:text-slate-300">
             <section>
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">1. Acceptance of Terms</h2>
-              <p>By accessing or using the InvoicePro service, you agree to be bound by these Terms. If you disagree with any part of the terms, then you may not access the service.</p>
+              <p>By accessing or using the InvoiceProIn service, you agree to be bound by these Terms. If you disagree with any part of the terms, then you may not access the service.</p>
             </section>
 
             <section>
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">2. Description of Service</h2>
-              <p>InvoicePro provides an online invoicing, billing, and business management platform. We reserve the right to modify or discontinue, temporarily or permanently, the Service (or any part thereof) with or without notice.</p>
+              <p>InvoiceProIn provides an online invoicing, billing, and business management platform. We reserve the right to modify or discontinue, temporarily or permanently, the Service (or any part thereof) with or without notice.</p>
             </section>
 
             <section>
@@ -37,12 +37,12 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
 
             <section>
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">4. Intellectual Property</h2>
-              <p>The Service and its original content, features and functionality are and will remain the exclusive property of InvoicePro and its licensors. The Service is protected by copyright, trademark, and other laws of both the India and foreign countries.</p>
+              <p>The Service and its original content, features and functionality are and will remain the exclusive property of InvoiceProIn and its licensors. The Service is protected by copyright, trademark, and other laws of both the India and foreign countries.</p>
             </section>
 
             <section>
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">5. Limitation of Liability</h2>
-              <p>In no event shall InvoicePro, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.</p>
+              <p>In no event shall InvoiceProIn, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.</p>
             </section>
 
             <section>

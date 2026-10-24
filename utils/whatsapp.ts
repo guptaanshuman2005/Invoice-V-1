@@ -4,7 +4,7 @@ export const sendInvoiceViaWhatsApp = (invoice: Invoice, client: Client | undefi
   const clientPhone = client?.phone?.replace(/\D/g, '') || '';
   const docNumber = invoice.invoiceNumber;
   const grandTotal = invoice.grandTotal.toFixed(2);
-  const companyName = company.details?.name || 'InvoicePro Merchant';
+  const companyName = company.details?.name || 'InvoiceProIn Merchant';
 
   const message = `Hello ${client?.name || 'Customer'},\n\n` +
     `Your invoice *#${docNumber}* from *${companyName}* for *₹${grandTotal}* is ready.\n\n` +
@@ -25,7 +25,7 @@ export const sendPaymentReminderViaWhatsApp = (invoice: Invoice, client: Client 
   const clientPhone = client?.phone?.replace(/\D/g, '') || '';
   const docNumber = invoice.invoiceNumber;
   const grandTotal = invoice.grandTotal.toFixed(2);
-  const companyName = company.details?.name || 'InvoicePro Merchant';
+  const companyName = company.details?.name || 'InvoiceProIn Merchant';
 
   const message = `⚠️ *PAYMENT REMINDER*\n\n` +
     `Dear ${client?.name || 'Customer'},\n\n` +

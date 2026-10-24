@@ -51,7 +51,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
 
             <section>
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">5. Contact Us</h2>
-              <p>If you have any questions about this Privacy Policy, please contact us at support@invoicepro.com.</p>
+              <p>If you have any questions about this Privacy Policy, please contact us at support@invoiceproin.onslate.in.</p>
             </section>
           </div>
         </div>

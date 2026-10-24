@@ -1,8 +1,8 @@
 {
   "id": "/?source=pwa",
-  "name": "InvoicePro - Professional GST Billing & Invoicing",
-  "short_name": "InvoicePro",
-  "description": "Generate GST-compliant invoices, track inventory, and file GSTR tax returns effortlessly.",
+  "name": "InvoiceProIn - Professional GST Billing & Invoicing",
+  "short_name": "InvoiceProIn",
+  "description": "Generate GST-compliant invoices, track inventory, and file GSTR tax returns effortlessly with InvoiceProIn.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -62,8 +62,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
                 {!isCollapsed && (
                     <div className="animate-fade-in text-left">
-                        <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white leading-none font-display">InvoicePro</div>
-                        <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-widest uppercase mt-1">Cloud Billing</div>
+                        <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white leading-none font-display flex items-center">
+                          InvoicePro<span className="text-accent bg-clip-text text-transparent bg-gradient-to-r from-accent to-indigo-400 font-extrabold ml-0.5">In</span>
+                        </div>
+                        <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-widest uppercase mt-1">Cloud Billing • India</div>
                     </div>
                 )}
              </div>
@@ -171,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="px-4 mb-2 shrink-0 animate-fade-in">
             <button
               onClick={installApp}
-              title="Install InvoicePro App"
+              title="Install InvoiceProIn App"
               className={`w-full flex items-center ${isCollapsed ? 'justify-center p-2.5' : 'gap-2 px-3 py-2'} bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 text-white rounded-xl shadow-md shadow-accent/25 text-xs font-bold transition-all active:scale-95 group`}
             >
               <Download className="w-4 h-4 shrink-0 animate-bounce" />

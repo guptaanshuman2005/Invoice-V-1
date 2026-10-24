@@ -1,5 +1,5 @@
 /**
- * InvoicePro - Firebase Authentication Service
+ * InvoiceProIn - Firebase Authentication Service
  * Seamless in-app authentication, 1-click Google Sign-In, and automated password reset emails.
  */
 

@@ -45,8 +45,8 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
     try {
       await initiateCashfreePayment({
         planId,
-        customerName: customerName || 'InvoicePro User',
-        customerEmail: customerEmail || 'billing@invoicein.onslate.in',
+        customerName: customerName || 'InvoiceProIn User',
+        customerEmail: customerEmail || 'billing@invoiceproin.onslate.in',
         customerPhone: customerPhone || '9820012345',
         onSuccess: (orderId: string, plan: SubscriptionPlan) => {
           setProcessingPlan(null);

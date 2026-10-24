@@ -173,7 +173,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                                 <div className="bg-white/10 p-2 rounded-lg backdrop-blur-md">
                                     <Zap className="h-8 w-8 text-accent" strokeWidth={2} />
                                 </div>
-                                <span className="text-xl font-bold tracking-tight">InvoicePro</span>
+                                <span className="text-xl font-bold tracking-tight">InvoiceProIn</span>
                             </div>
                             <h1 className="text-4xl font-extrabold mb-4 leading-tight">Setup your <br/>workspace</h1>
                             <p className="text-slate-300 text-lg leading-relaxed">

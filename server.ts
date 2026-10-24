@@ -73,7 +73,7 @@ async function startServer() {
           return_url: `${req.headers.origin || 'http://localhost:3000'}/?order_id={order_id}&status={order_status}`,
           notify_url: `${req.headers.origin || 'http://localhost:3000'}/api/cashfree/webhook`,
         },
-        order_note: order_note || "InvoicePro Plan Subscription",
+        order_note: order_note || "InvoiceProIn Plan Subscription",
       };
 
       const cfRes = await fetch(`${CASHFREE_BASE_URL}/orders`, {

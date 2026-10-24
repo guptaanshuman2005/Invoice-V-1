@@ -65,7 +65,9 @@ export const DemoPage: React.FC<DemoPageProps> = ({
               <div className="bg-gradient-to-r from-accent to-indigo-600 text-white p-2 rounded-xl shadow-md flex items-center justify-center">
                 <Zap className="w-4 h-4" />
               </div>
-              <span className="font-extrabold text-lg tracking-tight font-display">InvoicePro</span>
+              <span className="font-extrabold text-lg tracking-tight font-display flex items-center">
+                InvoicePro<span className="text-accent bg-clip-text text-transparent bg-gradient-to-r from-accent to-indigo-400 font-extrabold ml-0.5">In</span>
+              </span>
             </div>
             <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent font-black text-[10px] tracking-wider uppercase">
               Interactive Demo
@@ -98,7 +100,7 @@ export const DemoPage: React.FC<DemoPageProps> = ({
             Live Experience Center
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tight mb-6 font-display leading-[1.1]">
-            Explore InvoicePro in Action — <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent via-indigo-500 to-purple-600">No Signup Required</span>
+            Explore InvoiceProIn in Action — <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent via-indigo-500 to-purple-600">No Signup Required</span>
           </h1>
           <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 mb-8 leading-relaxed font-medium">
             Test drive our Indian GST calculation engine, live PDF invoice styling, stock deduction, and real-time business financial metrics in an instant sandbox environment.
@@ -376,7 +378,7 @@ export const DemoPage: React.FC<DemoPageProps> = ({
                 Live Indian GST Calculator Simulator
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Adjust the sliders and switches below to experience how InvoicePro automatically divides tax according to Indian GST council laws.
+                Adjust the sliders and switches below to experience how InvoiceProIn automatically divides tax according to Indian GST council laws.
               </p>
             </div>
 
@@ -540,7 +542,7 @@ export const DemoPage: React.FC<DemoPageProps> = ({
 
       {/* Minimal Footer */}
       <footer className="border-t border-slate-200/50 dark:border-slate-800/50 py-8 text-center text-xs text-slate-400">
-        <p>© {new Date().getFullYear()} InvoicePro. Interactive Indian GST Billing Demo.</p>
+        <p>© {new Date().getFullYear()} InvoiceProIn. Interactive Indian GST Billing Demo.</p>
       </footer>
 
     </div>
