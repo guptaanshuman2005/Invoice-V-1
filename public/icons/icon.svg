@@ -1,66 +1,123 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Background Squircle Gradient (Electric Indigo to Royal Violet) -->
-    <linearGradient id="bgGrad" x1="15%" y1="10%" x2="85%" y2="90%">
-      <stop offset="0%" stop-color="#4F46E5" />
-      <stop offset="50%" stop-color="#5B45F0" />
-      <stop offset="100%" stop-color="#7C3AED" />
+    <!-- Frosted Glass Translucent Gradient -->
+    <linearGradient id="squircleGlass" x1="15%" y1="10%" x2="85%" y2="90%">
+      <stop offset="0%" stop-color="#4338CA" />
+      <stop offset="45%" stop-color="#3730A3" />
+      <stop offset="100%" stop-color="#581C87" />
     </linearGradient>
 
-    <!-- Frosted Glass Rim Gradient -->
-    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#A5B4FC" stop-opacity="0.8" />
-      <stop offset="50%" stop-color="#6366F1" stop-opacity="0.3" />
-      <stop offset="100%" stop-color="#C084FC" stop-opacity="0.6" />
+    <!-- Glowing Electric Rim Gradient -->
+    <linearGradient id="electricRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A5B4FC" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#6366F1" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#C084FC" stop-opacity="0.8" />
     </linearGradient>
 
-    <!-- Glowing Drop Shadow -->
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#4338CA" flood-opacity="0.5" />
-      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#818CF8" flood-opacity="0.4" />
+    <!-- Internal Radial Caustic Glow -->
+    <radialGradient id="innerGlow" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#818CF8" stop-opacity="0.35" />
+      <stop offset="70%" stop-color="#4F46E5" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Verified Badge Gradient -->
+    <linearGradient id="badgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+
+    <!-- Ambient Shadow Filter -->
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#312E81" flood-opacity="0.6" />
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#6366F1" flood-opacity="0.3" />
     </filter>
 
-    <filter id="iconGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.3" />
+    <!-- Neon Glow Filter for Glyph -->
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#A5B4FC" flood-opacity="0.4" />
     </filter>
   </defs>
 
-  <!-- Dark Obsidian Base Background -->
-  <rect width="512" height="512" rx="128" fill="#070A12" />
+  <!-- Main Frosted Glass Squircle (Fills frame cleanly with transparent exterior) -->
+  <g filter="url(#softShadow)">
+    <rect x="24" y="24" width="464" height="464" rx="108" fill="url(#squircleGlass)" />
+    <rect x="24" y="24" width="464" height="464" rx="108" fill="url(#innerGlow)" />
+    <rect x="24" y="24" width="464" height="464" rx="108" fill="none" stroke="url(#electricRim)" stroke-width="4" />
+  </g>
 
-  <!-- Outer Glowing Glass Squircle -->
-  <rect x="32" y="32" width="448" height="448" rx="112" fill="url(#bgGrad)" filter="url(#glow)" />
-  <rect x="32" y="32" width="448" height="448" rx="112" fill="none" stroke="url(#rimGrad)" stroke-width="4" />
+  <!-- Subtle Top-Left Specular Reflection -->
+  <path d="M56 120 C 56 65, 95 36, 150 32 C 100 48, 64 80, 56 120 Z" fill="#FFFFFF" fill-opacity="0.25" />
 
-  <!-- Inner Soft Light Caustic -->
-  <ellipse cx="256" cy="120" rx="180" ry="80" fill="#FFFFFF" fill-opacity="0.12" />
-
-  <g filter="url(#iconGlow)">
-    <!-- Invoice Document Outline with Folded Top-Right Corner -->
-    <path d="M168 128 H312 L368 184 V384 C368 397.25 357.25 408 344 408 H168 C154.75 408 144 397.25 144 384 V152 C144 138.75 154.75 128 168 128 Z" 
-          fill="#FFFFFF" fill-opacity="0.08" 
-          stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Luminous Document & Rupee Emblem -->
+  <g filter="url(#neonGlow)">
     
-    <!-- Top-Right Fold Flap -->
-    <path d="M312 128 V184 H368" fill="none" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Invoice Document Background Translucency -->
+    <path d="M 160 116 
+             H 296 
+             L 356 176 
+             V 380 
+             C 356 393.25 345.25 404 332 404 
+             H 160 
+             C 146.75 404 136 393.25 136 380 
+             V 140 
+             C 136 126.75 146.75 116 160 116 Z" 
+          fill="#FFFFFF" fill-opacity="0.06" />
 
-    <!-- Top Document Text Line -->
-    <line x1="188" y1="184" x2="272" y2="184" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" />
-    <line x1="188" y1="214" x2="236" y2="214" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-opacity="0.8" />
+    <!-- Invoice Document Outline with Folded Top-Right Corner -->
+    <path d="M 160 116 
+             H 296 
+             L 356 176 
+             V 380 
+             C 356 393.25 345.25 404 332 404 
+             H 160 
+             C 146.75 404 136 393.25 136 380 
+             V 140 
+             C 136 126.75 146.75 116 160 116 Z" 
+          fill="none" 
+          stroke="#FFFFFF" 
+          stroke-width="18" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
 
-    <!-- Indian Rupee (₹) Symbol Centered -->
-    <!-- Top Bar 1 -->
-    <line x1="200" y1="262" x2="284" y2="262" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" />
-    <!-- Top Bar 2 -->
-    <line x1="200" y1="288" x2="276" y2="288" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" />
-    <!-- Stem and Loop -->
-    <path d="M228 262 V304 C256 304 274 294 274 276 C274 262 254 262 228 262" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
-    <!-- Diagonal Leg -->
-    <line x1="228" y1="304" x2="280" y2="356" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" />
+    <!-- Folded Corner Flap -->
+    <path d="M 296 116 V 176 H 356" 
+          fill="none" 
+          stroke="#FFFFFF" 
+          stroke-width="18" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
 
-    <!-- Verified Badge Squircle at Bottom Right -->
-    <circle cx="360" cy="368" r="44" fill="#3B82F6" stroke="#FFFFFF" stroke-width="10" />
-    <!-- Checkmark inside Badge -->
-    <path d="M342 368 L354 380 L378 354" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Top Document Lines -->
+    <line x1="176" y1="170" x2="256" y2="170" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" />
+    <line x1="176" y1="198" x2="226" y2="198" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-opacity="0.75" />
+
+    <!-- Perfectly Curved Indian Rupee Symbol (₹) -->
+    <!-- Top Horizontal Bar -->
+    <line x1="194" y1="248" x2="278" y2="248" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" />
+    <!-- Second Horizontal Bar -->
+    <line x1="194" y1="274" x2="268" y2="274" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" />
+    <!-- Rupee Upper Loop -->
+    <path d="M 224 248 
+             V 298 
+             C 258 298, 276 288, 276 268 
+             C 276 248, 256 248, 224 248" 
+          fill="none" 
+          stroke="#FFFFFF" 
+          stroke-width="16" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+    <!-- Rupee Diagonal Leg -->
+    <line x1="226" y1="298" x2="278" y2="352" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" />
+
+    <!-- Bottom Total Indicator Line -->
+    <line x1="176" y1="362" x2="216" y2="362" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-opacity="0.5" />
+
+    <!-- Verified Badge (Bottom Right Corner of Document) -->
+    <g transform="translate(340, 360)">
+      <circle cx="0" cy="0" r="38" fill="url(#badgeGrad)" stroke="#FFFFFF" stroke-width="7" />
+      <path d="M -14 0 L -4 10 L 16 -10" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+    </g>
+
   </g>
 </svg>
