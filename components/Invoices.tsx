@@ -1011,7 +1011,7 @@ export const InvoiceView: React.FC<{
       <div className="p-6 bg-white dark:bg-primary-dark flex flex-wrap justify-between items-center gap-3 rounded-b-lg border-t border-slate-100 dark:border-slate-800 sticky bottom-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
         <div className="flex flex-wrap gap-2 items-center">
             {onRecordPaymentClick && documentTitle === 'Invoice' && (
-                <Button onClick={onRecordPaymentClick} className="gap-1.5 shadow-md shadow-accent/20 bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Button onClick={onRecordPaymentClick} className="gap-1.5 shadow-xs">
                     <CreditCard className="w-4 h-4" /> Record Payment / Receipts
                 </Button>
             )}
@@ -1204,7 +1204,7 @@ const Invoices: React.FC<InvoicesProps> = ({
         <div className="flex gap-2.5 w-full sm:w-auto">
              <Button variant="secondary" onClick={handleExportCSV} className="gap-2"><Download className="w-4 h-4" /> Export</Button>
              <div className="relative group">
-                 <Button className="shadow-lg shadow-accent/20 gap-2"><Plus className="w-4 h-4" /> Create Document <ChevronDown className="w-3.5 h-3.5 opacity-70" /></Button>
+                 <Button className="gap-2 shadow-xs"><Plus className="w-4 h-4" /> Create Document <ChevronDown className="w-3.5 h-3.5 opacity-70" /></Button>
                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-30 p-1.5 overflow-hidden">
                      <button onClick={() => setActiveView('NewInvoice')} className="w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 flex items-center justify-between transition-colors">
                          <span>Tax Invoice</span>
@@ -1294,12 +1294,12 @@ const Invoices: React.FC<InvoicesProps> = ({
 
             {/* Bulk Actions Bar */}
             {selectedIds.length > 0 && (
-                <div className="bg-accent text-white px-6 py-3 rounded-xl mb-6 flex justify-between items-center animate-slide-in-top shadow-lg shadow-accent/30">
-                    <span className="text-sm font-bold">{selectedIds.length} Invoices Selected</span>
+                <div className="bg-zinc-900 dark:bg-zinc-800 text-white px-6 py-3 rounded-xl mb-6 flex justify-between items-center shadow-md border border-zinc-700/60 animate-fade-in">
+                    <span className="text-sm font-semibold">{selectedIds.length} Invoices Selected</span>
                     <div className="flex gap-3">
-                        <button onClick={() => { onBulkStatusChange(selectedIds, 'Paid'); setSelectedIds([]); }} className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Mark Paid</button>
-                        <button onClick={() => setIsBulkDeleteOpen(true)} className="bg-red-500/80 hover:bg-red-500 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Delete Selected</button>
-                        <button onClick={() => setSelectedIds([])} className="text-xs font-bold hover:underline">Clear</button>
+                        <button onClick={() => { onBulkStatusChange(selectedIds, 'Paid'); setSelectedIds([]); }} className="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">Mark Paid</button>
+                        <button onClick={() => setIsBulkDeleteOpen(true)} className="bg-rose-600/80 hover:bg-rose-600 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">Delete Selected</button>
+                        <button onClick={() => setSelectedIds([])} className="text-xs font-medium text-zinc-300 hover:text-white hover:underline">Clear</button>
                     </div>
                 </div>
             )}

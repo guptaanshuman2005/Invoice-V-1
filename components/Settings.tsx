@@ -400,18 +400,18 @@ const Settings: React.FC<SettingsProps> = ({
 
       {/* Demo Notice Banner */}
       {isDemoMode && (
-        <div className="bg-gradient-to-r from-amber-500/10 via-accent/10 to-indigo-500/10 border border-amber-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="text-xl">⚠️</span>
             <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Demo Sandbox Mode Active</h4>
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Demo Sandbox Mode Active</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Billing, payments, and permanent cloud database sync are disabled in Demo Mode. To upgrade your plan or save data to the cloud database, sign in or create a free account.
               </p>
             </div>
           </div>
           {onExitDemoToAuth && (
-            <Button onClick={onExitDemoToAuth} className="!py-2 !px-4 text-xs font-bold shrink-0 shadow-md">
+            <Button onClick={onExitDemoToAuth} className="!py-2 !px-4 text-xs font-semibold shrink-0 shadow-xs">
               Sign In / Sign Up →
             </Button>
           )}
@@ -525,7 +525,7 @@ const Settings: React.FC<SettingsProps> = ({
                     </div>
                     <div className="flex items-center gap-4">
                         {saveError && <span className="text-sm font-semibold text-red-500 animate-fade-in">{saveError}</span>}
-                        <Button onClick={handleSaveDetails} className="px-8 !py-3 !text-base shadow-lg shadow-accent/20">Save Profile</Button>
+                        <Button onClick={handleSaveDetails} className="px-6 !py-2.5 !text-sm shadow-xs">Save Profile</Button>
                     </div>
                 </div>
             </div>
@@ -537,7 +537,7 @@ const Settings: React.FC<SettingsProps> = ({
                         <span>Database & User Isolation</span>
                     </h2>
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                         Zoho Catalyst Data Store (India Region)
                     </span>
                 </div>
@@ -729,7 +729,7 @@ const Settings: React.FC<SettingsProps> = ({
                         onClick={() => handleSelectTemplateCard('custom')}
                         className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'custom' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/10' : 'border-slate-200 dark:border-slate-700 hover:border-amber-500/50'}`}
                     >
-                        <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">PREMIUM</div>
+                        <div className="absolute top-3 right-3 bg-amber-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full z-10">PREMIUM</div>
                         <div className="aspect-[1/1.4] bg-slate-50 dark:bg-slate-800/50 rounded-lg shadow-sm border border-dashed border-amber-300 dark:border-amber-700/50 mb-4 overflow-hidden flex items-center justify-center relative">
                             <div className="text-center p-4">
                                 <div className="w-10 h-10 mx-auto bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center mb-2">
@@ -756,7 +756,7 @@ const Settings: React.FC<SettingsProps> = ({
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-                    <Button onClick={handleSaveDetails} className="px-8 !py-3 !text-base shadow-lg shadow-accent/20">Save Customization</Button>
+                    <Button onClick={handleSaveDetails} className="px-6 !py-2.5 !text-sm shadow-xs">Save Customization</Button>
                 </div>
             </div>
           </div>
@@ -829,7 +829,7 @@ const Settings: React.FC<SettingsProps> = ({
                 </p>
                 <div className="pt-2">
                   <Button 
-                    className="w-full sm:w-auto !py-3.5 !px-8 text-base font-bold shadow-xl shadow-accent/25 hover:scale-[1.02] transition-transform"
+                    className="w-full sm:w-auto !py-2.5 !px-6 text-sm font-semibold shadow-xs"
                     onClick={onExitDemoToAuth}
                   >
                     Sign In / Sign Up to Activate Plan
@@ -909,7 +909,7 @@ const Settings: React.FC<SettingsProps> = ({
                           </div>
 
                           <div className="space-y-3">
-                              <Button className="w-full !py-3 font-semibold shadow-md shadow-accent/20" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>
+                              <Button className="w-full !py-2.5 font-semibold shadow-xs" onClick={() => window.dispatchEvent(new CustomEvent('openSubscriptionPrompt'))}>
                                   {sub.plan === 'free' ? 'Upgrade Plan (Instant Activation)' : 'Change / Upgrade Plan'}
                               </Button>
                               

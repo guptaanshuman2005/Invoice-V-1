@@ -247,8 +247,8 @@ const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
                     
                     {/* Live Preview Canvas */}
                     <div className="flex-1 bg-slate-100 dark:bg-slate-900 p-6 overflow-y-auto flex flex-col justify-between">
-                        <div className="h-10 flex items-center justify-between px-2 mb-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/40 dark:border-slate-700/20 shadow-sm shrink-0 animate-fade-in">
-                            <span className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest px-2">Interactive Custom Preview</span>
+                        <div className="h-10 flex items-center justify-between px-2 mb-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/40 dark:border-slate-700/20 shadow-xs shrink-0 animate-fade-in">
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide px-2">Interactive Custom Preview</span>
                             <div className="flex gap-2">
                                 {[
                                     { color: '#4F46E5', label: 'Indigo' },
@@ -283,8 +283,8 @@ const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
                                     >
                                         <div className="h-12 w-24 rounded-xl flex items-center justify-center text-xs font-black uppercase text-slate-400 dark:text-slate-500 border-2 border-dashed border-slate-300 dark:border-slate-800">Logo block</div>
                                         <div className="text-right">
-                                            <h1 className="text-lg font-black uppercase tracking-wider font-display" style={{ color: brandColor }}>INVOICE</h1>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">#INV-001</p>
+                                            <h1 className="text-lg font-bold uppercase tracking-wider" style={{ color: brandColor }}>INVOICE</h1>
+                                            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide mt-0.5">#INV-001</p>
                                         </div>
                                     </div>
 
@@ -345,7 +345,7 @@ const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
                                             {showQr && (
                                                 <div className="mt-3 p-2 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-center gap-3 w-48 animate-fade-in">
                                                     <div className="w-8 h-8 bg-slate-300 dark:bg-slate-800 rounded-lg shrink-0 border border-slate-200/40"></div>
-                                                    <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest">Bank Pay QR</span>
+                                                    <span className="text-[9px] font-semibold text-amber-600 uppercase tracking-wide">Bank Pay QR</span>
                                                 </div>
                                             )}
                                         </div>

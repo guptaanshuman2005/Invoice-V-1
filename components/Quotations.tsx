@@ -51,11 +51,11 @@ const Quotations: React.FC<QuotationsProps> = ({
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-display tracking-tight">Quotations</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Quotations</h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Create formal estimates, track acceptance, and convert directly to tax invoices.</p>
         </div>
         <div className="flex gap-3">
-             <Button onClick={() => setActiveView('NewQuotation')} className="gap-2 shadow-lg shadow-accent/20">
+             <Button onClick={() => setActiveView('NewQuotation')} className="gap-2 shadow-xs">
                <Plus className="w-4 h-4" /> New Quote
              </Button>
         </div>
@@ -74,7 +74,7 @@ const Quotations: React.FC<QuotationsProps> = ({
               </div>
               <h3 className="text-lg font-bold text-slate-800 dark:text-white">No quotations found</h3>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm">Create estimates for your clients and convert them to invoices with 1 click.</p>
-              <Button className="mt-5 shadow-lg shadow-accent/20" onClick={() => setActiveView('NewQuotation')}>
+              <Button className="mt-5 shadow-xs" onClick={() => setActiveView('NewQuotation')}>
                 <Plus className="w-4 h-4 mr-1.5" /> Create First Quote
               </Button>
           </div>

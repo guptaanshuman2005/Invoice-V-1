@@ -410,14 +410,14 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
     <div className="space-y-6 animate-fade-in print:p-0">
       
       {/* Page Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white dark:bg-slate-800/80 p-6 rounded-3xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm print:hidden">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-xs print:hidden">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-gradient-to-tr from-accent to-indigo-600 text-white rounded-xl shadow-md shadow-accent/20">
+            <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
-            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">GST Tax Reports & Filings</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">GST Tax Reports & Filings</h1>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               GSTR-1 & 3B Ready
             </span>
           </div>
@@ -430,7 +430,7 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
           <Button 
             onClick={handleDownloadJSON} 
-            className="flex-1 sm:flex-initial !py-2.5 !px-4 text-xs font-bold gap-2 shadow-md shadow-accent/20 bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 text-white"
+            className="flex-1 sm:flex-initial !py-2.5 !px-4 text-xs font-semibold gap-2 shadow-xs bg-indigo-600 hover:bg-indigo-700 text-white"
           >
             <FileJson className="w-4 h-4 shrink-0" />
             <span>Download GSTR-1 JSON</span>

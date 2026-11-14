@@ -533,7 +533,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                     <Button variant="secondary" onClick={() => setShowLivePreview(true)} className="flex items-center gap-2">
                         <Eye className="w-4 h-4" /> Live Preview
                     </Button>
-                    <Button onClick={handleSave} className="shadow-lg shadow-accent/20">Save {docTypeLabel}</Button>
+                    <Button onClick={handleSave} className="shadow-xs">Save {docTypeLabel}</Button>
                 </div>
              </div>
 
@@ -542,7 +542,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                  <div className="glass-panel p-5 rounded-2xl mb-6 border border-amber-500/20 bg-amber-50/40 dark:bg-amber-950/10">
                      <div className="flex items-center justify-between gap-2 mb-3">
                          <div className="flex items-center gap-2">
-                             <span className="text-xs font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                             <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
                                  Original Invoice & GST Reference
                              </span>
                              <span className="text-[11px] text-slate-500 dark:text-slate-400">(Required for GSTR-1 CDNR/CDNUR reporting)</span>

@@ -1414,7 +1414,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                       <Download className="w-4 h-4" />
                       Export
                   </Button>
-                  <Button onClick={() => handleOpenModal()} className="gap-2 shadow-lg shadow-accent/20">
+                  <Button onClick={() => handleOpenModal()} className="gap-2 shadow-xs">
                       <Plus className="w-4 h-4" />
                       Add Client
                   </Button>
@@ -1450,11 +1450,11 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
           </div>
 
           {selectedIds.length > 0 && (
-              <div className="bg-accent text-white px-5 py-3 rounded-xl flex justify-between items-center animate-slide-in-top shadow-lg shadow-accent/30">
-                  <span className="text-sm font-bold">{selectedIds.length} Clients Selected</span>
+              <div className="bg-zinc-900 dark:bg-zinc-800 text-white px-5 py-3 rounded-xl flex justify-between items-center shadow-md border border-zinc-700/60 animate-fade-in">
+                  <span className="text-sm font-semibold">{selectedIds.length} Clients Selected</span>
                   <div className="flex gap-2">
-                      <Button variant="secondary" className="!py-1 !px-3 !text-xs bg-white/20 text-white hover:bg-white/30 border-transparent" onClick={handleBulkDelete}>Delete Selected</Button>
-                      <button onClick={() => setSelectedIds([])} className="text-xs font-bold hover:underline px-2 py-1">Clear</button>
+                      <Button variant="secondary" className="!py-1 !px-3 !text-xs bg-white/10 text-white hover:bg-white/20 border-transparent" onClick={handleBulkDelete}>Delete Selected</Button>
+                      <button onClick={() => setSelectedIds([])} className="text-xs font-medium text-zinc-300 hover:text-white hover:underline px-2 py-1">Clear</button>
                   </div>
               </div>
           )}
@@ -1497,7 +1497,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                                           </td>
                                           <td className="px-3 sm:px-4 py-3.5 font-bold text-slate-900 dark:text-white">
                                               <div className="flex items-center gap-2">
-                                                  {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>}
+                                                  {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>}
                                                   <span>{client.name}</span>
                                               </div>
                                               {client.tags && client.tags.length > 0 && (
@@ -1546,13 +1546,13 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                       onDoubleClick={handleResetWidth}
                       title="Drag left/right to resize • Double-click to reset"
                       className={`hidden xl:flex flex-col justify-center items-center w-4 -mx-2 z-20 cursor-col-resize select-none transition-colors group ${
-                          isDragging ? 'bg-accent/20' : 'hover:bg-accent/15'
+                          isDragging ? 'bg-indigo-500/20' : 'hover:bg-indigo-500/10'
                       }`}
                   >
                       <div className={`w-1 h-16 rounded-full transition-all duration-200 ${
                           isDragging 
-                              ? 'bg-accent shadow-lg shadow-accent/50 scale-y-110' 
-                              : 'bg-slate-300 dark:bg-slate-700 group-hover:bg-accent group-hover:scale-y-110'
+                              ? 'bg-indigo-600 scale-y-110' 
+                              : 'bg-slate-300 dark:bg-slate-700 group-hover:bg-indigo-600 group-hover:scale-y-110'
                       }`} />
                   </div>
               )}

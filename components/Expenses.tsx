@@ -94,43 +94,43 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white font-display tracking-tight">Business Expense Log</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Business Expense Log</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Track company operational expenditures and calculate net profitability.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="shadow-lg shadow-accent/20">
+        <Button onClick={() => setIsModalOpen(true)} className="shadow-xs">
           <Plus className="w-4 h-4 mr-2" /> Record New Expense
         </Button>
       </div>
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/40 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center font-bold shrink-0">
-            <TrendingDown className="w-6 h-6" />
+        <div className="glass-panel p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 shadow-xs flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center font-bold shrink-0">
+            <TrendingDown className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total Expenses</span>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">₹{totalExpenseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h3>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Expenses</span>
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-0.5">₹{totalExpenseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h3>
           </div>
         </div>
 
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/40 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold shrink-0">
-            <Calendar className="w-6 h-6" />
+        <div className="glass-panel p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 shadow-xs flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold shrink-0">
+            <Calendar className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">This Month</span>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">₹{currentMonthExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h3>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">This Month</span>
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-0.5">₹{currentMonthExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h3>
           </div>
         </div>
 
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/40 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold shrink-0">
-            <Tag className="w-6 h-6" />
+        <div className="glass-panel p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 shadow-xs flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold shrink-0">
+            <Tag className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Highest Category</span>
-            <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1 truncate max-w-[160px]">{topCategory}</h3>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Highest Category</span>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate max-w-[160px]">{topCategory}</h3>
           </div>
         </div>
       </div>
@@ -297,7 +297,7 @@ const Expenses: React.FC<ExpensesProps> = ({ company, onAddExpense, onDeleteExpe
 
           <div className="pt-4 flex justify-end gap-3">
             <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit" className="shadow-lg shadow-accent/20">Save Expense</Button>
+            <Button type="submit" className="shadow-xs">Save Expense</Button>
           </div>
         </form>
       </Modal>

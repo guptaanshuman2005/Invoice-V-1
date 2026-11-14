@@ -102,13 +102,13 @@ export const DemoPage: React.FC<DemoPageProps> = ({
             Test drive our Indian GST calculation engine, live PDF invoice styling, stock deduction, and real-time business financial metrics in an instant sandbox environment.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={onLaunchSandbox}
-              className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 text-white px-8 py-4 rounded-2xl font-black text-base shadow-xl shadow-accent/25 hover:shadow-2xl hover:scale-105 active:scale-95 transition-all"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-xs transition-colors"
             >
               <Play className="w-4 h-4 fill-white" />
-              <span>Open Full Live Sandbox</span>
+              <span>Open live sandbox</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -117,37 +117,37 @@ export const DemoPage: React.FC<DemoPageProps> = ({
                 const element = document.getElementById('gst-simulator');
                 element?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 px-6 py-4 rounded-2xl font-bold text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 px-5 py-3 rounded-xl font-medium text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors shadow-xs"
             >
-              Try GST Simulator Below
+              Try GST Simulator
             </button>
           </div>
         </div>
 
         {/* Feature Highlights Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
-          <div className="p-6 rounded-3xl glass-panel border border-slate-200/50 dark:border-slate-800/50 hover:-translate-y-1 transition-all group">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <IndianRupee className="w-6 h-6" />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+          <div className="p-5 rounded-xl glass-panel border border-zinc-200/80 dark:border-zinc-800/80 group">
+            <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3">
+              <IndianRupee className="w-5 h-5" />
             </div>
-            <h3 className="font-extrabold text-base mb-1.5">Intelligent GST Engine</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <h3 className="font-semibold text-sm text-zinc-900 dark:text-white mb-1">Intelligent GST Engine</h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
               Auto-determines CGST+SGST vs Interstate IGST from client state codes. Includes HSN & SAC catalog.
             </p>
           </div>
 
-          <div className="p-6 rounded-3xl glass-panel border border-slate-200/50 dark:border-slate-800/50 hover:-translate-y-1 transition-all group">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Boxes className="w-6 h-6" />
+          <div className="p-5 rounded-xl glass-panel border border-zinc-200/80 dark:border-zinc-800/80 group">
+            <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
+              <Boxes className="w-5 h-5" />
             </div>
-            <h3 className="font-extrabold text-base mb-1.5">Live Stock Depletion</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <h3 className="font-semibold text-sm text-zinc-900 dark:text-white mb-1">Live Stock Depletion</h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
               Invoices auto-deduct inventory quantities with low-stock warnings and complete audit trail logs.
             </p>
           </div>
 
-          <div className="p-6 rounded-3xl glass-panel border border-slate-200/50 dark:border-slate-800/50 hover:-translate-y-1 transition-all group">
-            <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="p-5 rounded-xl glass-panel border border-zinc-200/80 dark:border-zinc-800/80 group">
+            <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-3">
               <Share2 className="w-6 h-6" />
             </div>
             <h3 className="font-extrabold text-base mb-1.5">WhatsApp & UPI Share</h3>
@@ -222,7 +222,7 @@ export const DemoPage: React.FC<DemoPageProps> = ({
           </div>
 
           {/* Live Mock Invoice Preview Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-8 max-w-4xl mx-auto overflow-hidden transition-all duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-8 max-w-4xl mx-auto overflow-hidden transition-all duration-300">
             
             {/* Header / Brand Banner */}
             <div className={`p-6 rounded-2xl mb-8 transition-colors duration-300 ${
@@ -235,10 +235,10 @@ export const DemoPage: React.FC<DemoPageProps> = ({
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <div className="flex items-center gap-2.5 mb-1">
-                    <div className="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center font-black text-sm shadow-sm">
+                    <div className="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center font-bold text-sm shadow-xs">
                       AG
                     </div>
-                    <h3 className={`text-xl font-black tracking-tight ${selectedTemplate === 'elegant' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+                    <h3 className={`text-xl font-bold tracking-tight ${selectedTemplate === 'elegant' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
                       Apex Global Technologies Pvt. Ltd.
                     </h3>
                   </div>
@@ -329,14 +329,14 @@ export const DemoPage: React.FC<DemoPageProps> = ({
               
               {/* Payment Details & Bank */}
               <div className="text-xs space-y-2">
-                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Bank Account & UPI Payment:</span>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">HDFC Bank Ltd (A/C: 50200012345678)</p>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 block mb-1">Bank Account & UPI Payment:</span>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">HDFC Bank Ltd (A/C: 50200012345678)</p>
                   <p className="font-mono text-slate-600 dark:text-slate-400">IFSC: HDFC0000060 | Lower Parel, Mumbai</p>
-                  <p className="text-accent font-bold mt-1">UPI ID: apextech@okhdfcbank</p>
+                  <p className="text-indigo-600 dark:text-indigo-400 font-semibold mt-1">UPI ID: apextech@okhdfcbank</p>
                 </div>
                 <p className="text-[11px] text-slate-500 italic">
-                  Amount in words: <span className="font-semibold text-slate-700 dark:text-slate-300">One Lakh Eighty Nine Thousand Three Hundred Ninety Only</span>
+                  Amount in words: <span className="font-medium text-slate-700 dark:text-slate-300">One Lakh Eighty Nine Thousand Three Hundred Ninety Only</span>
                 </p>
               </div>
 
@@ -344,15 +344,15 @@ export const DemoPage: React.FC<DemoPageProps> = ({
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between py-1 text-slate-600 dark:text-slate-400">
                   <span>Subtotal (Taxable Amount):</span>
-                  <span className="font-mono font-bold text-slate-900 dark:text-white">₹1,60,500.00</span>
+                  <span className="font-mono font-semibold text-slate-900 dark:text-white">₹1,60,500.00</span>
                 </div>
                 <div className="flex justify-between py-1 text-slate-600 dark:text-slate-400">
                   <span>Interstate IGST (18%):</span>
-                  <span className="font-mono font-bold text-accent">₹28,890.00</span>
+                  <span className="font-mono font-semibold text-indigo-600 dark:text-indigo-400">₹28,890.00</span>
                 </div>
                 <div className="flex justify-between py-2 border-t-2 border-slate-900 dark:border-slate-700 text-sm">
-                  <span className="font-extrabold text-slate-900 dark:text-white">Grand Total:</span>
-                  <span className="font-mono font-black text-slate-900 dark:text-white text-base">₹1,89,390.00</span>
+                  <span className="font-bold text-slate-900 dark:text-white">Grand Total:</span>
+                  <span className="font-mono font-bold text-slate-900 dark:text-white text-base">₹1,89,390.00</span>
                 </div>
               </div>
 
@@ -363,14 +363,14 @@ export const DemoPage: React.FC<DemoPageProps> = ({
 
         {/* Live Interactive GST Simulator Widget */}
         <section id="gst-simulator" className="mb-24 scroll-mt-24">
-          <div className="p-8 sm:p-12 rounded-3xl glass-panel border border-slate-200/60 dark:border-slate-800/60 shadow-xl relative overflow-hidden">
+          <div className="p-8 sm:p-12 rounded-2xl glass-panel border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm relative overflow-hidden">
             
             <div className="max-w-3xl mb-8">
-              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-accent mb-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400 mb-2">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '10s' }} />
                 Instant Sandbox Widget
               </span>
-              <h2 className="text-3xl font-black font-display text-slate-900 dark:text-white mb-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white mb-2 tracking-tight">
                 Live Indian GST Calculator Simulator
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -384,9 +384,9 @@ export const DemoPage: React.FC<DemoPageProps> = ({
               <div className="space-y-6">
                 
                 <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">
+                  <div className="flex justify-between text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
                     <span>Taxable Amount (₹)</span>
-                    <span className="font-mono text-sm text-accent font-black">₹{taxableAmount.toLocaleString('en-IN')}</span>
+                    <span className="font-mono text-sm text-indigo-600 dark:text-indigo-400 font-bold">₹{taxableAmount.toLocaleString('en-IN')}</span>
                   </div>
                   <input
                     type="range"
@@ -413,10 +413,10 @@ export const DemoPage: React.FC<DemoPageProps> = ({
                       <button
                         key={rate}
                         onClick={() => setGstRate(rate)}
-                        className={`py-2 rounded-xl text-xs font-black font-mono transition-all ${
+                        className={`py-2 rounded-xl text-xs font-semibold font-mono transition-colors ${
                           gstRate === rate 
-                            ? 'bg-gradient-to-r from-accent to-indigo-600 text-white shadow-md' 
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                            ? 'bg-indigo-600 text-white shadow-xs' 
+                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                         }`}
                       >
                         {rate}%
@@ -425,21 +425,21 @@ export const DemoPage: React.FC<DemoPageProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
+                <div className="p-4 rounded-xl bg-zinc-100/70 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-extrabold text-slate-900 dark:text-white">
+                    <div className="text-xs font-semibold text-zinc-900 dark:text-white">
                       {isInterstate ? 'Interstate Transaction (IGST)' : 'Intrastate Transaction (CGST + SGST)'}
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] text-zinc-500">
                       {isInterstate ? 'E.g., Maharashtra seller to Karnataka buyer' : 'E.g., Mumbai seller to Pune buyer (Same State)'}
                     </div>
                   </div>
                   <button
                     onClick={() => setIsInterstate(!isInterstate)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-xs ${
                       isInterstate 
-                        ? 'bg-purple-600 text-white shadow-md' 
-                        : 'bg-emerald-600 text-white shadow-md'
+                        ? 'bg-violet-600 text-white' 
+                        : 'bg-emerald-600 text-white'
                     }`}
                   >
                     {isInterstate ? 'Interstate' : 'Intrastate'}
@@ -449,16 +449,16 @@ export const DemoPage: React.FC<DemoPageProps> = ({
               </div>
 
               {/* Reactive Calculation Breakdown Card */}
-              <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-2xl relative">
-                <div className="text-xs uppercase tracking-widest font-mono text-slate-400 mb-4 flex items-center justify-between">
+              <div className="p-6 rounded-2xl bg-zinc-900 text-white shadow-md relative border border-zinc-800">
+                <div className="text-xs uppercase tracking-wider font-mono text-zinc-400 mb-4 flex items-center justify-between">
                   <span>Computed Tax Breakdown</span>
-                  <span className="text-emerald-400 font-bold">100% Compliant</span>
+                  <span className="text-emerald-400 font-semibold">100% Compliant</span>
                 </div>
 
-                <div className="space-y-3 font-mono text-xs border-b border-slate-800 pb-4 mb-4">
+                <div className="space-y-3 font-mono text-xs border-b border-zinc-800 pb-4 mb-4">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Base Taxable:</span>
-                    <span className="font-bold">₹{taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-zinc-400">Base Taxable:</span>
+                    <span className="font-semibold">₹{taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
 
                   {!isInterstate ? (
@@ -473,28 +473,28 @@ export const DemoPage: React.FC<DemoPageProps> = ({
                       </div>
                     </>
                   ) : (
-                    <div className="flex justify-between text-purple-400">
+                    <div className="flex justify-between text-violet-400">
                       <span>IGST ({gstRate}%):</span>
                       <span>₹{igst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                   )}
 
-                  <div className="flex justify-between text-slate-400">
+                  <div className="flex justify-between text-zinc-400">
                     <span>Total Tax Liability:</span>
-                    <span className="font-bold text-amber-300">₹{totalTax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="font-semibold text-amber-300">₹{totalTax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Total Invoice Value</span>
-                    <span className="text-2xl font-black font-mono text-white">
+                    <span className="text-[10px] uppercase font-semibold text-zinc-400 tracking-wider block">Total Invoice Value</span>
+                    <span className="text-2xl font-bold font-mono text-white">
                       ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <button
                     onClick={onLaunchSandbox}
-                    className="flex items-center gap-1.5 bg-accent hover:bg-accent-hover text-white px-4 py-2.5 rounded-xl text-xs font-black transition-all hover:scale-105 active:scale-95 shadow-md shadow-accent/30"
+                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors shadow-xs"
                   >
                     <span>Use in App</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -509,27 +509,26 @@ export const DemoPage: React.FC<DemoPageProps> = ({
         </section>
 
         {/* Final Call To Action */}
-        <div className="text-center py-12 px-6 rounded-3xl bg-gradient-to-r from-accent via-indigo-600 to-purple-600 text-white shadow-2xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)]"></div>
-          <h2 className="text-3xl md:text-4xl font-black font-display mb-4 relative z-10">
+        <div className="text-center py-12 px-6 rounded-2xl bg-zinc-900 text-white border border-zinc-800 shadow-md relative overflow-hidden">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3 relative z-10">
             Ready to test the live dashboard?
           </h2>
-          <p className="text-white/90 max-w-xl mx-auto text-sm md:text-base mb-8 relative z-10 font-medium">
+          <p className="text-zinc-400 max-w-lg mx-auto text-sm mb-6 relative z-10 font-normal">
             Jump directly into the fully functioning sandbox with preloaded Indian clients, products, quotes, and reports.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 relative z-10">
             <button
               onClick={onLaunchSandbox}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-accent hover:bg-slate-100 px-8 py-4 rounded-2xl font-black text-base transition-all shadow-xl hover:scale-105 active:scale-95"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-semibold text-sm transition-colors shadow-xs"
             >
-              <Play className="w-4 h-4 fill-accent" />
-              <span>Launch Live Interactive Sandbox</span>
+              <Play className="w-4 h-4 fill-white" />
+              <span>Launch interactive sandbox</span>
             </button>
             <button
               onClick={onGetStarted}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-black/25 hover:bg-black/40 text-white border border-white/20 px-8 py-4 rounded-2xl font-black text-base transition-all"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 px-6 py-3 rounded-xl font-semibold text-sm transition-colors"
             >
-              Create Free Account
+              Create free account
             </button>
           </div>
         </div>

@@ -316,7 +316,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                             </div>
                             
                             <div className="pt-6">
-                                <Button type="submit" className="w-full !py-4 !text-lg shadow-xl shadow-accent/20 hover:shadow-accent/30 transition-all transform hover:-translate-y-0.5">Next Step</Button>
+                                <Button type="submit" className="w-full !py-2.5 !text-sm shadow-xs">Next Step</Button>
                             </div>
                         </form>
                         ) : (
@@ -443,7 +443,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                                     onClick={() => setDetails(prev => ({ ...prev, invoiceTemplate: 'custom' }))}
                                     className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all group ${details.invoiceTemplate === 'custom' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/10' : 'border-slate-200 dark:border-slate-700 hover:border-amber-500/50'}`}
                                 >
-                                    <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">PREMIUM</div>
+                                    <div className="absolute top-3 right-3 bg-amber-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full z-10">PREMIUM</div>
                                     <div className="aspect-[1/1.4] bg-slate-50 dark:bg-slate-800/50 rounded-lg shadow-sm border border-dashed border-amber-300 dark:border-amber-700/50 mb-4 overflow-hidden flex items-center justify-center relative">
                                         <div className="text-center p-4">
                                             <div className="w-10 h-10 mx-auto bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center mb-2">
@@ -469,8 +469,8 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                             </div>
 
                             <div className="pt-6 flex gap-4">
-                                <Button type="button" variant="secondary" onClick={() => setStep(1)} className="w-1/3 !py-4 !text-lg">Back</Button>
-                                <Button type="button" onClick={handleSubmit} className="w-2/3 !py-4 !text-lg shadow-xl shadow-accent/20 hover:shadow-accent/30 transition-all transform hover:-translate-y-0.5">Complete Setup</Button>
+                                <Button type="button" variant="secondary" onClick={() => setStep(1)} className="w-1/3 !py-2.5 !text-sm">Back</Button>
+                                <Button type="button" onClick={handleSubmit} className="w-2/3 !py-2.5 !text-sm shadow-xs">Complete Setup</Button>
                             </div>
                         </div>
                         )}

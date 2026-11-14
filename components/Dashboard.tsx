@@ -733,40 +733,40 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                 {/* Left Column: Quick Actions & Insights */}
                 <div className="lg:col-span-1 space-y-5">
                     {/* Quick Actions */}
-                    <div className="glass-panel p-5 rounded-2xl">
-                        <h2 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Quick Actions</h2>
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
+                    <div className="glass-panel p-5 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                        <h2 className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">Quick Actions</h2>
+                        <div className="space-y-2.5">
+                            <div className="grid grid-cols-2 gap-2.5">
                                 <button
                                     onClick={() => setActiveView && setActiveView('NewInvoice')}
-                                    className="flex flex-col items-center justify-center gap-2 p-3.5 rounded-2xl bg-accent text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-accent/20 cursor-pointer"
+                                    className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shadow-xs active:scale-[0.98] cursor-pointer"
                                 >
-                                    <PlusCircle className="w-5 h-5" />
-                                    <span className="text-[10px] font-bold uppercase text-center">New Invoice</span>
+                                    <PlusCircle className="w-4 h-4" />
+                                    <span className="text-xs font-semibold text-center">New Invoice</span>
                                 </button>
                                 <button
                                     onClick={() => setIsQuickPaySelectorOpen(true)}
-                                    className="flex flex-col items-center justify-center gap-2 p-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-emerald-600/20 cursor-pointer"
+                                    className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-xs active:scale-[0.98] cursor-pointer"
                                     title="Record payment received from client"
                                 >
-                                    <CreditCard className="w-5 h-5" />
-                                    <span className="text-[10px] font-bold uppercase text-center">Record Payment</span>
+                                    <CreditCard className="w-4 h-4" />
+                                    <span className="text-xs font-semibold text-center">Record Payment</span>
                                 </button>
                             </div>
                             <div className="grid grid-cols-3 gap-2">
                                 <button
                                     onClick={() => setActiveView && setActiveView('NewQuotation')}
-                                    className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                                    className="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors active:scale-[0.98] cursor-pointer"
                                 >
-                                    <FileText className="w-4 h-4" />
-                                    <span className="text-[9px] font-bold uppercase text-center">New Quote</span>
+                                    <FileText className="w-3.5 h-3.5" />
+                                    <span className="text-[11px] font-medium text-center">New Quote</span>
                                 </button>
                                 <button
                                     onClick={() => setActiveView && setActiveView('Clients')}
-                                    className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                                    className="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors active:scale-[0.98] cursor-pointer"
                                 >
-                                    <Users className="w-4 h-4" />
-                                    <span className="text-[9px] font-bold uppercase text-center">Add Client</span>
+                                    <Users className="w-3.5 h-3.5" />
+                                    <span className="text-[11px] font-medium text-center">Add Client</span>
                                 </button>
                                 <button
                                     onClick={() => setActiveView && setActiveView('Items')}
@@ -783,7 +783,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                     <div className="glass-panel p-5 rounded-2xl">
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <h2 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Receivables Aging</h2>
+                                <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Receivables Aging</h2>
                                 <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Cash flow risk breakdown</p>
                             </div>
                             <button
@@ -872,7 +872,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                             >
                                 <div className="flex justify-between items-center text-xs font-bold mb-1.5">
                                     <div className="flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                                         <span className="text-slate-700 dark:text-slate-300">90+ Days</span>
                                         <span className="text-[10px] text-rose-600 bg-rose-100/60 dark:bg-rose-950/40 px-1.5 py-0.5 rounded font-bold">Critical</span>
                                     </div>
@@ -895,32 +895,32 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
                     {/* GST collected Breakdown */}
                     <div className="glass-panel p-5 rounded-2xl">
-                        <h2 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-5">GST Collected</h2>
+                        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">GST Collected</h2>
                         <div className="space-y-4">
                             <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800/60">
-                                <span className="text-xs font-bold text-slate-500">CGST</span>
-                                <span className="text-xs font-black text-slate-900 dark:text-white font-display">{currency}{metrics.gst.cgstCollected.toLocaleString()}</span>
+                                <span className="text-xs font-medium text-slate-500">CGST</span>
+                                <span className="text-xs font-bold text-slate-900 dark:text-white">{currency}{metrics.gst.cgstCollected.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800/60">
-                                <span className="text-xs font-bold text-slate-500">SGST</span>
-                                <span className="text-xs font-black text-slate-900 dark:text-white font-display">{currency}{metrics.gst.sgstCollected.toLocaleString()}</span>
+                                <span className="text-xs font-medium text-slate-500">SGST</span>
+                                <span className="text-xs font-bold text-slate-900 dark:text-white">{currency}{metrics.gst.sgstCollected.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800/60">
-                                <span className="text-xs font-bold text-slate-500">IGST</span>
-                                <span className="text-xs font-black text-slate-900 dark:text-white font-display">{currency}{metrics.gst.igstCollected.toLocaleString()}</span>
+                                <span className="text-xs font-medium text-slate-500">IGST</span>
+                                <span className="text-xs font-bold text-slate-900 dark:text-white">{currency}{metrics.gst.igstCollected.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center pt-2">
-                                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Total Tax</span>
-                                <span className="text-sm font-black text-accent font-display">{currency}{metrics.gst.totalGstCollected.toLocaleString()}</span>
+                                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Total Tax</span>
+                                <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{currency}{metrics.gst.totalGstCollected.toLocaleString()}</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Dynamic Insights */}
                     <div className="glass-panel p-5 rounded-2xl">
-                        <div className="flex justify-between items-center mb-5">
-                            <h2 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Insights</h2>
-                            <span className="flex h-1.5 w-1.5 rounded-full bg-accent/60 animate-pulse"></span>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Insights</h2>
+                            <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
                         </div>
                         <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                             {metrics.insights.length === 0 ? (
@@ -973,17 +973,17 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
                     {/* Restock Alerts Widget */}
                     {metrics.lowStockList.length > 0 && (
-                        <div className="glass-panel p-6 rounded-3xl animate-fade-in-up">
-                            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 font-display">Restock Alerts</h2>
+                        <div className="glass-panel p-5 rounded-2xl animate-fade-in">
+                            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Restock Alerts</h2>
                             <div className="space-y-3">
                                 {metrics.lowStockList.map(item => (
-                                    <div key={item.id} onClick={() => navigateToInventory('low')} className="flex items-center justify-between gap-3 p-3 bg-rose-500/5 dark:bg-rose-950/10 border border-rose-500/10 dark:border-rose-900/20 rounded-2xl cursor-pointer hover:-translate-y-0.5 transition-all hover:shadow-sm">
+                                    <div key={item.id} onClick={() => navigateToInventory('low')} className="flex items-center justify-between gap-3 p-3 bg-rose-500/5 dark:bg-rose-950/10 border border-rose-500/10 dark:border-rose-900/20 rounded-xl cursor-pointer hover:bg-rose-500/10 transition-colors">
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-xs font-black text-slate-900 dark:text-white truncate" title={item.name}>{item.name}</p>
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">HSN: {item.hsn || 'N/A'}</p>
+                                            <p className="text-xs font-bold text-slate-900 dark:text-white truncate" title={item.name}>{item.name}</p>
+                                            <p className="text-[9px] font-medium text-slate-400 uppercase tracking-wide mt-0.5">HSN: {item.hsn || 'N/A'}</p>
                                         </div>
                                         <div className="shrink-0 text-right">
-                                            <span className="inline-flex items-center whitespace-nowrap text-[10px] font-black text-rose-600 dark:text-rose-400 bg-rose-100/70 dark:bg-rose-950/40 border border-rose-200/50 dark:border-rose-900/40 px-2.5 py-1 rounded-full uppercase tracking-tight">
+                                            <span className="inline-flex items-center whitespace-nowrap text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-100/70 dark:bg-rose-950/40 border border-rose-200/50 dark:border-rose-900/40 px-2.5 py-1 rounded-full uppercase tracking-tight">
                                                 {item.quantityInStock} {item.unit || 'pcs'}
                                             </span>
                                         </div>
@@ -1105,7 +1105,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                                 <div className="flex justify-between items-center mb-5">
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                             <h2 className="text-base font-bold text-slate-800 dark:text-white">Recent Collections</h2>
                                         </div>
                                         <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Payments & receipts</p>
@@ -1446,7 +1446,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                                     : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 hover:bg-rose-100'
                             }`}
                         >
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
                             90+ Days ({metrics.aging.buckets['90+'].items.length})
                         </button>
                     </div>

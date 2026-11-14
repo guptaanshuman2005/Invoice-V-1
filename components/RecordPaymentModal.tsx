@@ -118,13 +118,13 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
         <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
           <div className="flex items-center justify-between gap-3 mb-2">
             <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Client</div>
-              <div className="text-sm font-black text-slate-900 dark:text-white truncate" title={invoice.client?.name}>
+              <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Client</div>
+              <div className="text-sm font-semibold text-slate-900 dark:text-white truncate" title={invoice.client?.name}>
                 {invoice.client?.name || 'Customer'}
               </div>
             </div>
             <div className="text-right">
-              <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide inline-block ${
+              <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide inline-block ${
                 summary.status === 'Paid'
                   ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-400'
                   : summary.status === 'Partially Paid'
@@ -139,20 +139,20 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           {/* 3-Column Financial Numbers */}
           <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-center">
             <div>
-              <div className="text-[10px] text-slate-400 uppercase font-bold">Total Bill</div>
-              <div className="text-sm font-black text-slate-900 dark:text-white font-mono mt-0.5">
+              <div className="text-[10px] text-slate-500 uppercase font-medium">Total Bill</div>
+              <div className="text-sm font-bold text-slate-900 dark:text-white font-mono mt-0.5">
                 ₹{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-emerald-500 uppercase font-bold">Received</div>
-              <div className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-medium">Received</div>
+              <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
                 ₹{summary.totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-rose-500 uppercase font-bold">Balance Due</div>
-              <div className="text-sm font-black text-rose-600 dark:text-rose-400 font-mono mt-0.5">
+              <div className="text-[10px] text-rose-600 dark:text-rose-400 uppercase font-medium">Balance Due</div>
+              <div className="text-sm font-bold text-rose-600 dark:text-rose-400 font-mono mt-0.5">
                 ₹{summary.balanceDue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
@@ -368,7 +368,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">
                           ₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </span>
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-accent">

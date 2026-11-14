@@ -184,16 +184,12 @@ const Auth: React.FC<AuthProps> = ({ onBack, initialView = 'login' }) => {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-[#F8F9FB] dark:bg-[#0A0A0A] font-sans selection:bg-accent selection:text-white items-center justify-center p-4 relative overflow-hidden">
-      
-      {/* Decorative Gradients */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-accent/10 dark:bg-accent/15 rounded-full blur-[120px] -z-10 animate-pulse duration-[8s]"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 dark:bg-purple-500/15 rounded-full blur-[120px] -z-10 animate-pulse duration-[10s]"></div>
+    <div className="flex min-h-screen w-full bg-[#F8F9FB] dark:bg-[#0B0C0E] font-sans selection:bg-indigo-600 selection:text-white items-center justify-center p-4 relative overflow-hidden">
 
       {onBack && (
         <button 
           onClick={onBack}
-          className="absolute top-6 left-6 sm:top-8 sm:left-8 text-xs font-black uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white flex items-center gap-2 transition-colors py-2 px-3 rounded-xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 shadow-sm"
+          className="absolute top-6 left-6 sm:top-8 sm:left-8 text-xs font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex items-center gap-2 transition-colors py-2 px-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Home
         </button>
@@ -204,7 +200,7 @@ const Auth: React.FC<AuthProps> = ({ onBack, initialView = 'login' }) => {
         {/* Header */}
         <div className="text-center">
           <div className="inline-flex justify-center mb-4"><BrandLogo size="lg" /></div>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight font-display">
+          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">
             {authView === 'login' ? 'Sign In to InvoiceProIn' : 
              authView === 'signup' ? 'Create Your Account' : 
              authView === 'forgotPassword' ? 'Reset Your Password' : 
@@ -425,7 +421,7 @@ const Auth: React.FC<AuthProps> = ({ onBack, initialView = 'login' }) => {
               <button 
                 type="button" 
                 onClick={() => switchView('login')} 
-                className="w-full text-center text-xs font-black uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 mt-2 transition-all"
+                className="w-full text-center text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 mt-2 transition-colors"
               >
                 &larr; Back to Sign In
               </button>
@@ -439,14 +435,14 @@ const Auth: React.FC<AuthProps> = ({ onBack, initialView = 'login' }) => {
                 <Mail className="w-8 h-8 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white font-display">Reset Email Sent!</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Reset Email Sent!</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">
                   We've sent a password reset link to <strong className="text-slate-900 dark:text-white font-bold">{email}</strong>. Check your inbox to choose a new password.
                 </p>
               </div>
               <Button 
                 onClick={() => switchView('login')} 
-                className="w-full py-3 text-sm shadow-lg shadow-accent/25 rounded-2xl bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 transition-all font-black uppercase tracking-wider text-white"
+                className="w-full py-2.5 text-sm rounded-xl font-semibold shadow-xs"
               >
                 Back to Sign In
               </Button>

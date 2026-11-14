@@ -116,7 +116,7 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
               </p>
             </div>
             <Button
-              className="whitespace-nowrap !py-2 !px-4 text-xs font-bold shadow-md shadow-accent/20"
+              className="whitespace-nowrap !py-2 !px-4 text-xs font-semibold shadow-xs"
               onClick={() => {
                 onClose();
                 if (onExitDemoToAuth) onExitDemoToAuth();
@@ -151,8 +151,8 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
 
             {/* Invoices Count Highlight */}
             <div className="bg-white dark:bg-slate-900/80 rounded-xl p-3 mb-4 border border-emerald-500/20 text-center">
-              <div className="text-2xl font-black text-slate-900 dark:text-white">5</div>
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Invoices Total</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">5</div>
+              <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Invoices Total</div>
             </div>
 
             <ul className="space-y-2 mb-6 flex-1 text-xs text-slate-600 dark:text-slate-400">
@@ -178,7 +178,7 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
             <p className="text-xs text-slate-500 mb-3">Pay-as-you-go monthly</p>
 
             <div className="mb-2">
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-white">₹49</span>
+              <span className="text-3xl font-bold text-slate-900 dark:text-white">₹49</span>
               <span className="text-xs text-slate-500 ml-1">/ month</span>
             </div>
 
@@ -188,8 +188,8 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
 
             {/* Invoices Count Highlight */}
             <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 mb-4 border border-slate-200 dark:border-slate-700/60 text-center">
-              <div className="text-2xl font-black text-slate-900 dark:text-white">50</div>
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Invoices / Month</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">50</div>
+              <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Invoices / Month</div>
               <div className="text-[10px] text-accent mt-0.5 font-medium">₹0.98 per invoice</div>
             </div>
 
@@ -215,8 +215,8 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
           </div>
 
           {/* Standard (Quarterly) */}
-          <div className="p-5 rounded-2xl border-2 border-accent/60 bg-accent/[0.02] dark:bg-accent/[0.04] relative flex flex-col shadow-lg shadow-accent/5">
-            <div className="absolute top-0 right-4 -translate-y-1/2 bg-accent text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">
+          <div className="p-5 rounded-2xl border-2 border-indigo-600 bg-white dark:bg-slate-900/60 relative flex flex-col shadow-xs">
+            <div className="absolute top-0 right-4 -translate-y-1/2 bg-indigo-600 text-white px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase">
               {currentPlan === 'standard' ? 'Active Plan' : 'Popular • Save 12%'}
             </div>
 
@@ -224,32 +224,32 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
             <p className="text-xs text-slate-500 mb-3">Quarterly billing</p>
 
             <div className="mb-2">
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-white">₹129</span>
+              <span className="text-3xl font-bold text-slate-900 dark:text-white">₹129</span>
               <span className="text-xs text-slate-500 ml-1">/ quarter</span>
             </div>
 
             {/* Monthly equivalent callout */}
-            <div className="text-[11px] font-bold text-accent mb-4 bg-accent/10 px-2 py-1 rounded inline-block w-fit">
+            <div className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mb-4 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-1 rounded-md inline-block w-fit">
               Just ₹43 / month (Save 12%)
             </div>
 
             {/* Invoices Count Highlight */}
-            <div className="bg-accent/5 dark:bg-accent/10 rounded-xl p-3 mb-4 border border-accent/30 text-center">
-              <div className="text-2xl font-black text-slate-900 dark:text-white">200</div>
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Invoices / Quarter</div>
-              <div className="text-[10px] text-accent mt-0.5 font-medium">₹0.64 per invoice</div>
+            <div className="bg-indigo-50/50 dark:bg-indigo-950/30 rounded-xl p-3 mb-4 border border-indigo-100 dark:border-indigo-900/40 text-center">
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">200</div>
+              <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Invoices / Quarter</div>
+              <div className="text-[10px] text-indigo-600 dark:text-indigo-400 mt-0.5 font-medium">₹0.64 per invoice</div>
             </div>
 
             <ul className="space-y-2 mb-6 flex-1 text-xs text-slate-600 dark:text-slate-400">
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-accent" /> 200 Invoices / Quarter</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-accent" /> All Features Unlocked</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-accent" /> 12% Monthly Savings</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" /> 200 Invoices / Quarter</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" /> All Features Unlocked</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" /> 12% Monthly Savings</li>
             </ul>
 
             <Button 
               onClick={() => handleCashfreeCheckout('standard')}
               disabled={processingPlan !== null || currentPlan === 'standard'}
-              className="w-full text-xs !py-2.5 font-bold shadow-md shadow-accent/20"
+              className="w-full text-xs !py-2.5 font-semibold shadow-xs"
             >
               {processingPlan === 'standard' ? (
                 <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...</span>
@@ -262,8 +262,8 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
           </div>
 
           {/* Premium (Yearly) */}
-          <div className="p-5 rounded-2xl border-2 border-purple-500/40 bg-purple-500/[0.02] dark:bg-purple-500/[0.04] flex flex-col relative">
-            <div className="absolute top-0 right-4 -translate-y-1/2 bg-gradient-to-r from-purple-600 to-accent text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">
+          <div className="p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 flex flex-col relative">
+            <div className="absolute top-0 right-4 -translate-y-1/2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase">
               {currentPlan === 'premium' ? 'Active Plan' : 'Best Value • Save 32%'}
             </div>
 
@@ -271,32 +271,32 @@ const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
             <p className="text-xs text-slate-500 mb-3">Annual billing</p>
 
             <div className="mb-2">
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-white">₹399</span>
+              <span className="text-3xl font-bold text-slate-900 dark:text-white">₹399</span>
               <span className="text-xs text-slate-500 ml-1">/ year</span>
             </div>
 
             {/* Monthly equivalent callout */}
-            <div className="text-[11px] font-bold text-purple-600 dark:text-purple-400 mb-4 bg-purple-500/10 px-2 py-1 rounded inline-block w-fit">
+            <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-4 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md inline-block w-fit">
               Just ₹33 / month (Save 32%)
             </div>
 
             {/* Invoices Count Highlight */}
-            <div className="bg-purple-500/5 dark:bg-purple-500/10 rounded-xl p-3 mb-4 border border-purple-500/20 text-center">
-              <div className="text-2xl font-black text-slate-900 dark:text-white">1,000</div>
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Invoices / Year</div>
-              <div className="text-[10px] text-purple-600 dark:text-purple-400 mt-0.5 font-medium">₹0.39 per invoice</div>
+            <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-3 mb-4 border border-slate-200 dark:border-slate-700 text-center">
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">1,000</div>
+              <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Invoices / Year</div>
+              <div className="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium">₹0.39 per invoice</div>
             </div>
 
             <ul className="space-y-2 mb-6 flex-1 text-xs text-slate-600 dark:text-slate-400">
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-purple-500" /> 1,000 Invoices / Year</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-purple-500" /> All Features Unlocked</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-purple-500" /> 32% Annual Savings</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" /> 1,000 Invoices / Year</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" /> All Features Unlocked</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" /> 32% Annual Savings</li>
             </ul>
 
             <Button 
               onClick={() => handleCashfreeCheckout('premium')}
               disabled={processingPlan !== null || currentPlan === 'premium'}
-              className="w-full text-xs !py-2.5 bg-gradient-to-r from-purple-600 to-accent text-white font-bold shadow-md shadow-purple-500/20"
+              className="w-full text-xs !py-2.5 font-semibold shadow-xs"
             >
               {processingPlan === 'premium' ? (
                 <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...</span>

@@ -268,7 +268,7 @@ const Items: React.FC<ItemsProps> = ({ items, setItems, company, onBulkDelete, i
                       onClick={() => setFilterStockStatus(tab.id)}
                       className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 active:scale-95 ${
                           filterStockStatus === tab.id
-                              ? 'bg-accent text-white shadow-sm shadow-accent/25'
+                              ? 'bg-indigo-600 text-white shadow-xs'
                               : 'bg-white/70 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800/60'
                       }`}
                   >

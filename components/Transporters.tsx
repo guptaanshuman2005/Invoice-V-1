@@ -99,10 +99,10 @@ const Transporters: React.FC<TransportersProps> = ({ transporters, setTransporte
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-display tracking-tight">Transporters</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Transporters</h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Manage logistics partners and GST numbers for instant E-Way Bill transit docs.</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="gap-2 shadow-lg shadow-accent/20">
+        <Button onClick={() => handleOpenModal()} className="gap-2 shadow-xs">
           <Plus className="w-4 h-4" /> Add Transporter
         </Button>
       </div>
@@ -158,7 +158,7 @@ const Transporters: React.FC<TransportersProps> = ({ transporters, setTransporte
           <TransporterForm transporter={editingTransporter} setTransporter={setEditingTransporter} errors={errors} setErrors={setErrors} />
           <div className="p-6 pt-0 flex justify-end gap-3">
             <Button variant="secondary" onClick={handleCloseModal}>Cancel</Button>
-            <Button onClick={handleSaveTransporter} className="shadow-lg shadow-accent/20">Save Transporter</Button>
+            <Button onClick={handleSaveTransporter} className="shadow-xs">Save Transporter</Button>
           </div>
       </Modal>
 

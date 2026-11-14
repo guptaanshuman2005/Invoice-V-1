@@ -100,12 +100,12 @@ const Inventory: React.FC<InventoryProps> = ({ items, setItems, onBulkStockUpdat
         <div className="animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-display tracking-tight">Inventory</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Inventory</h1>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Manage warehouse stock levels, low-stock warnings, and historical audits.</p>
                 </div>
                 <div className="flex gap-2.5">
                     <Button variant="secondary" onClick={() => setIsHistoryModalOpen(true)} className="gap-2">History</Button>
-                    {selectedIds.length > 0 && <Button onClick={openBulkModal} className="shadow-lg shadow-accent/20">Update ({selectedIds.length})</Button>}
+                    {selectedIds.length > 0 && <Button onClick={openBulkModal} className="shadow-xs">Update ({selectedIds.length})</Button>}
                 </div>
             </div>
             
@@ -182,7 +182,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, setItems, onBulkStockUpdat
                                             <div className="flex items-center gap-2">
                                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
                                                     isNegativeStock 
-                                                        ? 'bg-red-600 text-white font-black animate-pulse' 
+                                                        ? 'bg-red-600 text-white font-bold' 
                                                         : item.quantityInStock === 0 
                                                             ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 border border-red-300 dark:border-red-800' 
                                                             : isLowStock 
@@ -228,7 +228,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, setItems, onBulkStockUpdat
                         })}
                     </div>
                 </div>
-                <div className="p-6 pt-0 flex justify-end gap-3"><Button variant="secondary" onClick={() => setIsBulkModalOpen(false)}>Cancel</Button><Button onClick={saveBulkUpdates} className="shadow-lg shadow-accent/20">Update All</Button></div>
+                <div className="p-6 pt-0 flex justify-end gap-3"><Button variant="secondary" onClick={() => setIsBulkModalOpen(false)}>Cancel</Button><Button onClick={saveBulkUpdates} className="shadow-xs">Update All</Button></div>
             </Modal>
 
             <Modal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} title="Stock Movement Log">
