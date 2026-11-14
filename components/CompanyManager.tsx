@@ -159,13 +159,11 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
     const inputClasses = "w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none text-sm px-4 py-3 transition-all duration-200 ease-in-out border border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 focus:ring-2 focus:ring-accent/20 focus:border-accent";
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-secondary-dark flex items-center justify-center p-4 lg:p-8">
-            <div className="max-w-6xl w-full glass-panel rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row min-h-[800px]">
+        <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#0B0C0E] flex items-center justify-center p-4 lg:p-8">
+            <div className="max-w-6xl w-full glass-panel rounded-2xl shadow-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col lg:flex-row min-h-[750px]">
                 
-                {/* Left Side - Expanded & Richer */}
-                <div className="lg:w-2/5 bg-slate-900 text-white flex flex-col justify-between relative overflow-hidden p-10">
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-accent/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/3 pointer-events-none"></div>
+                {/* Left Side */}
+                <div className="lg:w-2/5 bg-zinc-900 text-white flex flex-col justify-between p-10 border-r border-zinc-800">
                     
                     <div className="relative z-10 space-y-8">
                         <div>
@@ -173,11 +171,11 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                                 <img 
                                     src="/icons/icon-192.png" 
                                     alt="InvoiceProIn Logo" 
-                                    className="w-10 h-10 rounded-2xl shadow-lg shadow-accent/20 object-contain shrink-0" 
+                                    className="w-9 h-9 rounded-xl shadow-xs object-contain shrink-0" 
                                 />
                                 <span className="text-xl font-bold tracking-tight">InvoiceProIn</span>
                             </div>
-                            <h1 className="text-4xl font-extrabold mb-4 leading-tight">Setup your <br/>workspace</h1>
+                            <h1 className="text-3xl font-bold mb-3 leading-tight">Set up your workspace</h1>
                             <p className="text-slate-300 text-lg leading-relaxed">
                                 You're moments away from professional invoicing. Configure your company profile to automate tax calculations and branding.
                             </p>

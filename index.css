@@ -48,16 +48,18 @@
 
 @layer base {
   :root {
+    color-scheme: light dark;
     --accent-color: #4F46E5;
     --accent-hover-color: #4338CA;
   }
   .dark {
+    color-scheme: dark;
     --accent-color: #6366F1;
     --accent-hover-color: #4F46E5;
   }
   
   body {
-    @apply bg-[#F8F9FB] dark:bg-[#0A0A0A] text-zinc-900 dark:text-zinc-100 antialiased selection:bg-accent/20;
+    @apply bg-[#F9FAFB] dark:bg-[#0B0C0E] text-zinc-900 dark:text-zinc-100 antialiased selection:bg-indigo-500/20 selection:text-indigo-900 dark:selection:text-indigo-200;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -91,11 +93,11 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-white/80 dark:bg-[#161618]/80 backdrop-blur-xl border border-zinc-200/40 dark:border-zinc-800/50 shadow-sm transition-all duration-300;
+    @apply bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all duration-200;
   }
   
   .glass-panel-elevated {
-    @apply bg-white/90 dark:bg-[#161618]/90 backdrop-blur-2xl border border-zinc-200/30 dark:border-zinc-800/40 shadow-lg shadow-zinc-900/[0.03] dark:shadow-zinc-900/20 transition-all duration-300;
+    @apply bg-white dark:bg-[#15161A] border border-zinc-200 dark:border-zinc-800 shadow-[0_4px_12px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)] transition-all duration-200;
   }
 
   .shimmer-bg {

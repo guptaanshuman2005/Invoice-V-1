@@ -75,15 +75,10 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, sparklin
     return (
         <div
             onClick={onClick}
-            className={`
-                relative p-4 sm:p-5 rounded-2xl glass-panel overflow-hidden
-                hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer group h-full
-                opacity-0 animate-fade-in-up ${style.shadow}
-            `}
-            style={{ animationDelay: `${delay}ms` }}
+            className="relative p-4 sm:p-5 rounded-xl glass-panel overflow-hidden transition-all duration-200 cursor-pointer group h-full hover:border-zinc-300 dark:hover:border-zinc-700 shadow-xs"
         >
             <div className="flex justify-between items-start mb-3">
-                <div className={`p-2.5 rounded-xl ${style.bg} ${style.text} transition-transform duration-300 group-hover:scale-105`}>
+                <div className={`p-2 rounded-lg ${style.bg} ${style.text}`}>
                     {icon}
                 </div>
                 <div className="flex flex-col items-end gap-1">
@@ -656,11 +651,10 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
     return (
         <div className="space-y-6 animate-fade-in pb-10 relative">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 glass-panel p-6 sm:p-8 rounded-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 -mt-16 -mr-16 w-48 h-48 bg-accent/[0.04] rounded-full blur-3xl pointer-events-none"></div>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 glass-panel p-6 sm:p-7 rounded-2xl border border-zinc-200 dark:border-zinc-800 relative overflow-hidden">
                 <div className="relative z-10">
-                    <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">{getGreeting()}</p>
-                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
+                    <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-1">{getGreeting()}</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">
                         {company.details.name}
                     </h1>
                 </div>
@@ -669,15 +663,15 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                         <>
                             <button
                                 onClick={() => setActiveView('Clients')}
-                                className="bg-slate-100/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700/60 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/60"
+                                className="bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-750 px-3.5 py-2 rounded-xl font-medium text-sm transition-colors flex items-center gap-2 border border-zinc-200 dark:border-zinc-700 shadow-xs"
                             >
                                 <Users className="w-4 h-4" /> Add Client
                             </button>
                             <button
                                 onClick={() => setActiveView('NewInvoice')}
-                                className="bg-accent text-white hover:shadow-lg hover:shadow-accent/20 px-5 py-2.5 rounded-xl font-semibold transition-all transform hover:-translate-y-0.5 active:scale-[0.97] flex items-center gap-2"
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl font-semibold text-sm transition-colors shadow-xs active:scale-[0.98] flex items-center gap-2 border border-indigo-500/20"
                             >
-                                <PlusCircle className="w-4.5 h-4.5" /> New Invoice
+                                <PlusCircle className="w-4 h-4" /> New Invoice
                             </button>
                         </>
                     )}

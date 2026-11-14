@@ -43,35 +43,30 @@ export const DemoPage: React.FC<DemoPageProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 selection:bg-accent selection:text-white relative overflow-hidden">
+    <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#0B0C0E] font-sans text-zinc-900 dark:text-zinc-100 selection:bg-indigo-500/20 relative">
       
-      {/* Background ambient lighting */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/15 rounded-full blur-3xl -z-10 animate-pulse" style={{ animationDuration: '8s' }}></div>
-      <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-purple-500/15 rounded-full blur-3xl -z-10 animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }}></div>
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px] -z-10"></div>
-
       {/* Navigation Bar */}
       <header className="sticky top-4 z-50 max-w-6xl mx-auto px-6">
-        <nav className="glass-panel rounded-2xl px-6 py-3.5 flex items-center justify-between border border-white/20 dark:border-slate-800/50 shadow-xl backdrop-blur-xl">
+        <nav className="glass-panel rounded-xl px-5 py-3 flex items-center justify-between border border-zinc-200 dark:border-zinc-800 shadow-sm">
           <div className="flex items-center gap-3">
             <button 
               onClick={onBackToLanding}
-              className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
               title="Back to Landing Page"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4" />
             </button>
             <div className="flex items-center gap-2">
               <img 
                 src="/icons/icon-192.png" 
                 alt="InvoiceProIn Logo" 
-                className="w-8 h-8 rounded-xl shadow-md object-contain shrink-0" 
+                className="w-7 h-7 rounded-lg shadow-xs object-contain shrink-0" 
               />
-              <span className="font-extrabold text-lg tracking-tight font-display flex items-center">
-                InvoicePro<span className="text-accent bg-clip-text text-transparent bg-gradient-to-r from-accent to-indigo-400 font-extrabold ml-0.5">In</span>
+              <span className="font-bold text-base tracking-tight flex items-center">
+                InvoicePro<span className="text-indigo-600 dark:text-indigo-400 font-bold ml-0.5">In</span>
               </span>
             </div>
-            <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent font-black text-[10px] tracking-wider uppercase">
+            <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium text-[10px]">
               Interactive Demo
             </span>
           </div>
@@ -79,30 +74,29 @@ export const DemoPage: React.FC<DemoPageProps> = ({
           <div className="flex items-center gap-3">
             <button
               onClick={onLaunchSandbox}
-              className="flex items-center gap-2 bg-gradient-to-r from-accent to-indigo-600 hover:from-accent-hover hover:to-indigo-700 text-white px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-accent/20 hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-lg font-semibold text-xs transition-colors shadow-xs"
             >
               <Play className="w-3.5 h-3.5 fill-white" />
-              <span>Launch Live Sandbox</span>
+              <span>Launch sandbox</span>
             </button>
             <button
               onClick={onGetStarted}
-              className="hidden md:inline-flex text-xs uppercase tracking-wider font-extrabold text-slate-500 hover:text-slate-900 dark:hover:text-white px-3 py-2 transition-colors"
+              className="hidden md:inline-flex text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-3 py-1.5 transition-colors"
             >
-              Create Account
+              Create account
             </button>
           </div>
         </nav>
       </header>
 
       {/* Hero Section */}
-      <main className="max-w-6xl mx-auto px-6 pt-16 pb-20">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-accent/10 dark:bg-accent/20 border border-accent/30 text-accent text-xs font-black uppercase tracking-widest mb-6">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            Live Experience Center
+      <main className="max-w-6xl mx-auto px-6 pt-12 pb-20">
+        <div className="text-center max-w-3xl mx-auto mb-14">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-medium mb-4">
+            <span>Live Experience Center</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tight mb-6 font-display leading-[1.1]">
-            Explore InvoiceProIn in Action — <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent via-indigo-500 to-purple-600">No Signup Required</span>
+          <h1 className="text-3xl sm:text-5xl font-bold text-zinc-900 dark:text-white tracking-tight mb-4 leading-tight">
+            Explore InvoiceProIn in action — <span className="text-indigo-600 dark:text-indigo-400">no signup required</span>
           </h1>
           <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 mb-8 leading-relaxed font-medium">
             Test drive our Indian GST calculation engine, live PDF invoice styling, stock deduction, and real-time business financial metrics in an instant sandbox environment.

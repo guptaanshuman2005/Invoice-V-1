@@ -1164,7 +1164,7 @@ const App: React.FC = () => {
   };
 
     return (
-        <div className="flex flex-col h-screen bg-slate-100 dark:bg-secondary-dark font-sans transition-all relative overflow-hidden">
+        <div className="flex flex-col h-screen bg-[#F9FAFB] dark:bg-[#0B0C0E] font-sans transition-colors relative overflow-hidden">
             {isDemoMode && (
               <DemoBanner 
                 onResetData={handleResetDemoData} 
@@ -1193,13 +1193,13 @@ const App: React.FC = () => {
               />
               <main className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'md:ml-0' : ''}`}>
                 {/* Top Header / Search Bar */}
-                <header className="h-20 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-30">
+                <header className="h-16 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/90 dark:bg-[#0B0C0E]/90 backdrop-blur-md flex items-center justify-between px-6 sm:px-8 sticky top-0 z-30">
                     <div className="flex items-center gap-4 flex-1 max-w-2xl">
-                        <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                            <Menu className="h-6 w-6" />
+                        <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                            <Menu className="h-5 w-5" />
                         </button>
                         <div className="relative flex-1 group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-accent transition-colors" />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
                             <input 
                                 ref={searchInputRef}
                                 type="text" 
@@ -1210,29 +1210,29 @@ const App: React.FC = () => {
                                 }}
                                 onFocus={() => setIsSearchDropdownOpen(true)}
                                 placeholder="Search invoices, clients, or items... (Alt + S)"
-                                className="w-full bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-accent/30 focus:bg-white dark:focus:bg-slate-900 rounded-2xl py-2.5 pl-11 pr-16 text-sm outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                                className="w-full bg-zinc-100/70 dark:bg-zinc-800/50 border border-transparent focus:border-indigo-500/40 focus:bg-white dark:focus:bg-zinc-900 rounded-xl py-2 pl-10 pr-16 text-sm outline-none transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-500 shadow-xs"
                             />
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[10px] font-bold text-slate-400">
+                            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-[10px] font-medium text-zinc-400">
                                 <span>ALT</span>
                                 <span>S</span>
                             </div>
                             
                             {/* Search Dropdown */}
                             {isSearchDropdownOpen && globalSearchQuery.trim() && (
-                                <div ref={searchDropdownRef} className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50 max-h-96 overflow-y-auto custom-scrollbar">
+                                <div ref={searchDropdownRef} className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden z-50 max-h-96 overflow-y-auto custom-scrollbar">
                                     {searchResults.invoices.length === 0 && searchResults.clients.length === 0 && searchResults.items.length === 0 ? (
-                                        <div className="p-4 text-center text-sm text-slate-500">No results found for "{globalSearchQuery}"</div>
+                                        <div className="p-4 text-center text-sm text-zinc-500">No results found for "{globalSearchQuery}"</div>
                                     ) : (
                                         <div className="py-2">
                                             {searchResults.invoices.length > 0 && (
                                                 <div className="mb-2">
-                                                    <div className="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Invoices</div>
+                                                    <div className="px-4 py-1 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Invoices</div>
                                                     {searchResults.invoices.map(inv => (
-                                                        <button key={inv.id} onClick={() => handleSearchResultClick('invoice', inv.id, inv.invoiceNumber)} className="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-3 transition-colors">
+                                                        <button key={inv.id} onClick={() => handleSearchResultClick('invoice', inv.id, inv.invoiceNumber)} className="w-full text-left px-4 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 flex items-center gap-3 transition-colors">
                                                             <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg"><FileText className="w-4 h-4" /></div>
                                                             <div>
-                                                                <div className="text-sm font-medium text-slate-900 dark:text-white">{inv.invoiceNumber}</div>
-                                                                <div className="text-xs text-slate-500">{activeCompany?.clients.find(c => c.id === inv.clientId)?.name}</div>
+                                                                <div className="text-sm font-medium text-zinc-900 dark:text-white">{inv.invoiceNumber}</div>
+                                                                <div className="text-xs text-zinc-500">{activeCompany?.clients.find(c => c.id === inv.clientId)?.name}</div>
                                                             </div>
                                                         </button>
                                                     ))}
@@ -1240,13 +1240,13 @@ const App: React.FC = () => {
                                             )}
                                             {searchResults.clients.length > 0 && (
                                                 <div className="mb-2">
-                                                    <div className="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Clients</div>
+                                                    <div className="px-4 py-1 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Clients</div>
                                                     {searchResults.clients.map(client => (
-                                                        <button key={client.id} onClick={() => handleSearchResultClick('client', client.id, client.name)} className="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-3 transition-colors">
-                                                            <div className="p-1.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg"><Users className="w-4 h-4" /></div>
+                                                        <button key={client.id} onClick={() => handleSearchResultClick('client', client.id, client.name)} className="w-full text-left px-4 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 flex items-center gap-3 transition-colors">
+                                                            <div className="p-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg"><Users className="w-4 h-4" /></div>
                                                             <div>
-                                                                <div className="text-sm font-medium text-slate-900 dark:text-white">{client.name}</div>
-                                                                <div className="text-xs text-slate-500">{client.email || 'No email'}</div>
+                                                                <div className="text-sm font-medium text-zinc-900 dark:text-white">{client.name}</div>
+                                                                <div className="text-xs text-zinc-500">{client.email || 'No email'}</div>
                                                             </div>
                                                         </button>
                                                     ))}
@@ -1254,13 +1254,13 @@ const App: React.FC = () => {
                                             )}
                                             {searchResults.items.length > 0 && (
                                                 <div>
-                                                    <div className="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Items</div>
+                                                    <div className="px-4 py-1 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Items</div>
                                                     {searchResults.items.map(item => (
-                                                        <button key={item.id} onClick={() => handleSearchResultClick('item', item.id, item.name)} className="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-3 transition-colors">
+                                                        <button key={item.id} onClick={() => handleSearchResultClick('item', item.id, item.name)} className="w-full text-left px-4 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 flex items-center gap-3 transition-colors">
                                                             <div className="p-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg"><Package className="w-4 h-4" /></div>
                                                             <div>
-                                                                <div className="text-sm font-medium text-slate-900 dark:text-white">{item.name}</div>
-                                                                <div className="text-xs text-slate-500">HSN: {item.hsn || 'N/A'}</div>
+                                                                <div className="text-sm font-medium text-zinc-900 dark:text-white">{item.name}</div>
+                                                                <div className="text-xs text-zinc-500">HSN: {item.hsn || 'N/A'}</div>
                                                             </div>
                                                         </button>
                                                     ))}
@@ -1276,63 +1276,63 @@ const App: React.FC = () => {
                     {/* Database & Cloud Status Pill */}
                     <div className="hidden md:flex items-center ml-2">
                       {isDemoMode ? (
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-semibold">
-                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                          <span>Demo Sandbox (Local Session Only)</span>
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                          <span>Demo Sandbox</span>
                           <button
                             onClick={() => handleExitDemoToAuth('signup')}
-                            className="ml-1 text-[11px] font-bold text-accent underline hover:opacity-80"
+                            className="ml-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 underline hover:opacity-80"
                           >
-                            Sign In to Cloud Sync →
+                            Sign In →
                           </button>
                         </div>
                       ) : (
                         <div 
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold"
+                          className="flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-medium"
                           title={`Connected to Zoho Catalyst Cloud Database • Company ID: ${activeCompany?.id}`}
                         >
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                           <span className="font-mono text-[11px]">Cloud: {activeCompany?.id}</span>
                         </div>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-4 ml-4">
+                    <div className="flex items-center gap-2 sm:gap-3 ml-4">
                         <button
                             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                            className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                            className="p-1.5 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 transition-colors"
                             title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                         >
-                            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-indigo-500" />}
                         </button>
                         
                         <button
                             onClick={isDemoMode ? handleExitDemo : handleLogout}
-                            className="p-2 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors hidden sm:block"
+                            className="p-1.5 rounded-lg text-zinc-500 hover:bg-rose-50 hover:text-rose-600 dark:text-zinc-400 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 transition-colors hidden sm:block"
                             title={isDemoMode ? "Exit Demo Sandbox" : "Sign Out"}
                         >
-                            <LogOut className="w-5 h-5" />
+                            <LogOut className="w-4 h-4" />
                         </button>
 
-                        <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
+                        <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-800 mx-1 hidden sm:block"></div>
 
                         <div className="relative">
                             <button
                                 onClick={() => setIsCompanySwitcherOpen(!isCompanySwitcherOpen)}
-                                className="flex items-center gap-3 px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group"
+                                className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700"
                             >
                                 <CompanyLogo company={activeCompany} size="sm" />
-                                <div className="hidden lg:flex flex-col items-start mr-2">
-                                    <span className="text-xs font-black text-slate-900 dark:text-white leading-none group-hover:text-accent transition-colors">{activeCompany?.details.name}</span>
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mt-1">Active Workspace</span>
+                                <div className="hidden lg:flex flex-col items-start mr-1 text-left">
+                                    <span className="text-xs font-semibold text-zinc-900 dark:text-white leading-none">{activeCompany?.details.name}</span>
+                                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">Active Workspace</span>
                                 </div>
-                                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isCompanySwitcherOpen ? 'rotate-180' : ''}`} />
+                                <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 ${isCompanySwitcherOpen ? 'rotate-180' : ''}`} />
                             </button>
 
                             {isCompanySwitcherOpen && (
-                                <div className="absolute z-50 top-full right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden ring-1 ring-black ring-opacity-5 animate-fade-in">
-                                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Switch Workspace</p>
+                                <div className="absolute z-50 top-full right-0 mt-1.5 w-60 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden ring-1 ring-black/5">
+                                    <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200/80 dark:border-zinc-800/80">
+                                        <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider px-1">Switch Workspace</p>
                                     </div>
                                     <ul className="max-h-60 overflow-y-auto py-1 custom-scrollbar">
                                         {userCompanies.map(company => (
