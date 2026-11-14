@@ -21,17 +21,35 @@ type FormErrors = { [K in keyof Omit<CompanyDetails, 'logo' | 'invoicePrefix' | 
 
 const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout }) => {
     const [step, setStep] = useState(1);
-    const [details, setDetails] = useState<CompanyDetails>({
-        name: '', gstin: '', pan: '', phone: '', email: '', website: '',
-        address: '', city: '', state: '', zip: '', udyam: '', logo: '', signature: '',
-        invoicePrefix: 'INV-', nextInvoiceNumber: 1, invoiceTemplate: 'modern'
+    const [details, setDetails] = useState<CompanyDetails>(() => {
+        try {
+            const draft = localStorage.getItem('invoicepro_draft_company');
+            if (draft) return JSON.parse(draft);
+            const savedGuest = localStorage.getItem('invoicepro_companies_guest');
+            if (savedGuest) {
+                const parsed = JSON.parse(savedGuest);
+                if (parsed.length > 0 && parsed[0].details) return parsed[0].details;
+            }
+        } catch {}
+        return {
+            name: '', gstin: '', pan: '', phone: '', email: '', website: '',
+            address: '', city: '', state: '', zip: '', udyam: '', logo: '', signature: '',
+            invoicePrefix: 'INV-', nextInvoiceNumber: 1, invoiceTemplate: 'modern'
+        };
     });
-    const [logoPreview, setLogoPreview] = useState<string | null>(null);
-    const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(() => details.logo || null);
+    const [signaturePreview, setSignaturePreview] = useState<string | null>(() => details.signature || null);
     const [errors, setErrors] = useState<FormErrors>({});
     const [logoError, setLogoError] = useState<string | null>(null);
     const [isPincodeLoading, setIsPincodeLoading] = useState(false);
     const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
+
+    // Auto-save draft changes to prevent data loss on accidental navigation or refresh
+    useEffect(() => {
+        if (details.name || details.phone || details.email || details.address) {
+            localStorage.setItem('invoicepro_draft_company', JSON.stringify(details));
+        }
+    }, [details]);
 
     const validateField = useCallback((name: string, value: string): string | null => {
         switch (name) {
@@ -153,6 +171,9 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
     };
 
     const handleSubmit = () => {
+        try {
+            localStorage.removeItem('invoicepro_draft_company');
+        } catch {}
         onAddCompany(details);
     };
 
@@ -247,7 +268,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                                     </div>
                                 </div>
                                 <div className="flex-grow pt-8">
-                                    <Input label="Company Name" name="name" value={details.name} onChange={handleChange} required error={errors.name} placeholder="e.g. Acme Corp" />
+                                    <Input label="Company Name" name="name" value={details.name} onChange={handleChange} required error={errors.name} placeholder="e.g. Acme Corp" autoComplete="organization" />
                                 </div>
                             </div>
 
@@ -255,11 +276,11 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                             <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800/50">
                                 <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Contact Details</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <Input label="Phone Number" name="phone" type="tel" value={details.phone} onChange={handleChange} required error={errors.phone} placeholder="e.g. 98765 43210" />
-                                    <Input label="Email Address" name="email" type="email" value={details.email} onChange={handleChange} error={errors.email} placeholder="e.g. contact@acme.com" />
+                                    <Input label="Phone Number" name="phone" type="tel" value={details.phone} onChange={handleChange} required error={errors.phone} placeholder="e.g. 98765 43210" autoComplete="tel" />
+                                    <Input label="Email Address" name="email" type="email" value={details.email} onChange={handleChange} error={errors.email} placeholder="e.g. contact@acme.com" autoComplete="email" />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <Input label="Website" name="website" value={details.website || ''} onChange={handleChange} placeholder="https://www.acme.com" />
+                                    <Input label="Website" name="website" value={details.website || ''} onChange={handleChange} placeholder="https://www.acme.com" autoComplete="url" />
                                     <Input label="GSTIN" name="gstin" value={details.gstin} onChange={handleChange} error={errors.gstin} placeholder="e.g. 27AAAAA0000A1Z5" />
                                 </div>
                             </div>
@@ -267,16 +288,16 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ onAddCompany, onLogout 
                             {/* Address Details */}
                             <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800/50">
                                 <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Location</h4>
-                                <Input label="Street Address" name="address" value={details.address} onChange={handleChange} required error={errors.address} placeholder="e.g. 123 Business Park, Main Road" />
+                                <Input label="Street Address" name="address" value={details.address} onChange={handleChange} required error={errors.address} placeholder="e.g. 123 Business Park, Main Road" autoComplete="street-address" />
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="relative">
-                                        <Input label="ZIP Code" name="zip" value={details.zip} onChange={handleChange} required maxLength={6} error={errors.zip} placeholder="e.g. 400001" />
+                                        <Input label="ZIP Code" name="zip" value={details.zip} onChange={handleChange} required maxLength={6} error={errors.zip} placeholder="e.g. 400001" autoComplete="postal-code" />
                                         {isPincodeLoading && <div className="absolute top-9 right-3 h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>}
                                     </div>
-                                    <Input label="City" name="city" value={details.city} onChange={handleChange} required error={errors.city} placeholder="e.g. Mumbai" />
+                                    <Input label="City" name="city" value={details.city} onChange={handleChange} required error={errors.city} placeholder="e.g. Mumbai" autoComplete="address-level2" />
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">State</label>
-                                        <select name="state" value={details.state} onChange={handleChange} className={inputClasses}>
+                                        <select name="state" value={details.state} onChange={handleChange} className={inputClasses} autoComplete="address-level1">
                                             <option value="">Select State</option>
                                             {INDIAN_STATES.map(state => <option key={state} value={state}>{state}</option>)}
                                         </select>

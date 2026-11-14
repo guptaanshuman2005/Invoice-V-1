@@ -26,6 +26,52 @@ function parseJSON<T = any>(str: any, fallback: T): T {
 }
 
 /**
+ * Helper to safely load and migrate companies from localStorage
+ */
+function loadCachedCompanies(storageKey: string, userId?: string): Company[] {
+  try {
+    const cached = localStorage.getItem(storageKey);
+    let parsed: Company[] = cached ? parseJSON(cached, []) : [];
+
+    // If user is logged in but has no companies under their key, check guest and legacy storage keys
+    if ((!parsed || parsed.length === 0) && userId) {
+      const guestData = localStorage.getItem('invoicepro_companies_guest');
+      const legacyData = localStorage.getItem('invoicepro_companies');
+      const fallbackSaved = localStorage.getItem(`invoicepro_saved_company_${userId}`);
+
+      let toAdopt: Company[] = [];
+      if (guestData) {
+        toAdopt = parseJSON(guestData, []);
+      } else if (legacyData) {
+        toAdopt = parseJSON(legacyData, []);
+      } else if (fallbackSaved) {
+        const single = parseJSON(fallbackSaved, null);
+        if (single) toAdopt = [single];
+      }
+
+      if (toAdopt && toAdopt.length > 0) {
+        parsed = toAdopt.map(c => ({
+          ...c,
+          ownerId: userId
+        }));
+        // Persist adopted companies immediately under user's key
+        localStorage.setItem(storageKey, JSON.stringify(parsed));
+      }
+    }
+
+    if (parsed && parsed.length > 0 && userId) {
+      // Ensure all companies have ownerId matching the active user
+      parsed = parsed.map(c => (!c.ownerId || c.ownerId === 'default' || c.ownerId === 'guest') ? { ...c, ownerId: userId } : c);
+      localStorage.setItem(`invoicepro_saved_company_${userId}`, JSON.stringify(parsed[0]));
+    }
+
+    return parsed || [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Hook to manage companies and relational entities directly from Zoho Catalyst Data Store.
  * Provides zero-downtime localStorage fallback when Catalyst is offline or during local dev.
  */
@@ -33,24 +79,15 @@ export function useCatalystCompanies(userId: string | undefined): [Company[], (v
   const storageKey = getStorageKey(userId);
 
   const [companies, setCompaniesState] = useState<Company[]>(() => {
-    try {
-      const cached = localStorage.getItem(storageKey);
-      return cached ? JSON.parse(cached) : [];
-    } catch {
-      return [];
-    }
+    return loadCachedCompanies(storageKey, userId);
   });
   const [loading, setLoading] = useState(true);
 
-  // Sync state when userId changes (e.g. logging into new account)
+  // Sync state when userId changes (e.g. logging into new account or logging out)
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem(storageKey);
-      setCompaniesState(cached ? JSON.parse(cached) : []);
-    } catch {
-      setCompaniesState([]);
-    }
-  }, [storageKey]);
+    const loaded = loadCachedCompanies(storageKey, userId);
+    setCompaniesState(loaded);
+  }, [storageKey, userId]);
 
   // 1. Fetch from Zoho Catalyst Data Store
   const fetchCompanies = useCallback(async () => {
@@ -102,12 +139,15 @@ export function useCatalystCompanies(userId: string | undefined): [Company[], (v
       if (rawCompanies.length > 0) {
         // Only load companies belonging to the current user
         const userRawCompanies = userId 
-          ? rawCompanies.filter((c: any) => c.owner_id === userId)
+          ? rawCompanies.filter((c: any) => c.owner_id === userId || !c.owner_id || c.owner_id === 'default')
           : rawCompanies;
 
         if (userRawCompanies.length === 0) {
-          setCompaniesState([]);
-          localStorage.setItem(storageKey, JSON.stringify([]));
+          // Zero-downtime persistence: NEVER wipe local storage when remote yields no records for this user
+          const currentCached = loadCachedCompanies(storageKey, userId);
+          if (currentCached.length > 0) {
+            setCompaniesState(currentCached);
+          }
           return;
         }
 
@@ -224,13 +264,24 @@ export function useCatalystCompanies(userId: string | undefined): [Company[], (v
 
         setCompaniesState(transformed);
         localStorage.setItem(storageKey, JSON.stringify(transformed));
+        if (userId && transformed.length > 0) {
+          localStorage.setItem(`invoicepro_saved_company_${userId}`, JSON.stringify(transformed[0]));
+          localStorage.setItem(`invoicepro_active_company_${userId}`, transformed[0].id);
+        }
       } else {
-        setCompaniesState([]);
-        localStorage.setItem(storageKey, JSON.stringify([]));
+        // Zero-downtime persistence: Remote returned 0 records or is offline.
+        // NEVER overwrite local cache with []!
+        const currentCached = loadCachedCompanies(storageKey, userId);
+        if (currentCached.length > 0) {
+          setCompaniesState(currentCached);
+        }
       }
     } catch (err: any) {
       console.warn('Notice: Loading companies from local cache (offline or Catalyst fallback):', err?.message || err);
-      // Keep state from localStorage cache
+      const currentCached = loadCachedCompanies(storageKey, userId);
+      if (currentCached.length > 0) {
+        setCompaniesState(currentCached);
+      }
     } finally {
       setLoading(false);
     }
@@ -247,6 +298,10 @@ export function useCatalystCompanies(userId: string | undefined): [Company[], (v
 
       // Update local cache immediately for instant UI feedback
       localStorage.setItem(storageKey, JSON.stringify(newCompanies));
+      if (userId && newCompanies.length > 0) {
+        localStorage.setItem(`invoicepro_saved_company_${userId}`, JSON.stringify(newCompanies[0]));
+        localStorage.setItem(`invoicepro_active_company_${userId}`, newCompanies[0].id);
+      }
 
       // Asynchronously sync to Catalyst Data Store in background
       const catalystSdk = (window as any).catalyst;

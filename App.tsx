@@ -80,7 +80,12 @@ const App: React.FC = () => {
   const [companies, setCompanies, isLoadingCompanies] = useCatalystCompanies(currentUser?.id);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [activeCompanyId, setActiveCompanyId] = useState<string | null>(() => {
-    return sessionStorage.getItem('activeCompanyId');
+    const fromSession = sessionStorage.getItem('activeCompanyId');
+    if (fromSession) return fromSession;
+    if (currentUser?.id) {
+      return localStorage.getItem(`invoicepro_active_company_${currentUser.id}`);
+    }
+    return null;
   });
   const [invoiceToEdit, setInvoiceToEdit] = useState<Invoice | Quotation | null>(null);
   const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false);
@@ -146,7 +151,8 @@ const App: React.FC = () => {
   const userCompanies = useMemo(() => {
     if (isDemoMode) return [demoCompany];
     if (!currentUser) return [];
-    return companies.filter(c => c.ownerId === currentUser.id);
+    const list = companies.filter(c => !c.ownerId || c.ownerId === currentUser.id || c.ownerId === 'default' || c.ownerId === 'guest');
+    return list.map(c => ({ ...c, ownerId: currentUser.id }));
   }, [isDemoMode, demoCompany, companies, currentUser]);
 
   const activeCompany = useMemo(() => {
@@ -158,10 +164,13 @@ const App: React.FC = () => {
   useEffect(() => {
     if (activeCompanyId) {
       sessionStorage.setItem('activeCompanyId', activeCompanyId);
+      if (currentUser?.id) {
+        localStorage.setItem(`invoicepro_active_company_${currentUser.id}`, activeCompanyId);
+      }
     } else {
       sessionStorage.removeItem('activeCompanyId');
     }
-  }, [activeCompanyId]);
+  }, [activeCompanyId, currentUser?.id]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -255,11 +264,16 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (currentUser) {
-        const userComps = companies.filter(c => c.ownerId === currentUser.id);
+        const userComps = companies.filter(c => !c.ownerId || c.ownerId === currentUser.id || c.ownerId === 'default' || c.ownerId === 'guest');
         if (userComps.length > 0) {
             const currentBelongsToUser = userComps.some(c => c.id === activeCompanyId);
             if (!currentBelongsToUser) {
-                setActiveCompanyId(userComps[0].id);
+                const savedId = localStorage.getItem(`invoicepro_active_company_${currentUser.id}`) || sessionStorage.getItem('activeCompanyId');
+                const matched = userComps.find(c => c.id === savedId);
+                const targetId = matched ? matched.id : userComps[0].id;
+                setActiveCompanyId(targetId);
+                sessionStorage.setItem('activeCompanyId', targetId);
+                localStorage.setItem(`invoicepro_active_company_${currentUser.id}`, targetId);
             }
         } else {
             setActiveCompanyId(null);
@@ -404,6 +418,9 @@ const App: React.FC = () => {
       };
       setCompanies([...companies, newCompany]);
       setActiveCompanyId(newCompany.id);
+      sessionStorage.setItem('activeCompanyId', newCompany.id);
+      localStorage.setItem(`invoicepro_active_company_${currentUser.id}`, newCompany.id);
+      localStorage.setItem(`invoicepro_saved_company_${currentUser.id}`, JSON.stringify(newCompany));
       setActiveView('Dashboard');
       trackEvent('create_company', { companyId: newCompany.id });
   };
