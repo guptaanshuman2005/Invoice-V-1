@@ -267,9 +267,9 @@ const Inventory: React.FC<InventoryProps> = ({ items, setItems, onBulkStockUpdat
             
             {/* Inventory Table */}
             <div className="glass-panel rounded-xl overflow-hidden shadow-xs border border-zinc-200 dark:border-zinc-800">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Inventory Stock Table">
                     <table className="w-full min-w-[750px] text-sm text-left text-zinc-600 dark:text-zinc-300">
-                        <thead className="text-xs text-zinc-700 dark:text-zinc-300 uppercase bg-zinc-100/70 dark:bg-zinc-800/70 border-b border-zinc-200 dark:border-zinc-800">
+                        <thead className="text-xs text-zinc-700 dark:text-zinc-300 uppercase bg-zinc-100/95 dark:bg-zinc-800/95 sticky top-0 z-10 border-b border-zinc-200 dark:border-zinc-800 backdrop-blur-xs">
                             <tr>
                                 <th scope="col" className="px-5 py-3 w-10"><input type="checkbox" checked={filteredItems.length > 0 && selectedIds.length === filteredItems.length} onChange={handleSelectAll} className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" /></th>
                                 <th scope="col" className="px-5 py-3">Item Name</th>
