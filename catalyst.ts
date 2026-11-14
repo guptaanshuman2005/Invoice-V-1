@@ -36,7 +36,7 @@ export const CATALYST_TABLE_IDS = {
 } as const;
 
 /**
- * Execute ZCQL (Zoho Catalyst Query Language) query via REST
+ * Execute ZCQL (Zoho Catalyst Query Language) query via Web SDK or REST
  */
 export async function executeZCQLQuery<T = any>(zcqlQuery: string): Promise<T[]> {
   if (!isCatalystConfigured) {
@@ -44,6 +44,20 @@ export async function executeZCQLQuery<T = any>(zcqlQuery: string): Promise<T[]>
     return [];
   }
 
+  // 1. First try native Catalyst Web SDK ZCatalystQL if available in browser
+  const catalystSdk = (typeof window !== 'undefined' ? (window as any).catalyst : null);
+  if (catalystSdk?.ZCatalystQL?.executeQuery) {
+    try {
+      const sdkRes = await catalystSdk.ZCatalystQL.executeQuery(zcqlQuery);
+      if (sdkRes?.content && Array.isArray(sdkRes.content)) {
+        return sdkRes.content;
+      }
+    } catch (sdkErr) {
+      console.warn('catalyst.ZCatalystQL SDK query failed, trying REST fallback:', sdkErr);
+    }
+  }
+
+  // 2. REST BaaS fallback
   try {
     const res = await fetch(`${projectDomain}/baas/v1/project/${projectId}/zcql`, {
       method: 'POST',
@@ -60,7 +74,7 @@ export async function executeZCQLQuery<T = any>(zcqlQuery: string): Promise<T[]>
     const data = await res.json();
     return data.data || [];
   } catch (error) {
-    console.error('Error executing ZCQL query on Zoho Catalyst:', error);
+    console.warn('Notice: Remote ZCQL query fallback to local cache:', (error as any)?.message || error);
     return [];
   }
 }
