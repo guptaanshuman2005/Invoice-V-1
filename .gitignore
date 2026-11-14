@@ -26,3 +26,7 @@ dist-ssr
 .vercel
 .env*
 functions/**/catalyst-config.json
+
+# AI Agent tooling & skills (local only, not needed in repository or production)
+.agents/
+skills-lock.json
