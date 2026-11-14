@@ -152,7 +152,7 @@ export interface StockHistoryEntry {
     itemName: string;
     previousQuantity: number;
     newQuantity: number;
-    action: 'Manual Update' | 'Bulk Update' | 'Invoice Created' | 'Invoice Edited' | 'Invoice Deleted' | 'Voice Update' | 'Initial' | 'Bill Scan' | 'Sales Return Credit Note';
+    action: 'Manual Update' | 'Bulk Update' | 'Invoice Created' | 'Invoice Edited' | 'Invoice Deleted' | 'Voice Update' | 'Initial' | 'Bill Scan' | 'Sales Return Credit Note' | 'Purchase Inward' | 'Damaged / Expired' | 'Physical Audit Adjustment';
     timestamp: string;
     referenceId?: string; // e.g., Invoice Number
 }

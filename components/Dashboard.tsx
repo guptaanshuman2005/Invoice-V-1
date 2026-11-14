@@ -4,12 +4,14 @@ import type { Company, Invoice, Item, InvoicePayment, PaymentMode } from '../typ
 import { 
     TrendingUp, TrendingDown, IndianRupee, FileText, Users, AlertTriangle, Scale, X, 
     PlusCircle, Clock, ChevronRight, Download, Search, MessageSquare, ExternalLink, 
-    ShieldAlert, CheckCircle2, CreditCard, Receipt, Printer, Share2 
+    ShieldAlert, ShieldCheck, CheckCircle2, CreditCard, Receipt, Printer, Share2, Package, Calendar 
 } from 'lucide-react';
 import Modal from './common/Modal';
 import { sendPaymentReminderViaWhatsApp } from '../utils/whatsapp';
 import { getInvoicePaymentSummary, printPaymentReceipt, sharePaymentReceiptWhatsApp } from '../utils/invoiceUtils';
 import { RecordPaymentModal } from './RecordPaymentModal';
+import { exportStockAuditSchedule, exportCashComplianceAuditLog, exportDebtorsAgingSchedule } from '../utils/auditExport';
+import { getFinancialYear } from '../utils/subscriptionUtils';
 
 interface DashboardProps {
     invoices: Invoice[];
@@ -203,8 +205,107 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
     const [quickPaySearch, setQuickPaySearch] = useState('');
     const [quickPayFilter, setQuickPayFilter] = useState<'all' | 'overdue' | 'partial'>('all');
 
+    // Indian Financial Year & Statutory Audit Sentinel States
+    const [selectedFY, setSelectedFY] = useState<string>('all');
+    const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+
+    const availableFYs = useMemo(() => {
+        const fys = new Set<string>();
+        const currentFY = getFinancialYear(new Date().toISOString());
+        fys.add(currentFY);
+        fys.add('FY 2025-26');
+        fys.add('FY 2024-25');
+        invoices.forEach(inv => {
+            if (inv.issueDate) {
+                const fy = getFinancialYear(inv.issueDate);
+                if (fy && fy !== 'Unknown FY') fys.add(fy);
+            }
+        });
+        (company.expenses || []).forEach(exp => {
+            if (exp.date) {
+                const fy = getFinancialYear(exp.date);
+                if (fy && fy !== 'Unknown FY') fys.add(fy);
+            }
+        });
+        return Array.from(fys).sort().reverse();
+    }, [invoices, company.expenses]);
+
+    const activeInvoices = useMemo(() => {
+        if (selectedFY === 'all') return invoices;
+        return invoices.filter(inv => getFinancialYear(inv.issueDate) === selectedFY);
+    }, [invoices, selectedFY]);
+
+    const activeExpenses = useMemo(() => {
+        const exps = company.expenses || [];
+        if (selectedFY === 'all') return exps;
+        return exps.filter(exp => getFinancialYear(exp.date) === selectedFY);
+    }, [company.expenses, selectedFY]);
+
+    const caAuditCompliance = useMemo(() => {
+        const negativeStockItems = items.filter(i => (i.quantityInStock || 0) < 0);
+        
+        // Income Tax Sec 40A(3): Cash expense > ₹10,000 (100% disallowed)
+        const sec40A3Violations = activeExpenses.filter(e => e.paymentMode === 'Cash' && (Number(e.amount) || 0) > 10000);
+        
+        // Income Tax Sec 269ST: Cash receipt >= ₹2,00,000 (100% penalty under Sec 271DA)
+        const sec269STViolations: { invoice: Invoice; amount: number; date: string }[] = [];
+        activeInvoices.forEach(inv => {
+            (inv.payments || []).forEach(p => {
+                if (p.mode === 'Cash' && (Number(p.amount) || 0) >= 200000) {
+                    sec269STViolations.push({ invoice: inv, amount: Number(p.amount) || 0, date: p.date || inv.issueDate });
+                }
+            });
+        });
+
+        // B2B Invoices with invalid/missing GSTIN
+        const b2bMissingGstin = activeInvoices.filter(inv => {
+            const isB2B = (inv.client?.taxId || inv.client?.gstin) ? true : false;
+            if (isB2B && inv.client?.gstin && inv.client.gstin.trim().length !== 15) return true;
+            return false;
+        });
+
+        const totalRisks = negativeStockItems.length + sec40A3Violations.length + sec269STViolations.length + b2bMissingGstin.length;
+        const isCompliant = totalRisks === 0;
+
+        return {
+            negativeStockItems,
+            sec40A3Violations,
+            sec269STViolations,
+            b2bMissingGstin,
+            totalRisks,
+            isCompliant
+        };
+    }, [items, activeExpenses, activeInvoices]);
+
+    const stockValuation = useMemo(() => {
+        return items.reduce((acc, item) => acc + Math.max(0, (item.quantityInStock || 0) * (item.price || 0)), 0);
+    }, [items]);
+
+    const netGstLiability = useMemo(() => {
+        let outputGst = 0;
+        activeInvoices.forEach(inv => {
+            if (inv.documentType === 'quotation') return;
+            outputGst += (inv.cgst || 0) + (inv.sgst || 0) + (inv.igst || 0);
+        });
+
+        let inputTaxCredit = 0;
+        activeExpenses.forEach(exp => {
+            if (['Raw Materials', 'Software', 'Utilities'].includes(exp.category)) {
+                inputTaxCredit += (Number(exp.amount) || 0) * 0.18 / 1.18;
+            }
+        });
+
+        const netPayable = Math.max(0, outputGst - inputTaxCredit);
+
+        return {
+            outputGst,
+            inputTaxCredit,
+            netPayable
+        };
+    }, [activeInvoices, activeExpenses]);
+
     const unsettledInvoices = useMemo(() => {
-        return invoices
+        return activeInvoices
             .filter(inv => {
                 const docType = inv.documentType || 'invoice';
                 if (docType === 'quotation') return false;
@@ -212,7 +313,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                 return summary.balanceDue > 0;
             })
             .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-    }, [invoices]);
+    }, [activeInvoices]);
 
     const filteredUnsettledInvoices = useMemo(() => {
         return unsettledInvoices.filter(inv => {
@@ -235,7 +336,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
         let totalReceivables = 0;
         let totalOverdue = 0;
 
-        invoices.forEach(inv => {
+        activeInvoices.forEach(inv => {
             const docType = inv.documentType || 'invoice';
             if (docType === 'quotation') return;
             const summary = getInvoicePaymentSummary(inv);
@@ -252,10 +353,10 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
             }
         });
 
-        const totalExpenses = (company.expenses || []).reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0);
+        const totalExpenses = activeExpenses.reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0);
         const netProfit = totalRevenue - totalExpenses;
         const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
-        const totalClients = new Set(invoices.map(i => i.client?.id).filter(Boolean)).size;
+        const totalClients = new Set(activeInvoices.map(i => i.client?.id).filter(Boolean)).size;
         const lowStockItems = items.filter(i => i.quantityInStock <= 5).length;
         const today = new Date();
 
@@ -266,7 +367,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
             return { month: d.getMonth(), year: d.getFullYear(), label: d.toLocaleString('default', { month: 'short' }), revenue: 0, outstanding: 0, activeClients: new Set<string>() };
         });
 
-        invoices.forEach(inv => {
+        activeInvoices.forEach(inv => {
             const docType = inv.documentType || 'invoice';
             if (docType === 'quotation') return;
             const summary = getInvoicePaymentSummary(inv);
@@ -319,7 +420,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
         const outstandingTrend = calcTrend(outstandingData[currentIdx], outstandingData[prevIdx]);
         const clientTrend = calcTrend(chartMonths[currentIdx].activeClients.size, chartMonths[prevIdx].activeClients.size);
         const clientRevenueMap = new Map<string, { name: string, total: number, count: number }>();
-        invoices.forEach(inv => {
+        activeInvoices.forEach(inv => {
             if (!inv.client?.id) return;
             const current = clientRevenueMap.get(inv.client.id) || { name: inv.client.name || 'Unknown', total: 0, count: 0 };
             current.total += inv.grandTotal;
@@ -382,7 +483,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
         }
 
         // 6. Tax Liability Estimate
-        const estimatedTax = invoices.reduce((acc, inv) => acc + (inv.cgst + inv.sgst + inv.igst), 0);
+        const estimatedTax = activeInvoices.reduce((acc, inv) => acc + (inv.cgst + inv.sgst + inv.igst), 0);
         if (estimatedTax > 0) {
             insights.push({
                 type: 'info',
@@ -391,7 +492,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
             });
         }
 
-        if (invoices.length > 0 && invoices.filter(i => i.status === 'Unpaid').length > 3) {
+        if (activeInvoices.length > 0 && activeInvoices.filter(i => i.status === 'Unpaid').length > 3) {
             insights.push({
                 type: 'info',
                 text: `You have several pending invoices. Consider sending reminders.`,
@@ -419,7 +520,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
         const allAgingInvoices: OverdueInvoiceItem[] = [];
 
-        invoices.forEach(inv => {
+        activeInvoices.forEach(inv => {
             const docType = inv.documentType || 'invoice';
             if (docType === 'quotation' || docType === 'credit_note') return;
             const summary = getInvoicePaymentSummary(inv);
@@ -473,7 +574,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
         let cgstCollected = 0;
         let sgstCollected = 0;
         let igstCollected = 0;
-        invoices.forEach(inv => {
+        activeInvoices.forEach(inv => {
             cgstCollected += inv.cgst || 0;
             sgstCollected += inv.sgst || 0;
             igstCollected += inv.igst || 0;
@@ -487,7 +588,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
         // Calculate Top Selling Items
         const itemSalesMap = new Map<string, { name: string, quantity: number, revenue: number }>();
-        invoices.forEach(inv => {
+        activeInvoices.forEach(inv => {
             if (inv.items) {
                 inv.items.forEach(item => {
                     const current = itemSalesMap.get(item.id || item.name) || { name: item.name || 'Unknown Item', quantity: 0, revenue: 0 };
@@ -527,7 +628,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
             gst: { cgstCollected, sgstCollected, igstCollected, totalGstCollected },
             lowStockList
         };
-    }, [invoices, items, currency, timeRange]);
+    }, [activeInvoices, items, currency, timeRange, activeExpenses]);
 
     const revenueChartData = useMemo(() => metrics.chartLabels.map((label, i) => ({ label, value: metrics.revenueData[i] })), [metrics]);
     const invoiceStatusCounts = useMemo(() => {
@@ -536,7 +637,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
         let pending = 0;
         let overdue = 0;
 
-        invoices.forEach(i => {
+        activeInvoices.forEach(i => {
             const docType = i.documentType || 'invoice';
             if (docType === 'quotation') return;
             const summary = getInvoicePaymentSummary(i);
@@ -546,9 +647,9 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
             else pending++;
         });
 
-        const total = invoices.length || 1;
+        const total = activeInvoices.length || 1;
         return { paid, partial, pending, overdue, total };
-    }, [invoices]);
+    }, [activeInvoices]);
     const dashArray = (count: number) => { const total = invoiceStatusCounts.total; const percentage = (count / total) * 100; return `${percentage}, 100`; };
     const dashOffset = (prevCounts: number[]) => { const total = invoiceStatusCounts.total; const prevSum = prevCounts.reduce((a, b) => a + b, 0); return -((prevSum / total) * 100); };
 
@@ -567,7 +668,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
     const recentCollections = useMemo<RecentCollectionItem[]>(() => {
         const list: RecentCollectionItem[] = [];
-        invoices.forEach(inv => {
+        activeInvoices.forEach(inv => {
             if (inv.payments && inv.payments.length > 0) {
                 inv.payments.forEach(p => {
                     list.push({
@@ -586,7 +687,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
             }
         });
         return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
-    }, [invoices]);
+    }, [activeInvoices]);
 
     const filteredAgingItems = useMemo(() => {
         const list = selectedAgingBucket === 'all'
@@ -657,26 +758,102 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                     <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">
                         {company.details.name}
                     </h1>
+                    {company.details.gstin && (
+                        <p className="text-xs font-mono text-zinc-400 dark:text-zinc-500 mt-0.5">
+                            GSTIN: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{company.details.gstin}</span>
+                        </p>
+                    )}
                 </div>
-                <div className="flex flex-wrap gap-2.5 relative z-10">
+                
+                <div className="flex flex-wrap items-center gap-2.5 relative z-10">
+                    {/* Indian Financial Year Selector */}
+                    <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-1.5 shadow-xs">
+                        <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        <select
+                            value={selectedFY}
+                            onChange={(e) => setSelectedFY(e.target.value)}
+                            className="bg-transparent text-xs font-bold text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer"
+                            title="Filter Dashboard by Indian Financial Year (Apr 1 - Mar 31)"
+                        >
+                            <option value="all">All Financial Years</option>
+                            {availableFYs.map(fy => (
+                                <option key={fy} value={fy}>{fy}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* CA Audit Sentinel Pill */}
+                    <button
+                        onClick={() => setIsAuditModalOpen(true)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all shadow-xs active:scale-[0.98] ${
+                            caAuditCompliance.isCompliant
+                                ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
+                                : 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50'
+                        }`}
+                        title="Open CA Statutory Tax Audit Sentinel & Schedules"
+                    >
+                        {caAuditCompliance.isCompliant ? (
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        ) : (
+                            <ShieldAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                        )}
+                        <span>{caAuditCompliance.isCompliant ? 'CA Audit: 100% Compliant' : `CA Alert: ${caAuditCompliance.totalRisks} Risk${caAuditCompliance.totalRisks > 1 ? 's' : ''}`}</span>
+                    </button>
+
                     {setActiveView && (
                         <>
                             <button
                                 onClick={() => setActiveView('Clients')}
-                                className="bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-750 px-3.5 py-2 rounded-xl font-medium text-sm transition-colors flex items-center gap-2 border border-zinc-200 dark:border-zinc-700 shadow-xs"
+                                className="bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-750 px-3.5 py-1.5 rounded-xl font-medium text-xs sm:text-sm transition-colors flex items-center gap-1.5 border border-zinc-200 dark:border-zinc-700 shadow-xs"
                             >
-                                <Users className="w-4 h-4" /> Add Client
+                                <Users className="w-3.5 h-3.5" /> Add Client
                             </button>
                             <button
                                 onClick={() => setActiveView('NewInvoice')}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl font-semibold text-sm transition-colors shadow-xs active:scale-[0.98] flex items-center gap-2 border border-indigo-500/20"
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-xl font-semibold text-xs sm:text-sm transition-colors shadow-xs active:scale-[0.98] flex items-center gap-1.5 border border-indigo-500/20"
                             >
-                                <PlusCircle className="w-4 h-4" /> New Invoice
+                                <PlusCircle className="w-3.5 h-3.5" /> New Invoice
                             </button>
                         </>
                     )}
                 </div>
             </div>
+
+            {/* CA Statutory Compliance Warning Banner */}
+            {!caAuditCompliance.isCompliant && (
+                <div className="bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in shadow-xs">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 shrink-0">
+                            <ShieldAlert className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="text-sm font-bold text-zinc-900 dark:text-white">
+                                    CA Audit Alert: {caAuditCompliance.totalRisks} Statutory Compliance Issue{caAuditCompliance.totalRisks > 1 ? 's' : ''} Detected
+                                </h4>
+                                <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
+                                    Form 3CD / Income Tax Act
+                                </span>
+                            </div>
+                            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+                                {caAuditCompliance.negativeStockItems.length > 0 && `${caAuditCompliance.negativeStockItems.length} negative stock SKU(s). `}
+                                {caAuditCompliance.sec40A3Violations.length > 0 && `${caAuditCompliance.sec40A3Violations.length} cash expense(s) > ₹10k. `}
+                                {caAuditCompliance.sec269STViolations.length > 0 && `${caAuditCompliance.sec269STViolations.length} cash receipt(s) ≥ ₹2L. `}
+                                Download audit schedules to reconcile before filing.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <button
+                            onClick={() => setIsAuditModalOpen(true)}
+                            className="text-xs font-semibold px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition-all shadow-xs active:scale-[0.98] flex items-center gap-1.5"
+                        >
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            Review & Export Schedules
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Overdue Receivables Alert Banner */}
             {metrics.totalOverdue > 0 && (
@@ -720,13 +897,14 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                 </div>
             )}
 
-            {/* Stat Cards Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <StatCard title="Revenue" value={`${currency}${metrics.totalRevenue.toLocaleString()}`} icon={<IndianRupee className="w-5 h-5" />} color="green" trend={{ value: metrics.trends.revenue, label: 'vs last month' }} sparklineData={metrics.revenueData} onClick={() => navigateToInvoices('Paid')} delay={0} />
-                <StatCard title="Receivables" value={`${currency}${metrics.totalReceivables.toLocaleString()}`} icon={<Scale className="w-5 h-5" />} color="yellow" trend={{ value: metrics.trends.outstanding, label: 'vs last month' }} sparklineData={metrics.outstandingData} onClick={() => navigateToInvoices('Unpaid')} delay={60} />
-                <StatCard title="Overdue" value={`${currency}${metrics.totalOverdue.toLocaleString()}`} icon={<TrendingDown className="w-5 h-5" />} color="red" trend={{ value: 0, label: 'Needs attention' }} onClick={() => navigateToInvoices('Overdue')} delay={120} />
-                <StatCard title="Low Stock" value={metrics.lowStockItems.toString()} icon={<AlertTriangle className="w-5 h-5" />} color="orange" onClick={() => navigateToInventory('low')} delay={180} />
-                <StatCard title="Clients" value={metrics.totalClients.toString()} icon={<Users className="w-5 h-5" />} color="blue" trend={{ value: metrics.trends.clients, label: 'Growth' }} onClick={() => setActiveView && setActiveView('Clients')} delay={240} />
+            {/* 6-Card Statutory & Operational Stat Cards Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+                <StatCard title="Revenue" value={`${currency}${metrics.totalRevenue.toLocaleString()}`} icon={<IndianRupee className="w-4 h-4" />} color="green" trend={{ value: metrics.trends.revenue, label: 'vs last month' }} sparklineData={metrics.revenueData} onClick={() => navigateToInvoices('Paid')} delay={0} />
+                <StatCard title="Receivables" value={`${currency}${metrics.totalReceivables.toLocaleString()}`} icon={<Scale className="w-4 h-4" />} color="yellow" trend={{ value: metrics.trends.outstanding, label: 'vs last month' }} sparklineData={metrics.outstandingData} onClick={() => navigateToInvoices('Unpaid')} delay={60} />
+                <StatCard title="Overdue" value={`${currency}${metrics.totalOverdue.toLocaleString()}`} icon={<TrendingDown className="w-4 h-4" />} color="red" trend={{ value: 0, label: 'Needs attention' }} onClick={() => navigateToInvoices('Overdue')} delay={120} />
+                <StatCard title="Stock Value" value={`₹${(stockValuation >= 100000 ? (stockValuation / 100000).toFixed(1) + 'L' : stockValuation.toLocaleString('en-IN', { maximumFractionDigits: 0 }))}`} icon={<Package className="w-4 h-4" />} color="purple" onClick={() => navigateToInventory('all')} delay={180} />
+                <StatCard title="Net GST (3B)" value={`₹${netGstLiability.netPayable.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`} icon={<FileText className="w-4 h-4" />} color="blue" onClick={() => setActiveView && setActiveView('GstReports')} delay={240} />
+                <StatCard title="Clients" value={metrics.totalClients.toString()} icon={<Users className="w-4 h-4" />} color="orange" trend={{ value: metrics.trends.clients, label: 'Growth' }} onClick={() => setActiveView && setActiveView('Clients')} delay={300} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -1687,6 +1865,180 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                                 );
                             })
                         )}
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Indian Statutory CA Audit Sentinel & Review Modal */}
+            <Modal
+                isOpen={isAuditModalOpen}
+                onClose={() => setIsAuditModalOpen(false)}
+                title="Chartered Accountant (CA) Statutory Audit Review"
+                size="lg"
+            >
+                <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                    {/* Entity details & status banner */}
+                    <div className={`p-4 rounded-xl border flex items-start gap-3.5 ${
+                        caAuditCompliance.isCompliant
+                            ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800'
+                            : 'bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'
+                    }`}>
+                        <div className={`p-2 rounded-lg shrink-0 ${caAuditCompliance.isCompliant ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'}`}>
+                            {caAuditCompliance.isCompliant ? <ShieldCheck className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                                <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
+                                    {caAuditCompliance.isCompliant ? '100% Tax & Audit Compliant' : `${caAuditCompliance.totalRisks} Statutory Audit Alerts Flagged`}
+                                </h3>
+                                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                                    {selectedFY === 'all' ? 'All Periods' : selectedFY}
+                                </span>
+                            </div>
+                            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                {caAuditCompliance.isCompliant
+                                    ? 'No cash disallowances under Sec 40A(3), no receipt violations under Sec 269ST, and quantitative stock balances are healthy for Form 3CD.'
+                                    : 'Review the flagged items below to prevent tax disallowances, penalty notices under Sec 271DA, and stock qualification remarks in your CA Tax Audit Report.'}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* 1-Click CA Schedules Export Actions */}
+                    <div>
+                        <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2.5">
+                            Download CA Audit Schedules (One-Click CSVs)
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <button
+                                onClick={() => exportStockAuditSchedule(items, company, selectedFY)}
+                                className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-850 hover:border-indigo-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-left group shadow-xs cursor-pointer"
+                            >
+                                <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400 mb-1.5">
+                                    <Package className="w-4 h-4" />
+                                    <Download className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
+                                </div>
+                                <p className="text-xs font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                                    Form 3CD Clause 35
+                                </p>
+                                <p className="text-[10px] text-zinc-500 mt-0.5">Quantitative Stock Valuation Register</p>
+                            </button>
+
+                            <button
+                                onClick={() => exportCashComplianceAuditLog(activeInvoices, activeExpenses, company, selectedFY)}
+                                className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-850 hover:border-indigo-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-left group shadow-xs cursor-pointer"
+                            >
+                                <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400 mb-1.5">
+                                    <IndianRupee className="w-4 h-4" />
+                                    <Download className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
+                                </div>
+                                <p className="text-xs font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                                    Sec 40A(3) & 269ST Log
+                                </p>
+                                <p className="text-[10px] text-zinc-500 mt-0.5">Statutory Cash Limits Audit</p>
+                            </button>
+
+                            <button
+                                onClick={() => exportDebtorsAgingSchedule(activeInvoices, company, selectedFY)}
+                                className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-850 hover:border-indigo-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-left group shadow-xs cursor-pointer"
+                            >
+                                <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400 mb-1.5">
+                                    <Clock className="w-4 h-4" />
+                                    <Download className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
+                                </div>
+                                <p className="text-xs font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                                    Debtors Aging Schedule
+                                </p>
+                                <p className="text-[10px] text-zinc-500 mt-0.5">CARO 2020 & Balance Sheet Audit</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Flagged Item Details */}
+                    <div className="space-y-4">
+                        <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                            Statutory Check Breakdown
+                        </h4>
+
+                        {/* Negative Stock */}
+                        <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <span className={`w-2 h-2 rounded-full ${caAuditCompliance.negativeStockItems.length > 0 ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
+                                    <span className="text-xs font-bold text-zinc-900 dark:text-white">Form 3CD Clause 35 — Quantitative Stock</span>
+                                </div>
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${caAuditCompliance.negativeStockItems.length > 0 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}`}>
+                                    {caAuditCompliance.negativeStockItems.length} Negative Item{caAuditCompliance.negativeStockItems.length !== 1 ? 's' : ''}
+                                </span>
+                            </div>
+                            {caAuditCompliance.negativeStockItems.length === 0 ? (
+                                <p className="text-xs text-zinc-500">All inventory items have zero or positive physical stock balances.</p>
+                            ) : (
+                                <div className="space-y-1.5 mt-2">
+                                    {caAuditCompliance.negativeStockItems.map(item => (
+                                        <div key={item.id} className="flex items-center justify-between text-xs bg-white dark:bg-zinc-800 p-2 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                                            <span className="font-medium text-zinc-800 dark:text-zinc-200">{item.name}</span>
+                                            <span className="font-bold text-rose-600 font-mono">{item.quantityInStock} {item.unit || 'pcs'}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Section 40A(3) Cash Expenses */}
+                        <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <span className={`w-2 h-2 rounded-full ${caAuditCompliance.sec40A3Violations.length > 0 ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
+                                    <span className="text-xs font-bold text-zinc-900 dark:text-white">Income Tax Sec 40A(3) — Cash Expenses &gt; ₹10,000</span>
+                                </div>
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${caAuditCompliance.sec40A3Violations.length > 0 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}`}>
+                                    {caAuditCompliance.sec40A3Violations.length} Flagged
+                                </span>
+                            </div>
+                            {caAuditCompliance.sec40A3Violations.length === 0 ? (
+                                <p className="text-xs text-zinc-500">No cash business payments exceed the statutory ₹10,000 threshold.</p>
+                            ) : (
+                                <div className="space-y-1.5 mt-2">
+                                    {caAuditCompliance.sec40A3Violations.map(exp => (
+                                        <div key={exp.id} className="flex items-center justify-between text-xs bg-white dark:bg-zinc-800 p-2 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                                            <div>
+                                                <span className="font-medium text-zinc-800 dark:text-zinc-200">{exp.category} — {exp.vendorName || exp.description || 'Vendor'}</span>
+                                                <span className="text-[10px] text-zinc-400 block">{exp.date}</span>
+                                            </div>
+                                            <span className="font-bold text-rose-600 font-mono">₹{Number(exp.amount).toLocaleString()} (Disallowed)</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Section 269ST Cash Receipts */}
+                        <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <span className={`w-2 h-2 rounded-full ${caAuditCompliance.sec269STViolations.length > 0 ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
+                                    <span className="text-xs font-bold text-zinc-900 dark:text-white">Income Tax Sec 269ST — Cash Receipts &ge; ₹2,00,000</span>
+                                </div>
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${caAuditCompliance.sec269STViolations.length > 0 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}`}>
+                                    {caAuditCompliance.sec269STViolations.length} Flagged
+                                </span>
+                            </div>
+                            {caAuditCompliance.sec269STViolations.length === 0 ? (
+                                <p className="text-xs text-zinc-500">No cash receipts equal or exceed ₹2,00,000. 100% compliant with Sec 271DA.</p>
+                            ) : (
+                                <div className="space-y-1.5 mt-2">
+                                    {caAuditCompliance.sec269STViolations.map((v, i) => (
+                                        <div key={i} className="flex items-center justify-between text-xs bg-white dark:bg-zinc-800 p-2 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                                            <div>
+                                                <span className="font-medium text-zinc-800 dark:text-zinc-200">Invoice #{v.invoice.invoiceNumber} — {v.invoice.client?.name || 'Customer'}</span>
+                                                <span className="text-[10px] text-zinc-400 block">{v.date}</span>
+                                            </div>
+                                            <span className="font-bold text-rose-600 font-mono">₹{v.amount.toLocaleString()} (Penalty Risk)</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </Modal>
