@@ -1046,6 +1046,7 @@ export const InvoiceView: React.FC<{
   const isDC = invoice.documentType === 'delivery_challan';
   const isPI = invoice.documentType === 'proforma';
   const resolvedTitle = isCN ? 'Credit Note' : isDN ? 'Debit Note' : isDC ? 'Delivery Challan' : isPI ? 'Proforma Invoice' : documentTitle;
+  const [viewTab, setViewTab] = useState<'invoice' | 'receipts'>('invoice');
 
   const handleShareWhatsApp = async () => { 
       const num = invoice.invoiceNumber || (invoice as any).quotationNumber;
@@ -1078,31 +1079,86 @@ export const InvoiceView: React.FC<{
   };
 
   const num = invoice.invoiceNumber || (invoice as any).quotationNumber;
+  const hasPayments = !!(invoice.payments && invoice.payments.length > 0);
 
   return (
     <>
-      <div className="max-h-[80vh] overflow-y-auto bg-slate-100 dark:bg-tertiary-dark p-4 flex flex-col items-center gap-4">
-        <div className="w-[210mm] bg-white min-h-[297mm] shadow-2xl origin-top scale-[0.8] md:scale-100"> 
-          <InvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />
-        </div>
+      {/* Top Tab Switcher when receipts exist */}
+      {hasPayments && (
+        <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-2.5 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xs">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setViewTab('invoice')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                viewTab === 'invoice'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>{resolvedTitle} Document</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewTab('receipts')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                viewTab === 'receipts'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Receipt className="w-3.5 h-3.5" />
+              <span>Payment Receipts ({invoice.payments?.length})</span>
+            </button>
+          </div>
 
-        {/* Itemized Payment Receipts Section (Visible when invoice has recorded receipts) */}
-        {invoice.payments && invoice.payments.length > 0 && (
-          <div className="w-[210mm] max-w-full bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-md">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                  <Receipt className="w-5 h-5" />
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-slate-500 hidden sm:inline">
+              Paid: <strong className="font-mono text-emerald-600">₹{invoice.payments?.reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="max-h-[80vh] overflow-y-auto bg-slate-100 dark:bg-tertiary-dark p-4 flex flex-col items-center gap-4">
+        {viewTab === 'invoice' ? (
+          <>
+            <div className="w-[210mm] bg-white min-h-[297mm] shadow-2xl origin-top scale-[0.8] md:scale-100"> 
+              <InvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />
+            </div>
+
+            {/* Quick Receipts Preview strip at bottom of invoice */}
+            {hasPayments && (
+              <div className="w-[210mm] max-w-full text-center py-2">
+                <button
+                  type="button"
+                  onClick={() => setViewTab('receipts')}
+                  className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 shadow-xs"
+                >
+                  <Receipt className="w-4 h-4" />
+                  <span>Click here to view all {invoice.payments?.length} Payment Receipt Vouchers</span>
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Full Payment Receipts View */
+          <div className="w-[210mm] max-w-full bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-xl space-y-5 animate-fade-in">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl shadow-xs">
+                  <Receipt className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>Payment Receipts & Installments</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
-                      {invoice.payments.length} Receipt{invoice.payments.length > 1 ? 's' : ''}
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Payment Receipts for #{invoice.invoiceNumber}</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                      {invoice.payments?.length} Recorded
                     </span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Total Collected: <strong className="font-mono text-emerald-600">₹{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong> of ₹{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    Customer: <strong className="text-slate-800 dark:text-slate-200">{invoice.client?.name || 'Customer'}</strong> • Total Invoice: <strong className="font-mono text-slate-800 dark:text-slate-200">₹{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
                   </p>
                 </div>
               </div>
@@ -1111,17 +1167,17 @@ export const InvoiceView: React.FC<{
                 <button
                   type="button"
                   onClick={() => printAllReceiptsSummary(company, invoice, invoice.client)}
-                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
-                  title="Print Consolidated Payment Statement"
+                  className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                  title="Print Official Statement with all receipts itemized"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>Print All Receipts Statement</span>
+                  <span>Print All Statement</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => shareAllReceiptsWhatsApp(company, invoice, invoice.client)}
-                  className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
-                  title="Share Statement on WhatsApp"
+                  className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                  title="Share All Receipts Statement on WhatsApp"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
                   <span>WhatsApp Statement</span>
@@ -1129,54 +1185,80 @@ export const InvoiceView: React.FC<{
               </div>
             </div>
 
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {invoice.payments.map((p, idx) => {
-                const voucherNo = `REC-${invoice.invoiceNumber}-${(p.id || '').slice(-4).toUpperCase() || (idx + 1).toString().padStart(2, '0')}`;
-                return (
-                  <div key={p.id || idx} className="py-3 flex flex-wrap items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                          Receipt #{idx + 1}
-                        </span>
-                        <span className="text-sm font-black text-slate-900 dark:text-white font-mono">
-                          ₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-accent">
-                          {p.mode}
-                        </span>
-                        <span className="text-xs font-mono text-slate-400">
-                          {voucherNo}
-                        </span>
-                      </div>
-                      <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
-                        <span>Date: <strong className="text-slate-700 dark:text-slate-300">{p.date}</strong></span>
-                        {p.referenceNo && <span>• Ref/UTR: <strong className="font-mono text-slate-700 dark:text-slate-300">{p.referenceNo}</strong></span>}
-                        {p.notes && <span>• Remarks: "{p.notes}"</span>}
-                      </div>
-                    </div>
+            {/* Financial Summary Card */}
+            <div className="grid grid-cols-3 gap-3 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/70 dark:border-slate-700/70 text-center">
+              <div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Invoice Total</div>
+                <div className="text-sm font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                  ₹{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">Total Received</div>
+                <div className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                  ₹{invoice.payments?.reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Balance Due</div>
+                <div className="text-sm font-black font-mono mt-0.5 text-emerald-600">
+                  ₹0.00 (Cleared)
+                </div>
+              </div>
+            </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => printPaymentReceipt(company, invoice, p, invoice.client)}
-                        className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5"
-                        title={`Print Receipt Voucher #${idx + 1}`}
-                      >
-                        <Printer className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Print Voucher</span>
-                      </button>
-                      <button
-                        onClick={() => sharePaymentReceiptWhatsApp(company, invoice, p, invoice.client)}
-                        className="px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-all flex items-center gap-1.5"
-                        title={`Share Receipt Voucher #${idx + 1} on WhatsApp`}
-                      >
-                        <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>WhatsApp</span>
-                      </button>
+            {/* List of Individual Receipts */}
+            <div className="space-y-3">
+              <div className="text-xs font-black text-slate-400 uppercase tracking-wider">Individual Receipt Vouchers:</div>
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {invoice.payments?.map((p, idx) => {
+                  const voucherNo = `REC-${invoice.invoiceNumber}-${(p.id || '').slice(-4).toUpperCase() || (idx + 1).toString().padStart(2, '0')}`;
+                  return (
+                    <div key={p.id || idx} className="py-3.5 flex flex-wrap items-center justify-between gap-3 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 px-3 rounded-xl transition-all">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                            Receipt #{idx + 1}
+                          </span>
+                          <span className="text-base font-black text-slate-900 dark:text-white font-mono">
+                            ₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">
+                            {p.mode}
+                          </span>
+                          <span className="text-xs font-mono text-slate-400">
+                            {voucherNo}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
+                          <span>Date: <strong className="text-slate-700 dark:text-slate-300">{p.date}</strong></span>
+                          {p.referenceNo && <span>• Ref/UTR: <strong className="font-mono text-slate-700 dark:text-slate-300">{p.referenceNo}</strong></span>}
+                          {p.notes && <span>• Remarks: "{p.notes}"</span>}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => printPaymentReceipt(company, invoice, p, invoice.client)}
+                          className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+                          title={`Print Receipt Voucher #${idx + 1}`}
+                        >
+                          <Printer className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Print Voucher</span>
+                        </button>
+                        <button
+                          onClick={() => sharePaymentReceiptWhatsApp(company, invoice, p, invoice.client)}
+                          className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+                          title={`Share Receipt Voucher #${idx + 1} on WhatsApp`}
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>WhatsApp</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -1623,6 +1705,18 @@ const Invoices: React.FC<InvoicesProps> = ({
                                                 </Dropdown>
                                             </td>
                                             <td className="px-6 py-4 text-right space-x-1" onClick={e => e.stopPropagation()}>
+                                                {(invoice.payments?.length || 0) > 0 && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setPaymentModalTab('history');
+                                                            setPaymentModalInvoice(invoice);
+                                                        }}
+                                                        className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 p-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all"
+                                                        title={`View & Print Payment Receipts (${invoice.payments?.length})`}
+                                                    >
+                                                        <Receipt className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => {
                                                         setPaymentModalTab(paymentSummary.status === 'Paid' ? 'history' : 'record');
