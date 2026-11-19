@@ -1154,7 +1154,7 @@ const App: React.FC = () => {
       case 'GstReports': return <GstReports company={activeCompany} />;
       case 'Clients': return <Clients clients={activeCompany.clients} setClients={setClients} invoices={activeCompany.invoices} company={activeCompany} onEditInvoice={handleEditInvoice} onDeleteInvoice={handleDeleteInvoice} onStatusChange={handleUpdateInvoiceStatus} onBulkDelete={handleBulkDeleteClients} onRecordPayment={handleRecordPayment} initialSearchQuery={activeSearchQuery} />;
       case 'Items': return <Items items={activeCompany.items} setItems={setItems} company={activeCompany} onBulkDelete={handleBulkDeleteItems} initialSearchQuery={activeSearchQuery} />;
-      case 'Inventory': return <Inventory items={activeCompany.items} setItems={setItems} onBulkStockUpdate={handleBulkStockUpdate} stockHistory={activeCompany.stockHistory || []} initialFilter={inventoryFilter} company={activeCompany} />;
+      case 'Inventory': return <Inventory items={activeCompany.items} setItems={setItems} onBulkStockUpdate={handleBulkStockUpdate} stockHistory={activeCompany.stockHistory || []} initialFilter={inventoryFilter} />;
       case 'Expenses': return <Expenses company={activeCompany} onAddExpense={handleAddExpense} onDeleteExpense={handleDeleteExpense} />;
       case 'Transporters': return <Transporters transporters={activeCompany.transporters} setTransporters={setTransporters} />;
       case 'Settings': return <Settings activeCompany={activeCompany} updateCompany={handleUpdateCompany} isDemoMode={isDemoMode} onExitDemoToAuth={() => handleExitDemoToAuth('signup')} currentUser={currentUser} />;

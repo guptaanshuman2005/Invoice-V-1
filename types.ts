@@ -58,7 +58,6 @@ export interface Item {
   name: string;
   hsn: string;
   price: number;
-  costPrice?: number; // Purchase/Acquisition cost per unit for FIFO/AS-2 valuation
   gstRate: number; // in percentage
   unit: string;
   quantityInStock: number;
@@ -153,10 +152,9 @@ export interface StockHistoryEntry {
     itemName: string;
     previousQuantity: number;
     newQuantity: number;
-    action: 'Manual Update' | 'Bulk Update' | 'Invoice Created' | 'Invoice Edited' | 'Invoice Deleted' | 'Voice Update' | 'Initial' | 'Bill Scan' | 'Sales Return Credit Note' | 'Purchase Inward' | 'Damaged / Expired' | 'Physical Audit Adjustment';
+    action: 'Manual Update' | 'Bulk Update' | 'Invoice Created' | 'Invoice Edited' | 'Invoice Deleted' | 'Voice Update' | 'Initial' | 'Bill Scan' | 'Sales Return Credit Note';
     timestamp: string;
     referenceId?: string; // e.g., Invoice Number
-    unitCost?: number; // Inward unit cost for FIFO batch valuation
 }
 
 export interface Subscription {
