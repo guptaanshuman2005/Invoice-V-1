@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Modal from './common/Modal';
 import { sendPaymentReminderViaWhatsApp } from '../utils/whatsapp';
-import { getInvoicePaymentSummary, printPaymentReceipt, sharePaymentReceiptWhatsApp } from '../utils/invoiceUtils';
+import { getInvoicePaymentSummary, printPaymentReceipt, sharePaymentReceiptWhatsApp, printAllReceiptsSummary } from '../utils/invoiceUtils';
 import { RecordPaymentModal } from './RecordPaymentModal';
 
 interface DashboardProps {
@@ -1244,10 +1244,14 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        printPaymentReceipt(company, inv, inv.payments![inv.payments!.length - 1], inv.client);
+                                                                        if (inv.payments && inv.payments.length > 1) {
+                                                                            printAllReceiptsSummary(company, inv, inv.client);
+                                                                        } else {
+                                                                            printPaymentReceipt(company, inv, inv.payments![0], inv.client);
+                                                                        }
                                                                     }}
                                                                     className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 hover:text-emerald-600 transition-colors"
-                                                                    title="Print Payment Voucher"
+                                                                    title={inv.payments && inv.payments.length > 1 ? `Print All ${inv.payments.length} Receipts Statement` : "Print Payment Voucher"}
                                                                 >
                                                                     <Printer className="w-3.5 h-3.5" />
                                                                 </button>

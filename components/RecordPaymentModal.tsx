@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import type { Company, Invoice, InvoicePayment, PaymentMode } from '../types';
-import { getInvoicePaymentSummary, printPaymentReceipt, sharePaymentReceiptWhatsApp } from '../utils/invoiceUtils';
+import { getInvoicePaymentSummary, printPaymentReceipt, sharePaymentReceiptWhatsApp, printAllReceiptsSummary, shareAllReceiptsWhatsApp } from '../utils/invoiceUtils';
 import Modal from './common/Modal';
 import Button from './common/Button';
-import { IndianRupee, Calendar, CreditCard, Hash, FileText, CheckCircle2, MessageCircle, Printer, Trash2, ArrowRight, AlertCircle } from 'lucide-react';
+import { IndianRupee, Calendar, CreditCard, Hash, FileText, CheckCircle2, MessageCircle, Printer, Trash2, ArrowRight, AlertCircle, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface RecordPaymentModalProps {
@@ -11,6 +11,7 @@ interface RecordPaymentModalProps {
   onClose: () => void;
   invoice: Invoice | null;
   company: Company;
+  initialTab?: 'record' | 'history';
   onSavePayment?: (invoiceId: string, payment: InvoicePayment) => void;
   onRecordPayment?: (invoiceId: string, payment: InvoicePayment) => void;
   onDeletePayment?: (invoiceId: string, paymentId: string) => void;
@@ -29,6 +30,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   onClose,
   invoice,
   company,
+  initialTab,
   onSavePayment,
   onRecordPayment,
   onDeletePayment
@@ -44,7 +46,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   const [notes, setNotes] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'record' | 'history'>('record');
 
-  // Auto-fill remaining balance when opened
+  // Auto-fill remaining balance and pick active tab when opened
   useEffect(() => {
     if (isOpen && invoice) {
       const curSummary = getInvoicePaymentSummary(invoice);
@@ -53,9 +55,15 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       setMode('UPI');
       setReferenceNo('');
       setNotes('');
-      setActiveTab('record');
+      if (initialTab) {
+        setActiveTab(initialTab);
+      } else if (curSummary.balanceDue <= 0 && (invoice.payments?.length || 0) > 0) {
+        setActiveTab('history');
+      } else {
+        setActiveTab('record');
+      }
     }
-  }, [isOpen, invoice]);
+  }, [isOpen, invoice, initialTab]);
 
   const numAmount = parseFloat(amount) || 0;
 
@@ -360,62 +368,101 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                 <p className="text-[11px] text-slate-400 mt-0.5">Use the "+ Record Installment" tab above to record payments.</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
-                {invoice.payments.map((p, idx) => (
-                  <div
-                    key={p.id || idx}
-                    className="p-3 bg-white dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/80 rounded-xl flex items-center justify-between gap-3 hover:shadow-sm transition-all"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">
-                          ₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-accent">
-                          {p.mode}
-                        </span>
-                        {p.referenceNo && (
-                          <span className="text-[10px] font-mono text-slate-400 truncate">
-                            Ref: {p.referenceNo}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-slate-500">
-                        Date: {p.date} {p.notes ? `• "${p.notes}"` : ''}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => printPaymentReceipt(company, invoice, p, invoice.client)}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-accent transition-colors"
-                        title="Download / Print Receipt Voucher"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => sharePaymentReceiptWhatsApp(company, invoice, p, invoice.client)}
-                        className="p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg text-emerald-600 transition-colors"
-                        title="Share Receipt on WhatsApp"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                      </button>
-                      {onDeletePayment && (
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`Delete payment of ₹${p.amount}?`)) {
-                              onDeletePayment(invoice.id, p.id);
-                            }
-                          }}
-                          className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-slate-400 hover:text-rose-600 transition-colors"
-                          title="Delete Payment"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
+              <div className="space-y-3">
+                {/* Header Actions for All Receipts */}
+                <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-xl">
+                  <div className="text-xs font-bold text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                    <Receipt className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span>{invoice.payments.length} Receipt{invoice.payments.length > 1 ? 's' : ''} Recorded</span>
+                    <span className="text-slate-400 font-normal font-mono">• Total: ₹{summary.totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => printAllReceiptsSummary(company, invoice, invoice.client)}
+                      className="px-2.5 py-1.5 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-bold shadow-xs hover:shadow transition-all flex items-center gap-1.5"
+                      title="Print Official Statement of all receipts"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Print All Statement</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => shareAllReceiptsWhatsApp(company, invoice, invoice.client)}
+                      className="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-xs hover:shadow transition-all flex items-center gap-1.5"
+                      title="Share All Receipts Statement on WhatsApp"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar">
+                  {invoice.payments.map((p, idx) => {
+                    const voucherNo = `REC-${invoice.invoiceNumber}-${(p.id || '').slice(-4).toUpperCase() || (idx + 1).toString().padStart(2, '0')}`;
+                    return (
+                      <div
+                        key={p.id || idx}
+                        className="p-3 bg-white dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/80 rounded-xl flex items-center justify-between gap-3 hover:shadow-sm transition-all"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                              Receipt #{idx + 1}
+                            </span>
+                            <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">
+                              ₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-accent">
+                              {p.mode}
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400">
+                              {voucherNo}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 flex items-center gap-2 flex-wrap">
+                            <span>Date: <strong className="text-slate-700 dark:text-slate-300">{p.date}</strong></span>
+                            {p.referenceNo && <span>• Ref/UTR: <strong className="font-mono text-slate-700 dark:text-slate-300">{p.referenceNo}</strong></span>}
+                            {p.notes && <span>• "{p.notes}"</span>}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => printPaymentReceipt(company, invoice, p, invoice.client)}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-accent transition-colors flex items-center gap-1 text-xs font-semibold"
+                            title={`Download / Print Receipt Voucher #${idx + 1}`}
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Print</span>
+                          </button>
+                          <button
+                            onClick={() => sharePaymentReceiptWhatsApp(company, invoice, p, invoice.client)}
+                            className="p-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg text-emerald-600 transition-colors flex items-center gap-1 text-xs font-semibold"
+                            title={`Share Receipt Voucher #${idx + 1} on WhatsApp`}
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">WhatsApp</span>
+                          </button>
+                          {onDeletePayment && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Delete payment of ₹${Number(p.amount).toLocaleString('en-IN')} (Receipt #${idx + 1})?`)) {
+                                  onDeletePayment(invoice.id, p.id);
+                                }
+                              }}
+                              className="p-2 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-slate-400 hover:text-rose-600 transition-colors"
+                              title="Delete Payment Entry"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

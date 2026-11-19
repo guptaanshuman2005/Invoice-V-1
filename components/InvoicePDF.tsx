@@ -150,8 +150,14 @@ const ModernInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documen
             </View>
             {invoice.payments && invoice.payments.length > 0 && (
               <>
+                {invoice.payments.length > 1 && invoice.payments.map((p, pIdx) => (
+                  <View key={p.id || pIdx} style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
+                    <Text style={{ color: '#64748b', fontSize: 7.5 }}>• Rec #{pIdx + 1} ({p.date} • {p.mode})</Text>
+                    <Text style={{ color: '#16a34a', fontSize: 7.5 }}>- Rs. {Number(p.amount).toFixed(2)}</Text>
+                  </View>
+                ))}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
-                  <Text style={{ color: '#16a34a', fontSize: 9 }}>Paid to Date</Text>
+                  <Text style={{ color: '#16a34a', fontSize: 9 }}>Paid to Date ({invoice.payments.length} receipts)</Text>
                   <Text style={{ color: '#16a34a', fontSize: 9, fontWeight: 'bold' }}>- Rs. {invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#cbd5e1' }}>
@@ -288,8 +294,14 @@ const TraditionalInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, do
               </View>
               {invoice.payments && invoice.payments.length > 0 && (
                 <>
+                  {invoice.payments.length > 1 && invoice.payments.map((p, pIdx) => (
+                    <View key={p.id || pIdx} style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 2, borderTopWidth: 1, borderTopColor: '#e2e8f0' }}>
+                      <Text style={{ fontSize: 7, color: '#475569' }}>• Rec #{pIdx + 1} ({p.date} • {p.mode})</Text>
+                      <Text style={{ fontSize: 7, color: '#16a34a' }}>- Rs. {Number(p.amount).toFixed(2)}</Text>
+                    </View>
+                  ))}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 4, borderTopWidth: 1, borderTopColor: '#000000' }}>
-                    <Text>Less: Amount Paid</Text>
+                    <Text>Less: Amount Paid ({invoice.payments.length} receipts)</Text>
                     <Text>- Rs. {invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 4, fontWeight: 'bold', borderTopWidth: 1, borderTopColor: '#000000' }}>
@@ -459,8 +471,14 @@ const PremiumInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, docume
               </View>
               {invoice.payments && invoice.payments.length > 0 && (
                 <View style={{ marginTop: 6, padding: 8, backgroundColor: '#f8fafc', borderRadius: 6, borderWidth: 1, borderColor: '#e2e8f0' }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 8, color: '#16a34a' }}>Amount Paid</Text>
+                  {invoice.payments.length > 1 && invoice.payments.map((p, pIdx) => (
+                    <View key={p.id || pIdx} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <Text style={{ fontSize: 7, color: '#64748b' }}>• Rec #{pIdx + 1} ({p.date} • {p.mode})</Text>
+                      <Text style={{ fontSize: 7, color: '#16a34a' }}>- Rs. {Number(p.amount).toFixed(2)}</Text>
+                    </View>
+                  ))}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: invoice.payments.length > 1 ? 1 : 0, borderTopColor: '#f1f5f9', paddingTop: invoice.payments.length > 1 ? 2 : 0 }}>
+                    <Text style={{ fontSize: 8, color: '#16a34a' }}>Total Paid ({invoice.payments.length} receipts)</Text>
                     <Text style={{ fontSize: 8, fontWeight: 'bold', color: '#16a34a' }}>- Rs. {invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 3, paddingTop: 3, borderTopWidth: 1, borderTopColor: '#cbd5e1' }}>
@@ -677,8 +695,14 @@ const CustomInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documen
             </View>
             {invoice.payments && invoice.payments.length > 0 && (
               <>
+                {invoice.payments.length > 1 && invoice.payments.map((p, pIdx) => (
+                  <View key={p.id || pIdx} style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
+                    <Text style={{ color: '#64748b', fontSize: 7.5 }}>• Rec #{pIdx + 1} ({p.date} • {p.mode})</Text>
+                    <Text style={{ color: '#16a34a', fontSize: 7.5 }}>- Rs. {Number(p.amount).toFixed(2)}</Text>
+                  </View>
+                ))}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
-                  <Text style={{ color: '#16a34a', fontSize: 9 }}>Paid to Date</Text>
+                  <Text style={{ color: '#16a34a', fontSize: 9 }}>Paid to Date ({invoice.payments.length} receipts)</Text>
                   <Text style={{ color: '#16a34a', fontSize: 9, fontWeight: 'bold' }}>- Rs. {invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#cbd5e1' }}>
@@ -925,8 +949,14 @@ const TallyInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, document
               </View>
               {invoice.payments && invoice.payments.length > 0 && (
                 <>
+                  {invoice.payments.length > 1 && invoice.payments.map((p, pIdx) => (
+                    <View key={p.id || pIdx} style={{ marginTop: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ fontSize: 6.5, color: '#64748b' }}>• Rec #{pIdx + 1} ({p.date} • {p.mode})</Text>
+                      <Text style={{ fontSize: 6.5, color: '#16a34a' }}>- ₹{Number(p.amount).toFixed(2)}</Text>
+                    </View>
+                  ))}
                   <View style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 7, color: '#16a34a' }}>Paid to Date:</Text>
+                    <Text style={{ fontSize: 7, color: '#16a34a' }}>Total Paid ({invoice.payments.length} rec):</Text>
                     <Text style={{ fontSize: 7, fontWeight: 'bold', color: '#16a34a' }}>- ₹{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</Text>
                   </View>
                   <View style={{ marginTop: 2, paddingTop: 2, borderTop: `1px dashed ${borderCol}`, flexDirection: 'row', justifyContent: 'space-between' }}>

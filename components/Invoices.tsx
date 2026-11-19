@@ -6,12 +6,12 @@ import Button from './common/Button';
 import Input from './common/Input';
 import Modal from './common/Modal';
 import { arrayToCSV, downloadCSV, generateGSTR1CSV, generateGSTR3BCSV } from '../utils/csvExport';
-import { MessageCircle, FileText, Download, Trash2, CheckCircle, Clock, AlertCircle, Filter, ChevronDown, Share2, Printer, MoreVertical, Repeat, Calendar, Play, Pause, Edit, Plus, CreditCard } from 'lucide-react';
+import { MessageCircle, FileText, Download, Trash2, CheckCircle, Clock, AlertCircle, Filter, ChevronDown, Share2, Printer, MoreVertical, Repeat, Calendar, Play, Pause, Edit, Plus, CreditCard, Receipt } from 'lucide-react';
 import { InvoicePDF } from './InvoicePDF';
 import { Dropdown } from './common/Dropdown';
 import { sendInvoiceViaWhatsApp, sendPaymentReminderViaWhatsApp } from '../utils/whatsapp';
 import { RecordPaymentModal } from './RecordPaymentModal';
-import { getInvoicePaymentSummary } from '../utils/invoiceUtils';
+import { getInvoicePaymentSummary, printPaymentReceipt, sharePaymentReceiptWhatsApp, printAllReceiptsSummary, shareAllReceiptsWhatsApp } from '../utils/invoiceUtils';
 import { getFinancialYear } from '../utils/subscriptionUtils';
 
 // --- Icons ---
@@ -184,11 +184,21 @@ const ModernInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docum
                             <span>{currency}{invoice.grandTotal.toFixed(2)}</span>
                         </div>
                         {invoice.payments && invoice.payments.length > 0 && (
-                            <div className="mt-3 pt-3 border-t border-slate-100 space-y-1">
+                            <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
                                 <div className="flex justify-between text-xs text-emerald-600 font-semibold">
-                                    <span>Paid to Date:</span>
+                                    <span>Paid to Date ({invoice.payments.length} receipt{invoice.payments.length > 1 ? 's' : ''}):</span>
                                     <span>- {currency}{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</span>
                                 </div>
+                                {invoice.payments.length > 1 && (
+                                    <div className="pl-2 space-y-0.5 text-[11px] text-slate-500 font-mono border-l-2 border-emerald-200">
+                                        {invoice.payments.map((p, pIdx) => (
+                                            <div key={p.id || pIdx} className="flex justify-between">
+                                                <span>• Rec #{pIdx + 1} ({p.date} • {p.mode}{p.referenceNo ? ` • Ref: ${p.referenceNo}` : ''}):</span>
+                                                <span className="text-emerald-600 font-medium">- {currency}{Number(p.amount).toFixed(2)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                                 <div className="flex justify-between text-sm font-bold text-rose-600 pt-1 border-t border-slate-100">
                                     <span>Balance Due:</span>
                                     <span>{currency}{Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</span>
@@ -328,8 +338,14 @@ const TraditionalInvoiceContent: React.FC<{ invoice: Invoice, company: Company, 
                     </div>
                     {invoice.payments && invoice.payments.length > 0 && (
                         <>
+                            {invoice.payments.length > 1 && invoice.payments.map((p, pIdx) => (
+                                <div key={p.id || pIdx} className="flex justify-between px-2 py-0.5 border-t border-dashed border-slate-300 text-[10px] text-slate-600 font-mono">
+                                    <span>• Rec #{pIdx + 1} ({p.date} • {p.mode})</span>
+                                    <span>- {currency} {Number(p.amount).toFixed(2)}</span>
+                                </div>
+                            ))}
                             <div className="flex justify-between p-2 border-t border-black text-xs text-emerald-700 font-medium">
-                                <span>Less: Amount Paid</span>
+                                <span>Less: Total Paid ({invoice.payments.length} receipts)</span>
                                 <span>- {currency} {invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between p-2 border-t border-black font-bold text-sm text-red-700">
@@ -505,11 +521,21 @@ const PremiumInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docu
                             <span>{currency}{invoice.grandTotal.toFixed(2)}</span>
                         </div>
                         {invoice.payments && invoice.payments.length > 0 && (
-                            <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                            <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
                                 <div className="flex justify-between text-xs text-emerald-600 font-semibold">
-                                    <span>Amount Paid:</span>
+                                    <span>Total Paid ({invoice.payments.length} receipt{invoice.payments.length > 1 ? 's' : ''}):</span>
                                     <span>- {currency}{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</span>
                                 </div>
+                                {invoice.payments.length > 1 && (
+                                    <div className="pl-2 space-y-0.5 text-[11px] text-slate-500 font-mono border-l-2 border-emerald-200">
+                                        {invoice.payments.map((p, pIdx) => (
+                                            <div key={p.id || pIdx} className="flex justify-between">
+                                                <span>• Rec #{pIdx + 1} ({p.date} • {p.mode}):</span>
+                                                <span className="text-emerald-600 font-medium">- {currency}{Number(p.amount).toFixed(2)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                                 <div className="flex justify-between text-sm font-bold text-rose-600 pt-1 border-t border-slate-200">
                                     <span>Balance Due:</span>
                                     <span>{currency}{Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</span>
@@ -712,12 +738,18 @@ const TallyInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docume
                             <span className="text-[10px] uppercase text-slate-500 mr-2">Grand Total:</span>
                             <span className="text-lg font-black text-slate-900">₹{invoice.grandTotal.toFixed(2)}</span>
                             {invoice.payments && invoice.payments.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-slate-200 text-left">
+                                <div className="mt-2 pt-2 border-t border-slate-200 text-left space-y-1">
+                                    {invoice.payments.length > 1 && invoice.payments.map((p, pIdx) => (
+                                        <div key={p.id || pIdx} className="flex justify-between text-[10px] text-slate-600 font-mono">
+                                            <span>• Rec #{pIdx + 1} ({p.date} • {p.mode}):</span>
+                                            <span>- ₹{Number(p.amount).toFixed(2)}</span>
+                                        </div>
+                                    ))}
                                     <div className="flex justify-between text-xs text-emerald-700">
-                                        <span>Paid to Date:</span>
+                                        <span>Total Paid ({invoice.payments.length} receipts):</span>
                                         <span className="font-semibold">- ₹{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</span>
                                     </div>
-                                    <div className="flex justify-between text-xs font-bold text-red-600 mt-1">
+                                    <div className="flex justify-between text-xs font-bold text-red-600 mt-1 pt-1 border-t border-slate-100">
                                         <span>Balance Due:</span>
                                         <span>₹{Math.max(0, invoice.grandTotal - invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toFixed(2)}</span>
                                     </div>
@@ -932,8 +964,18 @@ const CustomInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docum
                     </div>
                     {invoice.payments && invoice.payments.length > 0 && (
                         <>
-                            <div className="flex justify-between text-xs font-semibold pt-2 border-t border-slate-100">
-                                <span className="text-emerald-600">Total Paid:</span>
+                            {invoice.payments.length > 1 && (
+                                <div className="space-y-0.5 pt-1 border-t border-slate-100 text-[10px] text-slate-500 font-mono">
+                                    {invoice.payments.map((p, pIdx) => (
+                                        <div key={p.id || pIdx} className="flex justify-between">
+                                            <span>• Rec #{pIdx + 1} ({p.date} • {p.mode}):</span>
+                                            <span className="text-emerald-600">- ₹{Number(p.amount).toFixed(2)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="flex justify-between text-xs font-semibold pt-1 border-t border-slate-100">
+                                <span className="text-emerald-600">Total Paid ({invoice.payments.length} receipts):</span>
                                 <span className="text-emerald-600 font-mono">- ₹{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-sm font-black pt-1">
@@ -1039,10 +1081,105 @@ export const InvoiceView: React.FC<{
 
   return (
     <>
-      <div className="max-h-[80vh] overflow-y-auto bg-slate-100 dark:bg-tertiary-dark p-4 flex justify-center">
+      <div className="max-h-[80vh] overflow-y-auto bg-slate-100 dark:bg-tertiary-dark p-4 flex flex-col items-center gap-4">
         <div className="w-[210mm] bg-white min-h-[297mm] shadow-2xl origin-top scale-[0.8] md:scale-100"> 
           <InvoiceContent invoice={invoice} company={company} documentTitle={documentTitle} />
         </div>
+
+        {/* Itemized Payment Receipts Section (Visible when invoice has recorded receipts) */}
+        {invoice.payments && invoice.payments.length > 0 && (
+          <div className="w-[210mm] max-w-full bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-md">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                  <Receipt className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Payment Receipts & Installments</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                      {invoice.payments.length} Receipt{invoice.payments.length > 1 ? 's' : ''}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Total Collected: <strong className="font-mono text-emerald-600">₹{invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong> of ₹{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => printAllReceiptsSummary(company, invoice, invoice.client)}
+                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+                  title="Print Consolidated Payment Statement"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print All Receipts Statement</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => shareAllReceiptsWhatsApp(company, invoice, invoice.client)}
+                  className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+                  title="Share Statement on WhatsApp"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>WhatsApp Statement</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {invoice.payments.map((p, idx) => {
+                const voucherNo = `REC-${invoice.invoiceNumber}-${(p.id || '').slice(-4).toUpperCase() || (idx + 1).toString().padStart(2, '0')}`;
+                return (
+                  <div key={p.id || idx} className="py-3 flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          Receipt #{idx + 1}
+                        </span>
+                        <span className="text-sm font-black text-slate-900 dark:text-white font-mono">
+                          ₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-accent">
+                          {p.mode}
+                        </span>
+                        <span className="text-xs font-mono text-slate-400">
+                          {voucherNo}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
+                        <span>Date: <strong className="text-slate-700 dark:text-slate-300">{p.date}</strong></span>
+                        {p.referenceNo && <span>• Ref/UTR: <strong className="font-mono text-slate-700 dark:text-slate-300">{p.referenceNo}</strong></span>}
+                        {p.notes && <span>• Remarks: "{p.notes}"</span>}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => printPaymentReceipt(company, invoice, p, invoice.client)}
+                        className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5"
+                        title={`Print Receipt Voucher #${idx + 1}`}
+                      >
+                        <Printer className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Print Voucher</span>
+                      </button>
+                      <button
+                        onClick={() => sharePaymentReceiptWhatsApp(company, invoice, p, invoice.client)}
+                        className="px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-all flex items-center gap-1.5"
+                        title={`Share Receipt Voucher #${idx + 1} on WhatsApp`}
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>WhatsApp</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
       <div className="p-6 bg-white dark:bg-primary-dark flex flex-wrap justify-between items-center gap-3 rounded-b-lg border-t border-slate-100 dark:border-slate-800 sticky bottom-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
         <div className="flex flex-wrap gap-2 items-center">
@@ -1124,6 +1261,7 @@ const Invoices: React.FC<InvoicesProps> = ({
   const [filterFY, setFilterFY] = useState<string>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [paymentModalInvoice, setPaymentModalInvoice] = useState<Invoice | null>(null);
+  const [paymentModalTab, setPaymentModalTab] = useState<'record' | 'history'>('record');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
@@ -1415,10 +1553,20 @@ const Invoices: React.FC<InvoicesProps> = ({
                                                         Due: {currency}{paymentSummary.balanceDue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                     </div>
                                                 )}
-                                                {paymentSummary.status === 'Paid' && (invoice.payments?.length || 0) > 0 && (
-                                                    <div className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                                                        {invoice.payments?.length} receipt{invoice.payments?.length === 1 ? '' : 's'}
-                                                    </div>
+                                                {(invoice.payments?.length || 0) > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setPaymentModalTab('history');
+                                                            setPaymentModalInvoice(invoice);
+                                                        }}
+                                                        className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline inline-flex items-center gap-1 cursor-pointer mt-0.5 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 px-2 py-0.5 rounded-full transition-all"
+                                                        title="Click to view all payment receipts"
+                                                    >
+                                                        <Receipt className="w-3 h-3" />
+                                                        <span>{invoice.payments?.length} receipt{invoice.payments?.length === 1 ? '' : 's'}</span>
+                                                    </button>
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
@@ -1435,11 +1583,15 @@ const Invoices: React.FC<InvoicesProps> = ({
                                                 >
                                                     <div className="py-1 w-48 flex flex-col">
                                                         <button 
-                                                            onClick={() => { setPaymentModalInvoice(invoice); setOpenDropdownId(null); }} 
+                                                            onClick={() => { 
+                                                                setPaymentModalTab(paymentSummary.status === 'Paid' ? 'history' : 'record');
+                                                                setPaymentModalInvoice(invoice); 
+                                                                setOpenDropdownId(null); 
+                                                            }} 
                                                             className="w-full text-left px-4 py-2 text-xs hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold transition-colors flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800"
                                                         >
                                                             <CreditCard className="w-3.5 h-3.5" />
-                                                            Record Payment (Receipt)
+                                                            {paymentSummary.status === 'Paid' ? 'View Payment Receipts' : 'Record Payment (Receipt)'}
                                                         </button>
                                                         <button onClick={() => { onStatusChange(invoice.id, 'Paid'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 font-bold transition-colors">Mark Paid</button>
                                                         <button onClick={() => { onStatusChange(invoice.id, 'Unpaid'); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 font-bold transition-colors">Mark Unpaid</button>
@@ -1472,9 +1624,12 @@ const Invoices: React.FC<InvoicesProps> = ({
                                             </td>
                                             <td className="px-6 py-4 text-right space-x-1" onClick={e => e.stopPropagation()}>
                                                 <button
-                                                    onClick={() => setPaymentModalInvoice(invoice)}
+                                                    onClick={() => {
+                                                        setPaymentModalTab(paymentSummary.status === 'Paid' ? 'history' : 'record');
+                                                        setPaymentModalInvoice(invoice);
+                                                    }}
                                                     className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
-                                                    title="Record Payment / View Receipts"
+                                                    title={paymentSummary.status === 'Paid' ? 'View Payment Receipts' : 'Record Payment / Receipts'}
                                                 >
                                                     <CreditCard className="w-4 h-4" />
                                                 </button>
@@ -1549,7 +1704,9 @@ const Invoices: React.FC<InvoicesProps> = ({
                   onStatusChange={onStatusChange}
                   onRecordPaymentClick={() => {
                       const inv = invoices.find(i => i.id === selectedInvoice.id) || selectedInvoice;
+                      const pSummary = getInvoicePaymentSummary(inv);
                       setSelectedInvoice(null);
+                      setPaymentModalTab(pSummary.status === 'Paid' ? 'history' : 'record');
                       setPaymentModalInvoice(inv);
                   }}
               />
@@ -1561,6 +1718,7 @@ const Invoices: React.FC<InvoicesProps> = ({
           onClose={() => setPaymentModalInvoice(null)} 
           invoice={invoices.find(i => i.id === paymentModalInvoice?.id) || paymentModalInvoice} 
           company={company} 
+          initialTab={paymentModalTab}
           onSavePayment={(invId, payment) => {
               if (onRecordPayment) onRecordPayment(invId, payment);
           }}
