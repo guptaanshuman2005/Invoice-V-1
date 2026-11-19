@@ -136,6 +136,14 @@ const ModernInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documen
                 <Text>Rs. {invoice.igst.toFixed(2)}</Text>
               </View>
             )}
+            {invoice.roundOff && Math.abs(invoice.roundOff) > 0.001 ? (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Text style={{ color: '#64748b' }}>Round Off</Text>
+                <Text style={{ color: '#64748b' }}>
+                  {invoice.roundOff > 0 ? `+Rs. ${invoice.roundOff.toFixed(2)}` : `-Rs. ${Math.abs(invoice.roundOff).toFixed(2)}`}
+                </Text>
+              </View>
+            ) : null}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#e2e8f0' }}>
               <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#0f172a' }}>Total</Text>
               <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#0f172a' }}>Rs. {invoice.grandTotal.toFixed(2)}</Text>
@@ -268,6 +276,12 @@ const TraditionalInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, do
                   <Text>{invoice.igst.toFixed(2)}</Text>
                 </View>
               )}
+              {invoice.roundOff && Math.abs(invoice.roundOff) > 0.001 ? (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 4, borderBottomWidth: 1, borderBottomColor: '#000000' }}>
+                  <Text>Round Off</Text>
+                  <Text>{invoice.roundOff > 0 ? `+${invoice.roundOff.toFixed(2)}` : `-${Math.abs(invoice.roundOff).toFixed(2)}`}</Text>
+                </View>
+              ) : null}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 4, fontWeight: 'bold' }}>
                 <Text>Total Amount</Text>
                 <Text>Rs. {invoice.grandTotal.toFixed(2)}</Text>
@@ -431,6 +445,14 @@ const PremiumInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, docume
                   <Text>Rs. {invoice.igst.toFixed(2)}</Text>
                 </View>
               )}
+              {invoice.roundOff && Math.abs(invoice.roundOff) > 0.001 ? (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <Text style={{ color: '#64748b' }}>Round Off</Text>
+                  <Text style={{ color: '#64748b' }}>
+                    {invoice.roundOff > 0 ? `+Rs. ${invoice.roundOff.toFixed(2)}` : `-Rs. ${Math.abs(invoice.roundOff).toFixed(2)}`}
+                  </Text>
+                </View>
+              ) : null}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', backgroundColor: brandColor, color: '#ffffff', padding: 10, borderRadius: 8, marginTop: 10 }}>
                 <Text style={{ fontSize: 14, fontWeight: 'bold' }}>Total</Text>
                 <Text style={{ fontSize: 14, fontWeight: 'bold' }}>Rs. {invoice.grandTotal.toFixed(2)}</Text>
@@ -641,6 +663,14 @@ const CustomInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, documen
                 <Text style={{ fontSize: 9 }}>Rs. {invoice.igst.toFixed(2)}</Text>
               </View>
             )}
+            {invoice.roundOff && Math.abs(invoice.roundOff) > 0.001 ? (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Text style={{ color: '#64748b', fontSize: 9 }}>Round Off</Text>
+                <Text style={{ fontSize: 9 }}>
+                  {invoice.roundOff > 0 ? `+Rs. ${invoice.roundOff.toFixed(2)}` : `-Rs. ${Math.abs(invoice.roundOff).toFixed(2)}`}
+                </Text>
+              </View>
+            ) : null}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#e2e8f0' }}>
               <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#0f172a' }}>Total</Text>
               <Text style={{ fontSize: 13, fontWeight: 'bold', color: brandColor }}>Rs. {invoice.grandTotal.toFixed(2)}</Text>
@@ -685,7 +715,9 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, docume
   const template = company.details?.invoiceTemplate || 'modern';
   const isCN = invoice.documentType === 'credit_note';
   const isDN = invoice.documentType === 'debit_note';
-  const resolvedTitle = isCN ? 'Credit Note' : isDN ? 'Debit Note' : documentTitle;
+  const isDC = invoice.documentType === 'delivery_challan';
+  const isPI = invoice.documentType === 'proforma';
+  const resolvedTitle = isCN ? 'Credit Note' : isDN ? 'Debit Note' : isDC ? 'Delivery Challan' : isPI ? 'Proforma Invoice' : documentTitle;
   
   if (template === 'traditional' || template === 'classic') {
     return <TraditionalInvoicePDF invoice={invoice} company={company} documentTitle={resolvedTitle} numberToWords={numberToWords} />;
@@ -879,6 +911,14 @@ const TallyInvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, document
               <Text style={{ fontWeight: 'bold', fontSize: 8, marginTop: 2 }}>
                 INR {numberToWords(invoice.grandTotal)} Only
               </Text>
+              {invoice.roundOff && Math.abs(invoice.roundOff) > 0.001 ? (
+                <View style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ fontSize: 7, color: '#64748b' }}>Round Off:</Text>
+                  <Text style={{ fontSize: 7, color: '#64748b' }}>
+                    {invoice.roundOff > 0 ? `+₹${invoice.roundOff.toFixed(2)}` : `-₹${Math.abs(invoice.roundOff).toFixed(2)}`}
+                  </Text>
+                </View>
+              ) : null}
               <View style={{ marginTop: 4, paddingTop: 3, borderTop: `1px solid ${borderCol}`, flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Grand Total:</Text>
                 <Text style={{ fontWeight: 'bold', fontSize: 8 }}>₹{invoice.grandTotal.toFixed(2)}</Text>

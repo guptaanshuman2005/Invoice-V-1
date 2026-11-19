@@ -122,9 +122,14 @@ const GstReports: React.FC<GstReportsProps> = ({ company }) => {
     });
   }, [company.invoices, dateRange]);
 
-  // Segregate standard invoices, credit notes, and debit notes
+  // Segregate standard invoices, credit notes, and debit notes (Delivery challans & proforma invoices are non-taxable / estimates)
   const regularInvoices = useMemo(() => {
-    return filteredInvoices.filter(inv => inv.documentType !== 'credit_note' && inv.documentType !== 'debit_note');
+    return filteredInvoices.filter(inv => 
+      inv.documentType !== 'credit_note' && 
+      inv.documentType !== 'debit_note' && 
+      inv.documentType !== 'delivery_challan' && 
+      inv.documentType !== 'proforma'
+    );
   }, [filteredInvoices]);
 
   const creditNotes = useMemo(() => {

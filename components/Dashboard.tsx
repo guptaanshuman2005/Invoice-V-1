@@ -207,7 +207,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
         return invoices
             .filter(inv => {
                 const docType = inv.documentType || 'invoice';
-                if (docType === 'quotation') return false;
+                if (docType === 'quotation' || docType === 'delivery_challan' || docType === 'proforma') return false;
                 const summary = getInvoicePaymentSummary(inv);
                 return summary.balanceDue > 0;
             })
@@ -237,7 +237,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
         invoices.forEach(inv => {
             const docType = inv.documentType || 'invoice';
-            if (docType === 'quotation') return;
+            if (docType === 'quotation' || docType === 'delivery_challan' || docType === 'proforma') return;
             const summary = getInvoicePaymentSummary(inv);
 
             // Total cash realized
@@ -268,7 +268,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
         invoices.forEach(inv => {
             const docType = inv.documentType || 'invoice';
-            if (docType === 'quotation') return;
+            if (docType === 'quotation' || docType === 'delivery_challan' || docType === 'proforma') return;
             const summary = getInvoicePaymentSummary(inv);
 
             // Monthly collected revenue
@@ -421,7 +421,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
         invoices.forEach(inv => {
             const docType = inv.documentType || 'invoice';
-            if (docType === 'quotation' || docType === 'credit_note') return;
+            if (docType === 'quotation' || docType === 'credit_note' || docType === 'delivery_challan' || docType === 'proforma') return;
             const summary = getInvoicePaymentSummary(inv);
             if (summary.balanceDue <= 0) return;
 
@@ -538,7 +538,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, items, company, setActi
 
         invoices.forEach(i => {
             const docType = i.documentType || 'invoice';
-            if (docType === 'quotation') return;
+            if (docType === 'quotation' || docType === 'delivery_challan' || docType === 'proforma') return;
             const summary = getInvoicePaymentSummary(i);
             if (summary.status === 'Paid') paid++;
             else if (summary.status === 'Partially Paid') partial++;

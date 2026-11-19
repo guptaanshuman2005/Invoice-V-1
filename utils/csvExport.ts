@@ -53,7 +53,12 @@ export const generateGSTR1CSV = (invoices: Invoice[], company: Company) => {
         const rows: string[][] = [];
         const companyState = (company.details.state || '').trim().toLowerCase();
 
-        const regularInvoices = invoices.filter(inv => inv.documentType !== 'credit_note' && inv.documentType !== 'debit_note');
+        const regularInvoices = invoices.filter(inv => 
+            inv.documentType !== 'credit_note' && 
+            inv.documentType !== 'debit_note' &&
+            inv.documentType !== 'delivery_challan' &&
+            inv.documentType !== 'proforma'
+        );
         const creditDebitNotes = invoices.filter(inv => inv.documentType === 'credit_note' || inv.documentType === 'debit_note');
 
         // 1. Header for B2B/B2C
@@ -224,6 +229,7 @@ export const generateGSTR3BCSV = (invoices: Invoice[], company: Company) => {
         const unregisteredInterState: { [state: string]: { taxable: number, igst: number } } = {};
 
         invoices.forEach(inv => {
+            if (inv.documentType === 'delivery_challan' || inv.documentType === 'proforma') return;
             const isCreditNote = inv.documentType === 'credit_note';
             const multiplier = isCreditNote ? -1 : 1;
 
@@ -578,6 +584,7 @@ export const generateGSTR1JSON = (invoices: Invoice[], company: Company, fp: str
     }
 
     const cur_gt = invoices.reduce((sum, inv) => {
+        if (inv.documentType === 'delivery_challan' || inv.documentType === 'proforma') return sum;
         const mult = inv.documentType === 'credit_note' ? -1 : 1;
         return sum + (inv.grandTotal || 0) * mult;
     }, 0);

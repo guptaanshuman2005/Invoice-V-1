@@ -68,6 +68,9 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
     const [advancePaymentDate, setAdvancePaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [advancePaymentRef, setAdvancePaymentRef] = useState<string>('');
 
+    // Auto-roundoff to nearest ₹1
+    const [autoRoundOff, setAutoRoundOff] = useState<boolean>(true);
+
     // Initialize editing state or load draft
     useEffect(() => {
         if (invoiceToEdit) {
@@ -77,6 +80,10 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
             const validUntil = 'validUntil' in invoiceToEdit ? (invoiceToEdit as Quotation).validUntil : '';
             const invDoc = invoiceToEdit as Invoice;
             
+            if ('roundOff' in invoiceToEdit && invoiceToEdit.roundOff !== undefined) {
+                setAutoRoundOff(invoiceToEdit.roundOff !== 0);
+            }
+
             setDraftInvoice({
                 invoiceNumber: invNum,
                 clientId: client.id,
@@ -101,6 +108,8 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                 vehicleNumber: invoiceToEdit.vehicleNumber || '',
                 ewayBillNumber: invoiceToEdit.ewayBillNumber || '',
                 type: mode,
+                documentType: invDoc.documentType || (mode === 'credit_note' ? 'credit_note' : mode === 'debit_note' ? 'debit_note' : 'invoice'),
+                roundOff: invDoc.roundOff,
                 originalInvoiceNumber: invDoc.originalInvoiceNumber || '',
                 originalInvoiceDate: invDoc.originalInvoiceDate || '',
                 reason: invDoc.reason || (mode === 'credit_note' ? 'Sales Return' : 'Correction in Invoice')
@@ -316,6 +325,34 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
         toast.success(`Item "${newItem.name}" saved to items catalog and added!`);
     };
 
+    const handleDocTypeChange = (newDocType: 'invoice' | 'delivery_challan' | 'proforma') => {
+        setDraftInvoice(prev => {
+            let nextNum = prev.invoiceNumber;
+            const invPrefix = company.details?.invoicePrefix || 'INV-';
+            const numPart = (company.nextInvoiceNumber || 1).toString().padStart(3, '0');
+
+            if (newDocType === 'delivery_challan') {
+                if (!nextNum || nextNum.startsWith(invPrefix) || nextNum.startsWith('PI-')) {
+                    nextNum = `DC-${numPart}`;
+                }
+            } else if (newDocType === 'proforma') {
+                if (!nextNum || nextNum.startsWith(invPrefix) || nextNum.startsWith('DC-')) {
+                    nextNum = `PI-${numPart}`;
+                }
+            } else {
+                if (!nextNum || nextNum.startsWith('DC-') || nextNum.startsWith('PI-')) {
+                    nextNum = `${invPrefix}${numPart}`;
+                }
+            }
+
+            return {
+                ...prev,
+                documentType: newDocType,
+                invoiceNumber: nextNum
+            };
+        });
+    };
+
     const calculateTotals = () => {
         let subTotal = 0, cgst = 0, sgst = 0, igst = 0;
         const client = (company.clients || []).find(c => c.id === draftInvoice.clientId);
@@ -342,7 +379,24 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
             }
         });
 
-        return { subTotal, cgst, sgst, igst, grandTotal: subTotal + cgst + sgst + igst };
+        const exactTotal = subTotal + cgst + sgst + igst;
+        let roundOff = 0;
+        let grandTotal = exactTotal;
+
+        if (autoRoundOff) {
+            grandTotal = Math.round(exactTotal);
+            roundOff = Number((grandTotal - exactTotal).toFixed(2));
+        }
+
+        return { 
+            subTotal, 
+            cgst, 
+            sgst, 
+            igst, 
+            exactTotal,
+            roundOff, 
+            grandTotal 
+        };
     };
 
     const totals = calculateTotals();
@@ -395,6 +449,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
             cgst: totals.cgst,
             sgst: totals.sgst,
             igst: totals.igst,
+            roundOff: totals.roundOff,
             grandTotal: totals.grandTotal,
             selectedBankAccountId: draftInvoice.selectedBankAccountId,
             shippingName: shippingData.name,
@@ -418,7 +473,10 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
             saveInvoice(quotation);
             setSavedInvoice(quotation as Quotation);
         } else {
-            const documentType = mode === 'credit_note' ? 'credit_note' : mode === 'debit_note' ? 'debit_note' : 'invoice';
+            const documentType = 
+                mode === 'credit_note' ? 'credit_note' : 
+                mode === 'debit_note' ? 'debit_note' : 
+                (draftInvoice.documentType || 'invoice');
             
             let initialPayments: InvoicePayment[] | undefined = undefined;
             if (mode === 'invoice') {
@@ -442,6 +500,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                 ...commonData,
                 invoiceNumber: draftInvoice.invoiceNumber,
                 documentType,
+                roundOff: totals.roundOff,
                 originalInvoiceNumber: draftInvoice.originalInvoiceNumber,
                 originalInvoiceDate: draftInvoice.originalInvoiceDate,
                 reason: draftInvoice.reason,
@@ -460,7 +519,14 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
     const handleShareWhatsApp = async () => {
         if (!savedInvoice) return;
         const num = (savedInvoice as any).invoiceNumber || (savedInvoice as any).quotationNumber;
-        const type = mode === 'quote' ? 'Quotation' : mode === 'credit_note' ? 'Credit Note' : mode === 'debit_note' ? 'Debit Note' : 'Invoice';
+        const docType = savedInvoice && 'documentType' in savedInvoice ? (savedInvoice as Invoice).documentType : undefined;
+        const type = 
+            mode === 'quote' ? 'Quotation' : 
+            mode === 'credit_note' ? 'Credit Note' : 
+            mode === 'debit_note' ? 'Debit Note' : 
+            docType === 'delivery_challan' ? 'Delivery Challan' :
+            docType === 'proforma' ? 'Proforma Invoice' :
+            'Tax Invoice';
         const text = `*${type} from ${company.details?.name || 'Company'}*\n\nHello ${savedInvoice.client?.name || 'Client'},\n\nHere are the details for *${type} ${num}*:\n\n*Total Amount:* Rs. ${savedInvoice.grandTotal.toFixed(2)}\n*Date:* ${savedInvoice.issueDate}\n\nPlease review attached details.\n\nThank you.`; 
         
         // If Web Share API is supported, try to share the PDF file
@@ -501,7 +567,14 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
     };
 
     const isCreditOrDebitNote = mode === 'credit_note' || mode === 'debit_note';
-    const docTypeLabel = mode === 'quote' ? 'Quotation' : mode === 'credit_note' ? 'Credit Note' : mode === 'debit_note' ? 'Debit Note' : 'Invoice';
+    const activeDocType = draftInvoice.documentType || 'invoice';
+    const docTypeLabel = 
+        mode === 'quote' ? 'Quotation' : 
+        mode === 'credit_note' ? 'Credit Note' : 
+        mode === 'debit_note' ? 'Debit Note' : 
+        activeDocType === 'delivery_challan' ? 'Delivery Challan' :
+        activeDocType === 'proforma' ? 'Proforma Invoice' :
+        'Tax Invoice';
 
     return (
         <div className="max-w-6xl mx-auto pb-20 animate-fade-in">
@@ -520,10 +593,30 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                      GST Table 9B
                                  </span>
                              )}
+                             {activeDocType === 'delivery_challan' && (
+                                 <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
+                                     Rule 55
+                                 </span>
+                             )}
+                             {activeDocType === 'proforma' && (
+                                 <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
+                                     Advance Estimate
+                                 </span>
+                             )}
                          </div>
                          {isCreditOrDebitNote && (
                              <p className="text-xs text-slate-500 mt-0.5">
                                  {mode === 'credit_note' ? 'Issued for sales returns, post-sale discounts, or tax rate reductions.' : 'Issued for upward rate corrections, additional billing, or supplementary charges.'}
+                             </p>
+                         )}
+                         {mode === 'invoice' && activeDocType === 'delivery_challan' && (
+                             <p className="text-xs text-slate-500 mt-0.5">
+                                 Goods dispatch document under Rule 55 of CGST Rules (Job-work, approval, or transportation).
+                             </p>
+                         )}
+                         {mode === 'invoice' && activeDocType === 'proforma' && (
+                             <p className="text-xs text-slate-500 mt-0.5">
+                                 Preliminary bill / formal quote issued to clients for advance payment approval.
                              </p>
                          )}
                      </div>
@@ -536,6 +629,52 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                     <Button onClick={handleSave} className="shadow-xs">Save {docTypeLabel}</Button>
                 </div>
              </div>
+
+             {/* Document Type Switcher (Tax Invoice | Delivery Challan | Proforma Invoice) */}
+             {mode === 'invoice' && !isEditing && (
+                 <div className="glass-panel p-2.5 rounded-2xl mb-6 flex flex-wrap items-center justify-between gap-3 border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40">
+                     <div className="flex items-center gap-1.5 p-1 bg-slate-200/60 dark:bg-slate-800/80 rounded-xl w-full sm:w-auto">
+                         <button
+                             type="button"
+                             onClick={() => handleDocTypeChange('invoice')}
+                             className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                                 activeDocType === 'invoice'
+                                     ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                             }`}
+                         >
+                             Tax Invoice
+                         </button>
+                         <button
+                             type="button"
+                             onClick={() => handleDocTypeChange('delivery_challan')}
+                             className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                                 activeDocType === 'delivery_challan'
+                                     ? 'bg-purple-600 text-white shadow-xs'
+                                     : 'text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-300'
+                             }`}
+                         >
+                             Delivery Challan
+                         </button>
+                         <button
+                             type="button"
+                             onClick={() => handleDocTypeChange('proforma')}
+                             className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                                 activeDocType === 'proforma'
+                                     ? 'bg-teal-600 text-white shadow-xs'
+                                     : 'text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-300'
+                             }`}
+                         >
+                             Proforma Invoice
+                         </button>
+                     </div>
+                     <div className="text-xs text-slate-500 dark:text-slate-400 px-1">
+                         {activeDocType === 'invoice' && 'Standard GST sales invoice for supply of goods/services.'}
+                         {activeDocType === 'delivery_challan' && 'Issued under Rule 55 of CGST Rules (Goods transportation without immediate sale).'}
+                         {activeDocType === 'proforma' && 'Preliminary quotation bill requested by buyers for advance payment.'}
+                     </div>
+                 </div>
+             )}
 
              {/* Credit / Debit Note Reference Card */}
              {isCreditOrDebitNote && (
@@ -945,8 +1084,36 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                  <span>₹{totals.igst.toFixed(2)}</span>
                              </div>
                          )}
+
+                         {/* Auto Round-Off Toggle */}
+                         <div className="flex justify-between items-center py-2 px-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 mt-1">
+                             <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300 select-none">
+                                 <input 
+                                     type="checkbox"
+                                     checked={autoRoundOff}
+                                     onChange={(e) => setAutoRoundOff(e.target.checked)}
+                                     className="w-3.5 h-3.5 rounded text-accent focus:ring-accent cursor-pointer"
+                                 />
+                                 <span>Round off (nearest ₹1)</span>
+                             </label>
+                             <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+                                 {autoRoundOff && totals.roundOff !== 0 ? (
+                                     totals.roundOff > 0 ? `+₹${totals.roundOff.toFixed(2)}` : `-₹${Math.abs(totals.roundOff).toFixed(2)}`
+                                 ) : (
+                                     <span className="text-slate-400 font-normal">₹0.00</span>
+                                 )}
+                             </span>
+                         </div>
+
                          <div className="border-t border-slate-100 dark:border-slate-800 my-3 pt-3 flex justify-between items-center">
-                             <span className="text-lg font-bold text-slate-900 dark:text-white">Grand Total</span>
+                             <div>
+                                 <span className="text-lg font-bold text-slate-900 dark:text-white">Grand Total</span>
+                                 {autoRoundOff && totals.roundOff !== 0 && (
+                                     <div className="text-[10px] text-slate-400 font-medium">
+                                         Round off: {totals.roundOff > 0 ? `+₹${totals.roundOff.toFixed(2)}` : `-₹${Math.abs(totals.roundOff).toFixed(2)}`}
+                                     </div>
+                                 )}
+                             </div>
                              <span className="text-2xl font-black text-accent">₹{totals.grandTotal.toFixed(2)}</span>
                          </div>
 
@@ -1311,7 +1478,9 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                      cgst: totals.cgst,
                                      sgst: totals.sgst,
                                      igst: totals.igst,
+                                     roundOff: totals.roundOff,
                                      grandTotal: totals.grandTotal,
+                                     documentType: activeDocType,
                                      status: 'Unpaid',
                                      selectedBankAccountId: draftInvoice.selectedBankAccountId,
                                      shippingName: draftInvoice.isShippingSameAsBilling ? undefined : draftInvoice.shippingDetails.name,
@@ -1321,7 +1490,7 @@ const NewInvoice: React.FC<NewInvoiceProps> = ({
                                      shippingZip: draftInvoice.isShippingSameAsBilling ? undefined : draftInvoice.shippingDetails.zip
                                  }} 
                                  company={company} 
-                                 documentTitle={mode === 'quote' ? 'Quotation' : 'Invoice'} 
+                                 documentTitle={docTypeLabel} 
                                  numberToWords={numberToWords} 
                              />
                          </PDFViewer>

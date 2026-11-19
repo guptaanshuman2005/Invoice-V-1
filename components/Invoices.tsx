@@ -170,6 +170,13 @@ const ModernInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docum
                             {invoice.igst > 0 && (
                                 <div className="flex justify-between text-slate-600"><span>IGST</span><span>{currency}{invoice.igst.toFixed(2)}</span></div>
                             )}
+
+                            {invoice.roundOff && Math.abs(invoice.roundOff) > 0.001 && (
+                                <div className="flex justify-between text-slate-600">
+                                    <span>Round Off</span>
+                                    <span>{invoice.roundOff > 0 ? `+${currency}${invoice.roundOff.toFixed(2)}` : `-${currency}${Math.abs(invoice.roundOff).toFixed(2)}`}</span>
+                                </div>
+                            )}
                         </div>
                         <div className="border-t border-slate-200 my-4"></div>
                         <div className="flex justify-between text-xl font-bold text-slate-900">
@@ -307,6 +314,12 @@ const TraditionalInvoiceContent: React.FC<{ invoice: Invoice, company: Company, 
                         <div className="flex justify-between p-2 border-b border-black text-xs">
                             <span>Add: IGST</span>
                             <span>{invoice.igst.toFixed(2)}</span>
+                        </div>
+                    )}
+                    {invoice.roundOff && Math.abs(invoice.roundOff) > 0.001 && (
+                        <div className="flex justify-between p-2 border-b border-black text-xs">
+                            <span>Round Off</span>
+                            <span>{invoice.roundOff > 0 ? `+${invoice.roundOff.toFixed(2)}` : `-${Math.abs(invoice.roundOff).toFixed(2)}`}</span>
                         </div>
                     )}
                     <div className="flex justify-between p-2 font-bold text-sm">
@@ -478,6 +491,13 @@ const PremiumInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docu
                             
                             {invoice.igst > 0 && (
                                 <div className="flex justify-between text-slate-500"><span>IGST</span><span>{currency}{invoice.igst.toFixed(2)}</span></div>
+                            )}
+
+                            {invoice.roundOff && Math.abs(invoice.roundOff) > 0.001 && (
+                                <div className="flex justify-between text-slate-500">
+                                    <span>Round Off</span>
+                                    <span>{invoice.roundOff > 0 ? `+${currency}${invoice.roundOff.toFixed(2)}` : `-${currency}${Math.abs(invoice.roundOff).toFixed(2)}`}</span>
+                                </div>
                             )}
                         </div>
                         <div className="flex justify-between items-center text-xl font-bold text-white p-4 rounded-xl mt-2 shadow-md" style={{ backgroundColor: brandColor }}>
@@ -682,6 +702,12 @@ const TallyInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docume
                             <p className="text-[10px] uppercase font-bold text-slate-500">Amount Chargeable (in words):</p>
                             <p className="font-bold text-xs text-slate-900 mt-1">INR {numberToWords(invoice.grandTotal)}</p>
                         </div>
+                        {invoice.roundOff && Math.abs(invoice.roundOff) > 0.001 && (
+                            <div className="text-right text-xs text-slate-500 mb-1">
+                                <span className="mr-2">Round Off:</span>
+                                <span className="font-mono">{invoice.roundOff > 0 ? `+₹${invoice.roundOff.toFixed(2)}` : `-₹${Math.abs(invoice.roundOff).toFixed(2)}`}</span>
+                            </div>
+                        )}
                         <div className="text-right mt-2">
                             <span className="text-[10px] uppercase text-slate-500 mr-2">Grand Total:</span>
                             <span className="text-lg font-black text-slate-900">₹{invoice.grandTotal.toFixed(2)}</span>
@@ -891,6 +917,12 @@ const CustomInvoiceContent: React.FC<{ invoice: Invoice, company: Company, docum
                             <span>₹{invoice.igst.toFixed(2)}</span>
                         </div>
                     )}
+                    {invoice.roundOff && Math.abs(invoice.roundOff) > 0.001 && (
+                        <div className="flex justify-between text-slate-600">
+                            <span>Round Off:</span>
+                            <span>{invoice.roundOff > 0 ? `+₹${invoice.roundOff.toFixed(2)}` : `-₹${Math.abs(invoice.roundOff).toFixed(2)}`}</span>
+                        </div>
+                    )}
                     <div 
                         className="flex justify-between text-base font-black pt-3 border-t-2 mt-2"
                         style={{ borderTopColor: brandColor, color: brandColor }}
@@ -939,7 +971,9 @@ export const InvoiceContent: React.FC<{ invoice: Invoice, company: Company, docu
     const template = company.details?.invoiceTemplate || 'modern';
     const isCN = invoice.documentType === 'credit_note';
     const isDN = invoice.documentType === 'debit_note';
-    const resolvedTitle = isCN ? 'Credit Note' : isDN ? 'Debit Note' : documentTitle;
+    const isDC = invoice.documentType === 'delivery_challan';
+    const isPI = invoice.documentType === 'proforma';
+    const resolvedTitle = isCN ? 'Credit Note' : isDN ? 'Debit Note' : isDC ? 'Delivery Challan' : isPI ? 'Proforma Invoice' : documentTitle;
     
     if (template === 'traditional' || template === 'classic') {
         return <TraditionalInvoiceContent invoice={invoice} company={company} documentTitle={resolvedTitle} />;
@@ -967,7 +1001,9 @@ export const InvoiceView: React.FC<{
 }> = ({ invoice, company, onClose, onStatusChange, onRecordPaymentClick, documentTitle = 'Invoice' }) => {
   const isCN = invoice.documentType === 'credit_note';
   const isDN = invoice.documentType === 'debit_note';
-  const resolvedTitle = isCN ? 'Credit Note' : isDN ? 'Debit Note' : documentTitle;
+  const isDC = invoice.documentType === 'delivery_challan';
+  const isPI = invoice.documentType === 'proforma';
+  const resolvedTitle = isCN ? 'Credit Note' : isDN ? 'Debit Note' : isDC ? 'Delivery Challan' : isPI ? 'Proforma Invoice' : documentTitle;
 
   const handleShareWhatsApp = async () => { 
       const num = invoice.invoiceNumber || (invoice as any).quotationNumber;
@@ -1084,7 +1120,7 @@ const Invoices: React.FC<InvoicesProps> = ({
   const [activeTab, setActiveTab] = useState<'invoices' | 'recurring'>('invoices');
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [filterStatus, setFilterStatus] = useState(initialFilter || '');
-  const [filterDocType, setFilterDocType] = useState<'all' | 'invoice' | 'credit_note' | 'debit_note'>('all');
+  const [filterDocType, setFilterDocType] = useState<'all' | 'invoice' | 'credit_note' | 'debit_note' | 'delivery_challan' | 'proforma'>('all');
   const [filterFY, setFilterFY] = useState<string>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [paymentModalInvoice, setPaymentModalInvoice] = useState<Invoice | null>(null);
@@ -1256,6 +1292,8 @@ const Invoices: React.FC<InvoicesProps> = ({
                     >
                         <option value="all">All Types</option>
                         <option value="invoice">Tax Invoices Only</option>
+                        <option value="delivery_challan">Delivery Challans (DC)</option>
+                        <option value="proforma">Proforma Invoices (PI)</option>
                         <option value="credit_note">Credit Notes (CN)</option>
                         <option value="debit_note">Debit Notes (DN)</option>
                     </select>
@@ -1348,6 +1386,14 @@ const Invoices: React.FC<InvoicesProps> = ({
                                                     ) : invoice.documentType === 'debit_note' ? (
                                                         <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
                                                             DN
+                                                        </span>
+                                                    ) : invoice.documentType === 'delivery_challan' ? (
+                                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
+                                                            CHALLAN
+                                                        </span>
+                                                    ) : invoice.documentType === 'proforma' ? (
+                                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
+                                                            PROFORMA
                                                         </span>
                                                     ) : null}
                                                     <span>{invoice.invoiceNumber}</span>

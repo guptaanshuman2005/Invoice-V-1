@@ -267,15 +267,22 @@ interface ClientHistoryPanelProps {
     isMaximized: boolean;
     onToggleMaximize: () => void;
     panelWidth?: number;
+    initialTab?: 'invoices' | 'ledger' | 'timeline';
 }
 
 const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({ 
     client, invoices, currency, company, onEditInvoice, onViewInvoice, onDeleteInvoice, onEmailInvoice,
     onRecordPaymentClick,
-    onClose, isMaximized, onToggleMaximize, panelWidth = 490
+    onClose, isMaximized, onToggleMaximize, panelWidth = 490, initialTab = 'invoices'
 }) => {
-    const [activeTab, setActiveTab] = useState<'invoices' | 'ledger' | 'timeline'>('invoices');
-    const [ledgerViewMode, setLedgerViewMode] = useState<'cards' | 'table'>('cards');
+    const [activeTab, setActiveTab] = useState<'invoices' | 'ledger' | 'timeline'>(initialTab);
+    const [ledgerViewMode, setLedgerViewMode] = useState<'cards' | 'table'>('table');
+
+    useEffect(() => {
+        if (initialTab) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab, client.id]);
 
     useEffect(() => {
         if (isMaximized) {
@@ -540,10 +547,10 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
         const rowsHtml = ledgerData.rows.map(r => `
             <tr>
                 <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-family: monospace;">${r.date}</td>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: bold; color: #4338ca;">${r.ref}</td>
                 <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${r.particulars}</td>
-                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-family: monospace;">${r.ref}</td>
-                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${r.debit > 0 ? `₹${r.debit.toFixed(2)}` : '-'}</td>
-                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${r.credit > 0 ? `₹${r.credit.toFixed(2)}` : '-'}</td>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #2563eb;">${r.debit > 0 ? `₹${r.debit.toFixed(2)}` : '-'}</td>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #16a34a;">${r.credit > 0 ? `₹${r.credit.toFixed(2)}` : '-'}</td>
                 <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">₹${r.runningBalance.toFixed(2)} ${r.runningBalance >= 0 ? 'Dr' : 'Cr'}</td>
             </tr>
         `).join('');
@@ -626,18 +633,18 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                     <thead>
                         <tr>
                             <th style="width: 100px;">Date</th>
+                            <th style="width: 120px;">Invoice #</th>
                             <th>Particulars / Description</th>
-                            <th style="width: 120px;">Voucher #</th>
-                            <th style="width: 110px; text-align: right;">Debit (Dr)</th>
-                            <th style="width: 110px; text-align: right;">Credit (Cr)</th>
-                            <th style="width: 130px; text-align: right;">Balance</th>
+                            <th style="width: 110px; text-align: right;">Billed (₹)</th>
+                            <th style="width: 110px; text-align: right;">Paid (₹)</th>
+                            <th style="width: 130px; text-align: right;">Balance (₹)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr style="background: #f8fafc; font-weight: 600;">
                             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-family: monospace;">${ledgerStartDate}</td>
-                            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Opening Balance B/F</td>
                             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-family: monospace;">-</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Opening Balance B/F</td>
                             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">-</td>
                             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">-</td>
                             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">₹${ledgerData.openingBalance.toFixed(2)}</td>
@@ -647,8 +654,8 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                     <tfoot>
                         <tr style="background: #f1f5f9; font-weight: 800; border-top: 2px solid #cbd5e1;">
                             <td colspan="3" style="padding: 10px 12px;">Total Activity & Closing Balance</td>
-                            <td style="padding: 10px 12px; text-align: right;">₹${ledgerData.totalDebit.toFixed(2)}</td>
-                            <td style="padding: 10px 12px; text-align: right;">₹${ledgerData.totalCredit.toFixed(2)}</td>
+                            <td style="padding: 10px 12px; text-align: right; color: #2563eb;">₹${ledgerData.totalDebit.toFixed(2)}</td>
+                            <td style="padding: 10px 12px; text-align: right; color: #16a34a;">₹${ledgerData.totalCredit.toFixed(2)}</td>
                             <td style="padding: 10px 12px; text-align: right; color: ${ledgerData.closingBalance > 0 ? '#b91c1c' : '#047857'}; font-size: 13px;">₹${ledgerData.closingBalance.toFixed(2)}</td>
                         </tr>
                     </tfoot>
@@ -679,14 +686,20 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
     const handleShareLedgerWhatsApp = () => {
         const cleanPhone = (client.phone || '').replace(/[^0-9]/g, '');
         const phoneParam = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-        const msg = `*ACCOUNT STATEMENT / KHATA LEDGER*\n\n` +
+        const recentTxLines = ledgerData.rows.length > 0 
+            ? `\n*Recent Transactions:*\n` + ledgerData.rows.slice(-5).map(r => `• ${r.date} | ${r.ref} | ${r.debit > 0 ? `Billed: ₹${r.debit.toFixed(2)}` : `Paid: ₹${r.credit.toFixed(2)}`} | Bal: ₹${r.runningBalance.toFixed(2)}`).join('\n') + `\n`
+            : '';
+
+        const msg = `*STATEMENT OF ACCOUNT (KHATA / HISAB-KITAB)*\n\n` +
             `Dear *${client.name}*,\n` +
             `Here is your account statement from *${company.details.name || 'our company'}* for the period *${ledgerStartDate}* to *${ledgerEndDate}*:\n\n` +
             `• *Opening Balance:* ₹${ledgerData.openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n` +
-            `• *Total Bills (Debit):* ₹${ledgerData.totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n` +
-            `• *Total Payments/Credits:* ₹${ledgerData.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n` +
-            `• *Net Balance Due:* ₹${ledgerData.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ${ledgerData.closingBalance > 0 ? '(Receivable)' : ledgerData.closingBalance < 0 ? '(Advance)' : '(Nil)'}\n\n` +
-            `Please verify and clear any pending balance at your earliest convenience. Thank you!`;
+            `• *Total Billed (₹):* ₹${ledgerData.totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n` +
+            `• *Total Paid (₹):* ₹${ledgerData.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n` +
+            `• *Net Balance Due (₹):* ₹${ledgerData.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ${ledgerData.closingBalance > 0 ? '(Receivable / Due)' : ledgerData.closingBalance < 0 ? '(Advance with Us)' : '(Cleared / Nil)'}\n` +
+            recentTxLines +
+            `\nPlease verify and clear any pending balance at your earliest convenience.\n\n` +
+            `Thank you for your business!\n*${company.details?.name || ''}*`;
 
         const url = `https://wa.me/${phoneParam}?text=${encodeURIComponent(msg)}`;
         window.open(url, '_blank');
@@ -1051,19 +1064,19 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                                     <thead className="bg-slate-100/70 dark:bg-slate-800/70 text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider border-b border-slate-200 dark:border-slate-800">
                                         <tr>
                                             <th className="px-3.5 py-2.5">Date</th>
+                                            <th className="px-3.5 py-2.5">Invoice #</th>
                                             <th className="px-3.5 py-2.5">Particulars</th>
-                                            <th className="px-3.5 py-2.5">Voucher #</th>
-                                            <th className="px-3.5 py-2.5 text-right">Debit (Dr)</th>
-                                            <th className="px-3.5 py-2.5 text-right">Credit (Cr)</th>
-                                            <th className="px-3.5 py-2.5 text-right">Balance</th>
+                                            <th className="px-3.5 py-2.5 text-right">Billed (₹)</th>
+                                            <th className="px-3.5 py-2.5 text-right">Paid (₹)</th>
+                                            <th className="px-3.5 py-2.5 text-right">Balance (₹)</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                         {/* Opening Balance Row */}
                                         <tr className="bg-slate-50/60 dark:bg-slate-900/30 font-semibold">
                                             <td className="px-3.5 py-2 font-mono text-slate-500">{ledgerStartDate}</td>
+                                            <td className="px-3.5 py-2 text-slate-400 font-mono">-</td>
                                             <td className="px-3.5 py-2 text-slate-700 dark:text-slate-300 italic">Opening Balance B/F</td>
-                                            <td className="px-3.5 py-2 text-slate-400">-</td>
                                             <td className="px-3.5 py-2 text-right text-slate-400">-</td>
                                             <td className="px-3.5 py-2 text-right text-slate-400">-</td>
                                             <td className="px-3.5 py-2 text-right font-mono font-bold text-slate-900 dark:text-white">
@@ -1082,10 +1095,10 @@ const ClientHistoryPanel: React.FC<ClientHistoryPanelProps> = ({
                                             ledgerData.rows.map(row => (
                                                 <tr key={row.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                                                     <td className="px-3.5 py-2.5 font-mono text-slate-500 whitespace-nowrap">{row.date}</td>
+                                                    <td className="px-3.5 py-2.5 font-mono text-accent font-semibold">{row.ref}</td>
                                                     <td className="px-3.5 py-2.5">
                                                         <span className="font-medium text-slate-800 dark:text-slate-200">{row.particulars}</span>
                                                     </td>
-                                                    <td className="px-3.5 py-2.5 font-mono text-accent font-semibold">{row.ref}</td>
                                                     <td className="px-3.5 py-2.5 text-right font-mono font-medium text-blue-600 dark:text-blue-400">
                                                         {row.debit > 0 ? `₹${row.debit.toFixed(2)}` : '-'}
                                                     </td>
@@ -1236,6 +1249,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
   
   // For History Panel
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
+  const [initialHistoryTab, setInitialHistoryTab] = useState<'invoices' | 'ledger' | 'timeline'>('invoices');
   const [invoiceToView, setInvoiceToView] = useState<Invoice | null>(null);
   const [paymentModalInvoice, setPaymentModalInvoice] = useState<Invoice | null>(null);
 
@@ -1490,7 +1504,10 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                                           className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition-colors relative ${
                                               isSelected ? 'bg-indigo-50/90 dark:bg-indigo-950/30' : ''
                                           }`} 
-                                          onClick={() => setViewingClient(client)}
+                                          onClick={() => {
+                                              setViewingClient(client);
+                                              setInitialHistoryTab('invoices');
+                                          }}
                                       >
                                           <td className="px-3 sm:px-4 py-3.5" onClick={e => e.stopPropagation()}>
                                               <input type="checkbox" checked={selectedIds.includes(client.id)} onChange={() => handleSelectOne(client.id)} className="rounded border-slate-300 text-accent focus:ring-accent" />
@@ -1516,6 +1533,17 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                                               {client.city ? `${client.city}${client.state ? `, ${client.state}` : ''}` : '—'}
                                           </td>
                                           <td className="px-3 sm:px-4 py-3.5 text-right space-x-1" onClick={e => e.stopPropagation()}>
+                                              <button 
+                                                  onClick={() => {
+                                                      setViewingClient(client);
+                                                      setInitialHistoryTab('ledger');
+                                                  }} 
+                                                  className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 active:scale-95 transition-all inline-flex items-center gap-1 font-semibold text-xs" 
+                                                  title="View Khata / Party Ledger Statement"
+                                              >
+                                                  <FileSpreadsheet className="h-4 w-4" strokeWidth={2} />
+                                                  <span className="hidden sm:inline">Khata</span>
+                                              </button>
                                               <button onClick={() => handleOpenModal(client)} className="text-slate-400 hover:text-accent p-1.5 rounded-lg hover:bg-accent/10 active:scale-95 transition-all" title="Edit Client"><Edit className="h-4 w-4" strokeWidth={2} /></button>
                                               <button onClick={() => handleDeleteClient(client.id)} className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 active:scale-95 transition-all" title="Delete Client"><Trash2 className="h-4 w-4" strokeWidth={2} /></button>
                                           </td>
@@ -1585,6 +1613,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, invoices, compan
                               isMaximized={isMaximized}
                               onToggleMaximize={() => setIsMaximized(!isMaximized)}
                               panelWidth={panelWidth}
+                              initialTab={initialHistoryTab}
                           />
                       </div>
                   </div>

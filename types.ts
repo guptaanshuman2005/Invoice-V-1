@@ -119,10 +119,11 @@ export interface Invoice {
   ewayBillNumber?: string;
 
   // Credit / Debit Note Details
-  documentType?: 'invoice' | 'credit_note' | 'debit_note';
+  documentType?: 'invoice' | 'credit_note' | 'debit_note' | 'delivery_challan' | 'proforma';
   originalInvoiceNumber?: string;
   originalInvoiceDate?: string;
   reason?: 'Sales Return' | 'Post Sale Discount' | 'Deficiency in Services' | 'Correction in Invoice' | 'Change in POS' | 'Other';
+  roundOff?: number;
 }
 
 export interface Quotation extends Omit<Invoice, 'status' | 'invoiceNumber'> {
@@ -220,10 +221,13 @@ export interface DraftInvoice {
     transporterId: string;
     vehicleNumber: string;
     ewayBillNumber: string;
-    // Added for Quotation, Credit Note, and Debit Note support
-    type?: 'invoice' | 'quote' | 'credit_note' | 'debit_note';
+    // Added for Quotation, Credit Note, Debit Note, Delivery Challan, and Proforma support
+    type?: 'invoice' | 'quote' | 'credit_note' | 'debit_note' | 'delivery_challan' | 'proforma';
+    documentType?: 'invoice' | 'delivery_challan' | 'proforma' | 'credit_note' | 'debit_note';
     validUntil?: string;
     originalInvoiceNumber?: string;
     originalInvoiceDate?: string;
     reason?: 'Sales Return' | 'Post Sale Discount' | 'Deficiency in Services' | 'Correction in Invoice' | 'Change in POS' | 'Other';
+    roundOff?: number;
+    autoRoundOff?: boolean;
 }
