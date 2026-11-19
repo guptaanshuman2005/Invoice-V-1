@@ -529,53 +529,6 @@ const Settings: React.FC<SettingsProps> = ({
                     </div>
                 </div>
             </div>
-
-            {/* Cloud Database & Account Isolation Card */}
-            <div className="glass-panel p-8 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-                <div className="flex flex-wrap justify-between items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-700/50 pb-3">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-light-text flex items-center gap-2">
-                        <span>Database & User Isolation</span>
-                    </h2>
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        Zoho Catalyst Data Store (India Region)
-                    </span>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
-                    Every company and invoice record in InvoiceProIn is strictly partitioned and mapped to your specific user identity in the cloud database.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <span className="text-slate-400 uppercase font-semibold text-[10px] block mb-1">Account Owner</span>
-                        <span className="font-bold text-slate-900 dark:text-white truncate block">
-                            {currentUser?.email || (isDemoMode ? 'Demo Sandbox User' : 'Guest Account')}
-                        </span>
-                        <span className="text-[10px] text-slate-500 mt-1 block truncate">
-                            UID: {currentUser?.id || (isDemoMode ? 'sandbox_demo_guest' : 'local_storage')}
-                        </span>
-                    </div>
-
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <span className="text-slate-400 uppercase font-semibold text-[10px] block mb-1">Company Database ID</span>
-                        <span className="font-bold text-slate-900 dark:text-white truncate block font-mono">
-                            {activeCompany.id}
-                        </span>
-                        <span className="text-[10px] text-slate-500 mt-1 block">
-                            Mapped to Catalyst Table <code className="text-accent">companies</code>
-                        </span>
-                    </div>
-
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <span className="text-slate-400 uppercase font-semibold text-[10px] block mb-1">Invoices Partition</span>
-                        <span className="font-bold text-slate-900 dark:text-white block font-mono">
-                            {activeCompany.invoices.length} Invoices Stored
-                        </span>
-                        <span className="text-[10px] text-slate-500 mt-1 block">
-                            Foreign Key: <code className="text-accent">company_id = "{activeCompany.id}"</code>
-                        </span>
-                    </div>
-                </div>
-            </div>
           </div>
         )}
 
