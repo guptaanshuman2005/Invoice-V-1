@@ -174,9 +174,35 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key === 's') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
+      if (e.key === 'Escape') {
+        setIsSearchDropdownOpen(false);
+        setIsCompanySwitcherOpen(false);
+        setIsSidebarOpen(false);
+        return;
+      }
+
+      if (e.altKey) {
+        const key = e.key.toLowerCase();
+        if (key === 's') {
+          e.preventDefault();
+          searchInputRef.current?.focus();
+        } else if (key === 'n') {
+          e.preventDefault();
+          setInvoiceToEdit(null);
+          handleSetActiveView('NewInvoice');
+        } else if (key === 'd') {
+          e.preventDefault();
+          handleSetActiveView('Dashboard');
+        } else if (key === 'i') {
+          e.preventDefault();
+          handleSetActiveView('Invoices');
+        } else if (key === 'k') {
+          e.preventDefault();
+          handleSetActiveView('Inventory');
+        } else if (key === 'c') {
+          e.preventDefault();
+          handleSetActiveView('Clients');
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -305,16 +331,7 @@ const App: React.FC = () => {
     return () => window.removeEventListener('openSubscriptionPrompt', handleOpenSubscription);
   }, [isDemoMode]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && (e.key.toLowerCase() === 's' || e.code === 'KeyS')) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+
 
   useEffect(() => {
     const handleNavigate = (e: Event) => {

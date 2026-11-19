@@ -22,6 +22,14 @@ interface SidebarProps {
   onToggleCollapse: () => void;
 }
 
+const SHORTCUT_MAP: Record<string, string> = {
+  Dashboard: 'Alt+D',
+  NewInvoice: 'Alt+N',
+  Invoices: 'Alt+I',
+  Clients: 'Alt+C',
+  Inventory: 'Alt+K'
+};
+
 const Sidebar: React.FC<SidebarProps> = ({ 
   activeView, setActiveView, theme, setTheme, 
   userCompanies, activeCompany, onSwitchCompany, onAddCompany, onLogout, onOpenProfile,
@@ -158,7 +166,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <span className={`shrink-0 ${isActive ? 'text-white' : 'text-zinc-400 dark:text-zinc-500'}`}>
                       {item.icon}
                   </span>
-                  {!isCollapsed && <span className="truncate">{item.name}</span>}
+                  {!isCollapsed && <span className="truncate flex-grow">{item.name}</span>}
+                  {!isCollapsed && SHORTCUT_MAP[item.view] && (
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded transition-colors ${
+                      isActive 
+                        ? 'bg-indigo-700/60 text-indigo-100' 
+                        : 'text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800'
+                    }`}>
+                      {SHORTCUT_MAP[item.view]}
+                    </span>
+                  )}
                 </button>
               </li>
             )})}

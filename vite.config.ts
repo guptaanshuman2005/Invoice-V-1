@@ -96,6 +96,27 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        chunkSizeWarningLimit: 1200,
+        rollupOptions: {
+          output: {
+            manualChunks(id) {
+              if (id.includes('@react-pdf')) {
+                return 'vendor-pdf';
+              }
+              if (id.includes('recharts') || id.includes('d3-')) {
+                return 'vendor-charts';
+              }
+              if (id.includes('firebase')) {
+                return 'vendor-firebase';
+              }
+              if (id.includes('lucide-react')) {
+                return 'vendor-icons';
+              }
+            }
+          }
+        }
       }
     };
 });
